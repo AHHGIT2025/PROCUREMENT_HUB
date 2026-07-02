@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Material Detail - Executive Flux ERP</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800;900&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#ffffff", "danger": "#E11D48", "on-tertiary-fixed": "#291800", "secondary-container": "#316bf3", "danger-soft": "#FFF1F2", "warning": "#F59E0B", "on-primary-fixed": "#081b3a", "primary": "#031635", "inverse-surface": "#213145", "tertiary-fixed-dim": "#e8c08a", "on-error-container": "#93000a", "on-tertiary-container": "#b08d5b", "surface-container-lowest": "#ffffff", "secondary": "#0051d5", "background": "#F8FAFC", "on-secondary-fixed": "#00174b", "on-tertiary-fixed-variant": "#5d4217", "surface-dim": "#cbdbf5", "on-background": "#0b1c30", "outline": "#75777f", "surface-container-high": "#dce9ff", "inverse-primary": "#b6c6ef", "tertiary": "#231400", "primary-container": "#1a2b4b", "error-container": "#ffdad6", "on-secondary-container": "#fefcff", "on-primary-fixed-variant": "#364768", "error": "#ba1a1a", "on-tertiary": "#ffffff", "info": "#3B82F6", "inverse-on-surface": "#eaf1ff", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "on-error": "#ffffff", "primary-fixed": "#d8e2ff", "primary-fixed-dim": "#b6c6ef", "on-secondary-fixed-variant": "#003ea8", "surface-tint": "#4e5e81", "on-surface": "#0b1c30", "on-secondary": "#ffffff", "border": "#E2E8F0", "tertiary-container": "#3e2700", "on-primary-container": "#8293b8", "tertiary-fixed": "#ffddb1", "secondary-fixed": "#dbe1ff", "surface-container-highest": "#d3e4fe", "outline-variant": "#c5c6cf", "surface-container": "#e5eeff", "warning-soft": "#FFFBEB", "surface": "#FFFFFF", "surface-bright": "#f8f9ff", "success-soft": "#ECFDF5", "success": "#10B981", "on-surface-variant": "#44474e", "secondary-fixed-dim": "#b4c5ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"
+                    },
+                    spacing: {
+                        "lg": "24px", "xs": "4px", "gutter": "20px", "margin-mobile": "16px", "xl": "32px", "margin-desktop": "32px", "base": "4px", "max-width": "1440px", "sm": "8px", "2xl": "48px", "md": "16px"
+                    },
+                    fontFamily: {
+                        "headline-sm": ["Hanken Grotesk"], "headline-md": ["Hanken Grotesk"], "label-md": ["Inter"], "code-sm": ["JetBrains Mono"], "body-lg": ["Inter"], "display-lg": ["Hanken Grotesk"], "headline-lg": ["Hanken Grotesk"], "body-sm": ["Inter"], "body-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "label-md": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+                        "code-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom Scrollbar for inner elements */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-sm h-screen overflow-hidden flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="fixed left-0 top-0 h-full w-[240px] flex flex-col pt-16 bg-surface-container-low border-r border-border z-40 transition-all duration-200 ease-in-out hidden md:flex">
+<div class="px-md pb-md">
+<h2 class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-sm mt-md">Modules</h2>
+<ul class="flex flex-col gap-xs">
+<!-- Active Item -->
+<li>
+<a class="flex items-center gap-sm px-md py-sm bg-secondary-container text-on-secondary-container rounded-lg" href="#">
+<span class="material-symbols-outlined icon-fill">inventory_2</span>
+<span class="text-label-md font-label-md">Material Master</span>
+</a>
+</li>
+<!-- Inactive Items -->
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md font-label-md">Stock Monitor</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">warehouse</span>
+<span class="text-label-md font-label-md">Warehouse Map</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">view_module</span>
+<span class="text-label-md font-label-md">Bin Config</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-label-md font-label-md">Audit Logs</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="mt-auto p-md border-t border-border">
+<button class="w-full bg-primary text-on-primary py-sm rounded-lg text-label-md font-label-md flex items-center justify-center gap-xs hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                Quick Scan
+            </button>
+<div class="mt-md flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-label-md font-label-md">IC</div>
+<div>
+<p class="text-label-md font-label-md text-on-surface">Inventory Ops</p>
+<p class="text-[10px] text-on-surface-variant">Global Warehouse A</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col min-w-0 md:ml-[240px] h-screen overflow-hidden">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface h-16 border-b border-border shrink-0">
+<div class="flex items-center gap-lg">
+<div class="text-headline-md font-headline-md font-bold text-primary">Executive Flux ERP</div>
+<!-- Search Bar -->
+<div class="relative hidden lg:block w-64">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full pl-8 pr-sm py-1.5 bg-background border border-border rounded-lg text-body-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary/10 transition-shadow" placeholder="Search materials..." type="text"/>
+</div>
+</div>
+<!-- Global Nav Links -->
+<nav class="hidden xl:flex items-center gap-lg">
+<a class="text-on-surface-variant hover:text-primary text-label-md font-label-md transition-colors" href="#">Dashboard</a>
+<a class="text-on-surface-variant hover:text-primary text-label-md font-label-md transition-colors" href="#">Analytics</a>
+<a class="text-on-surface-variant hover:text-primary text-label-md font-label-md transition-colors" href="#">Reports</a>
+<a class="text-on-surface-variant hover:text-primary text-label-md font-label-md transition-colors" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs">
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors"><span class="material-symbols-outlined">help</span></button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors"><span class="material-symbols-outlined">apps</span></button>
+</div>
+<div class="h-6 w-px bg-border"></div>
+<button class="text-secondary text-label-md font-label-md hover:underline">Bulk Import</button>
+<button class="bg-primary text-on-primary px-md py-sm rounded-lg text-label-md font-label-md hover:opacity-90 transition-opacity">New Material</button>
+</div>
+</header>
+<!-- Scrollable Page Content -->
+<main class="flex-1 overflow-y-auto p-margin-desktop bg-background">
+<div class="max-w-[1440px] mx-auto flex flex-col gap-lg">
+<!-- Page Header & Actions -->
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-md">
+<div>
+<a class="inline-flex items-center gap-xs text-secondary text-label-md font-label-md hover:underline mb-sm" href="#">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                            Back to Material List
+                        </a>
+<div class="flex items-center gap-md">
+<h1 class="text-headline-lg font-headline-lg text-primary">Industrial Grade Steel Bearing</h1>
+<span class="px-sm py-1 bg-success-soft text-success text-label-md font-label-md rounded-full border border-success/20">Active</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-xs">SKU: BRG-IND-8842-X | Category: Mechanical Components</p>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-sm bg-surface border border-border text-primary text-label-md font-label-md rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">edit</span> Edit
+                        </button>
+<button class="px-md py-sm bg-surface border border-border text-primary text-label-md font-label-md rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">print</span> Print Label
+                        </button>
+</div>
+</div>
+<!-- Technical Summary Card -->
+<div class="bg-surface border border-border rounded-xl p-md flex flex-col lg:flex-row gap-lg">
+<!-- Image Placeholder -->
+<div class="w-full lg:w-48 h-48 bg-surface-container-low rounded-lg border border-border flex items-center justify-center overflow-hidden shrink-0 relative group">
+<img alt="Industrial Steel Bearing" class="w-full h-full object-cover mix-blend-multiply opacity-90" data-alt="A highly detailed close-up shot of a pristine industrial grade steel bearing resting on a sterile, minimalist metallic workbench. The lighting is bright, cool, and diffused, simulating a high-end corporate engineering environment. The steel surface of the bearing gleams with precision reflections, highlighting its flawless manufacturing. The overall aesthetic is clean, technical, and utilizes a cool gray and deep navy color palette indicative of a modern ERP interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWY0k82dkNaFOMWv8FVpxc8TUtH8_T7ADzz5Pco9TA6C0U4_r6pUgBiBdcaN1dG2_e24ACfhG0DGZxX9rjZfs0caMsNINjYc4NBt7i-AX3v6xTHq4ClgzhsxkpHg7e4vBpzHN_txBgKXGqHcWIUgW3AVqSY-geWBQoaT2tPV2Ou7ybSdBBMj-FWv5-LRc3hF1925LOgt3G0YZ_8BH68s_z_mDTFOV5mO09kvFSPcuxbAF7lgm4VVCWh2-ELB4b4WahKAw3SucEseQ"/>
+<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 bg-surface text-primary p-sm rounded-full shadow-lg transition-opacity">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Grid -->
+<div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-md content-start">
+<!-- Metric 1 -->
+<div class="bg-background border border-border rounded-lg p-sm flex flex-col gap-xs">
+<span class="text-label-md font-label-md text-on-surface-variant flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">timer</span> Lead Time</span>
+<span class="text-headline-sm font-headline-sm text-primary">14 Days</span>
+</div>
+<!-- Metric 2 -->
+<div class="bg-background border border-border rounded-lg p-sm flex flex-col gap-xs">
+<span class="text-label-md font-label-md text-on-surface-variant flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">shield</span> Safety Stock</span>
+<span class="text-headline-sm font-headline-sm text-warning">250 Units</span>
+</div>
+<!-- Metric 3 -->
+<div class="bg-background border border-border rounded-lg p-sm flex flex-col gap-xs">
+<span class="text-label-md font-label-md text-on-surface-variant flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">shopping_cart</span> Min Order Qty</span>
+<span class="text-headline-sm font-headline-sm text-primary">500 Units</span>
+</div>
+<!-- Metric 4 -->
+<div class="bg-background border border-border rounded-lg p-sm flex flex-col gap-xs">
+<span class="text-label-md font-label-md text-on-surface-variant flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">attach_money</span> Standard Cost</span>
+<span class="text-headline-sm font-headline-sm text-primary">$42.50</span>
+</div>
+<!-- Description spanning full width -->
+<div class="col-span-2 md:col-span-4 mt-sm">
+<h3 class="text-label-md font-label-md text-primary mb-xs">Technical Description</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+                                High-load capacity deep groove ball bearing designed for heavy industrial machinery. Features premium chromium steel construction with advanced heat treatment for extended fatigue life. Sealed on both sides to prevent contamination in harsh operating environments.
+                            </p>
+</div>
+</div>
+</div>
+<!-- Tabs Navigation -->
+<div class="border-b border-border">
+<nav class="flex items-center gap-lg overflow-x-auto scrollbar-hide">
+<button class="py-sm border-b-2 border-secondary text-secondary text-label-md font-label-md whitespace-nowrap">General Info</button>
+<button class="py-sm border-b-2 border-transparent text-on-surface-variant hover:text-primary text-label-md font-label-md whitespace-nowrap transition-colors">Inventory (1,240)</button>
+<button class="py-sm border-b-2 border-transparent text-on-surface-variant hover:text-primary text-label-md font-label-md whitespace-nowrap transition-colors">History</button>
+<button class="py-sm border-b-2 border-transparent text-on-surface-variant hover:text-primary text-label-md font-label-md whitespace-nowrap transition-colors">Warehouse Assignments</button>
+</nav>
+</div>
+<!-- Tab Content: General Info (Bento Grid Layout) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<!-- Main Specs (Span 2 cols) -->
+<div class="lg:col-span-2 bg-surface border border-border rounded-xl p-md">
+<div class="flex items-center justify-between mb-md">
+<h3 class="text-headline-sm font-headline-sm text-primary flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">straighten</span> Physical Specifications
+                            </h3>
+</div>
+<div class="grid grid-cols-2 gap-x-lg gap-y-md">
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Inner Diameter (d)</p>
+<p class="text-body-md font-body-md text-primary">50 mm</p>
+</div>
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Outer Diameter (D)</p>
+<p class="text-body-md font-body-md text-primary">110 mm</p>
+</div>
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Width (B)</p>
+<p class="text-body-md font-body-md text-primary">27 mm</p>
+</div>
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Weight</p>
+<p class="text-body-md font-body-md text-primary">1.05 kg</p>
+</div>
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Dynamic Load Rating (C)</p>
+<p class="text-body-md font-body-md text-primary">61.8 kN</p>
+</div>
+<div class="border-b border-border pb-xs">
+<p class="text-label-md font-label-md text-on-surface-variant">Static Load Rating (C0)</p>
+<p class="text-body-md font-body-md text-primary">38.0 kN</p>
+</div>
+</div>
+</div>
+<!-- Right Column Stack -->
+<div class="flex flex-col gap-md">
+<!-- Approved Manufacturers -->
+<div class="bg-surface border border-border rounded-xl p-md flex-1">
+<h3 class="text-headline-sm font-headline-sm text-primary flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-secondary">factory</span> Approved Manufacturers
+                            </h3>
+<ul class="flex flex-col gap-sm">
+<li class="flex items-center justify-between p-sm bg-background border border-border rounded-lg">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 bg-surface-container-high rounded flex items-center justify-center text-primary font-bold text-[10px]">SKF</div>
+<div>
+<p class="text-label-md font-label-md text-primary">SKF Group</p>
+<p class="text-[11px] text-on-surface-variant">Primary Supplier</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-success text-[18px]">verified</span>
+</li>
+<li class="flex items-center justify-between p-sm bg-background border border-border rounded-lg">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 bg-surface-container-high rounded flex items-center justify-center text-primary font-bold text-[10px]">TIM</div>
+<div>
+<p class="text-label-md font-label-md text-primary">Timken</p>
+<p class="text-[11px] text-on-surface-variant">Secondary Supplier</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-success text-[18px]">verified</span>
+</li>
+</ul>
+</div>
+<!-- Documents -->
+<div class="bg-surface border border-border rounded-xl p-md">
+<h3 class="text-label-md font-label-md text-primary flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">description</span> Technical Documents
+                            </h3>
+<a class="flex items-center gap-sm py-xs group" href="#">
+<span class="material-symbols-outlined text-danger text-[20px]">picture_as_pdf</span>
+<span class="text-body-sm font-body-sm text-on-surface group-hover:text-secondary transition-colors">Material_Safety_Data_Sheet.pdf</span>
+</a>
+<a class="flex items-center gap-sm py-xs group" href="#">
+<span class="material-symbols-outlined text-info text-[20px]">engineering</span>
+<span class="text-body-sm font-body-sm text-on-surface group-hover:text-secondary transition-colors">CAD_Drawing_3D.step</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ProcureLink ERP - Attachments &amp; Justification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-fixed-variant": "#5d4217",
+                        "surface-tint": "#4e5e81",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary-container": "#b08d5b",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#0b1c30",
+                        "outline-variant": "#c5c6cf",
+                        "surface-container-highest": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "primary-container": "#1a2b4b",
+                        "background": "#F8FAFC",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#e8c08a",
+                        "inverse-primary": "#b6c6ef",
+                        "outline": "#75777f",
+                        "on-secondary": "#ffffff",
+                        "warning-soft": "#FFFBEB",
+                        "surface": "#FFFFFF",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-surface": "#213145",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary-fixed-variant": "#364768",
+                        "warning": "#F59E0B",
+                        "surface-container-high": "#dce9ff",
+                        "success-soft": "#ECFDF5",
+                        "danger": "#E11D48",
+                        "on-primary-fixed": "#081b3a",
+                        "on-surface-variant": "#44474e",
+                        "surface-variant": "#d3e4fe",
+                        "danger-soft": "#FFF1F2",
+                        "on-secondary-fixed": "#00174b",
+                        "border": "#E2E8F0",
+                        "secondary-container": "#316bf3",
+                        "on-error": "#ffffff",
+                        "info": "#3B82F6",
+                        "secondary": "#0051d5",
+                        "tertiary-fixed": "#ffddb1",
+                        "success": "#10B981",
+                        "tertiary-container": "#3e2700",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "on-primary-container": "#8293b8",
+                        "inverse-on-surface": "#eaf1ff",
+                        "secondary-fixed": "#dbe1ff",
+                        "primary": "#031635",
+                        "on-tertiary-fixed": "#291800",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary-container": "#fefcff",
+                        "tertiary": "#231400",
+                        "on-background": "#0b1c30"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "2xl": "48px",
+                        "md": "16px",
+                        "margin-desktop": "32px",
+                        "max-width": "1440px",
+                        "gutter": "20px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "base": "4px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "headline-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-sm": ["Hanken Grotesk", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Hanken Grotesk", "sans-serif"],
+                        "display-lg": ["Hanken Grotesk", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #F8FAFC; }
+    </style>
+</head>
+<body class="flex bg-background min-h-screen text-on-background font-body-md">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col py-md gap-xs bg-surface-container-low dark:bg-surface-container-highest w-[240px] h-screen fixed left-0 top-0 border-r border-border dark:border-outline-variant z-40">
+<div class="px-md pb-lg">
+<h1 class="font-headline-sm text-headline-sm font-extrabold text-primary dark:text-primary-fixed">ProcureLink</h1>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Enterprise ERP</p>
+</div>
+<div class="px-md mb-md">
+<button class="w-full bg-primary text-on-primary py-2 rounded-DEFAULT font-label-md text-label-md hover:bg-inverse-surface transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Requisition
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<a class="flex items-center gap-3 py-2 px-3 mx-2 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 py-2 px-3 mx-2 text-on-primary-container dark:text-on-primary-fixed bg-secondary-container dark:bg-primary-container font-semibold rounded-lg font-label-md text-label-md transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+                Requisitions
+            </a>
+<a class="flex items-center gap-3 py-2 px-3 mx-2 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-3 py-2 px-3 mx-2 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+                Approvals
+            </a>
+<a class="flex items-center gap-3 py-2 px-3 mx-2 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">store</span>
+                Vendors
+            </a>
+</div>
+<div class="mt-auto pt-md border-t border-border dark:border-outline-variant px-2">
+<a class="flex items-center gap-3 py-2 px-3 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 py-2 px-3 text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-container-high hover:text-primary dark:hover:text-primary-fixed-dim transition-all duration-150 ease-in-out rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">contact_support</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-[240px] flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim w-full h-16 border-b border-border dark:border-outline-variant flex justify-between items-center px-margin-desktop sticky top-0 z-30">
+<div class="flex items-center gap-md">
+<!-- Mobile menu button (hidden on desktop) -->
+<button class="md:hidden text-on-surface-variant p-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed font-bold hidden md:block">New Requisition</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="p-2 rounded-full text-on-surface-variant dark:text-outline hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer duration-200 active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant dark:text-outline hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer duration-200 active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant dark:text-outline hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors cursor-pointer duration-200 active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden border border-border">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A close-up headshot of a professional individual in a corporate setting. The lighting is soft and flattering, highlighting a friendly yet serious expression. The background is a blurred, bright office environment, matching the modern, clean aesthetic of a corporate ERP interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-shs_nzlhJZBEYxa6VHCCc4iDZA4q7MNJcgZv5-BnAtQopwDqDAbajHc0SspWq_Cy_d7j2unzrnfKSbwMfypYxTPkeK0bZUvnSMSP4Qx1E2Fbb-MnJbpqNzJXy0IVlamyhdd_-k2YjMcnVLVQWaQS3r4QzwD7Aa4xOTaEkzuotnoj_FGfCOUUxquJJoVtmw_Ll8R4NXIOZRXxqm7JPFlv2v7Y4EGZCZq5MeUaNg7thMJdvvigH5yeG2dxh867ApiC2CTiFB5M-Sg"/>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full">
+<!-- Stepper -->
+<div class="mb-xl">
+<div class="flex items-center justify-between relative">
+<!-- Line behind -->
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-border z-0"></div>
+<!-- Active Line Progress -->
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-2/3 h-[2px] bg-primary z-0"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Basic Info</span>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Line Items</span>
+</div>
+<!-- Step 3 (Active) -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface border-2 border-primary flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Attachments</span>
+</div>
+<!-- Step 4 -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface border-2 border-border flex items-center justify-center text-outline">
+<span class="font-label-md text-label-md">4</span>
+</div>
+<span class="font-label-md text-label-md text-outline">Review</span>
+</div>
+</div>
+</div>
+<div class="mb-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Step 3: Attachments &amp; Justification</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Provide a detailed business case and attach any relevant quotes, specifications, or contracts.</p>
+</div>
+<!-- Main Form Content - Bento-ish Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-xl">
+<!-- Justification Section -->
+<div class="lg:col-span-7 bg-surface rounded-xl border border-border p-lg">
+<label class="block font-label-md text-label-md text-on-surface mb-sm" for="justification">Justification / Business Case <span class="text-danger">*</span></label>
+<textarea class="w-full rounded-DEFAULT border border-border p-md font-body-sm text-body-sm text-on-surface focus:border-secondary focus:ring-2 focus:ring-secondary/10 resize-none transition-shadow" id="justification" placeholder="Explain the business need, ROI, or impact of this request..." rows="12"></textarea>
+<div class="mt-2 flex justify-between items-center text-on-surface-variant font-code-sm text-code-sm">
+<span>Min. 50 words recommended.</span>
+<span>0 / 2000</span>
+</div>
+</div>
+<!-- Attachments Section -->
+<div class="lg:col-span-5 flex flex-col gap-gutter">
+<!-- Upload Dropzone -->
+<div class="bg-surface rounded-xl border border-border border-dashed p-xl flex flex-col items-center justify-center text-center hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[24px]">cloud_upload</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Drag &amp; Drop Files Here</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">or click to browse from your computer</p>
+<p class="font-code-sm text-code-sm text-outline">Supported: PDF, XLSX, JPG, PNG (Max 10MB)</p>
+</div>
+<!-- Uploaded Files List -->
+<div class="bg-surface rounded-xl border border-border p-md flex flex-col gap-sm">
+<h4 class="font-label-md text-label-md text-on-surface mb-xs">Uploaded Files (2)</h4>
+<!-- File Item 1 -->
+<div class="flex items-center justify-between p-sm border border-border rounded-lg hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-danger">picture_as_pdf</span>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface line-clamp-1">Vendor_Quote_Q3_Final.pdf</p>
+<p class="font-code-sm text-code-sm text-outline">2.4 MB</p>
+</div>
+</div>
+<button class="p-1 text-outline hover:text-danger hover:bg-danger-soft rounded-full transition-colors" title="Remove file">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- File Item 2 -->
+<div class="flex items-center justify-between p-sm border border-border rounded-lg hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success">table_view</span>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface line-clamp-1">ROI_Calculation_Matrix.xlsx</p>
+<p class="font-code-sm text-code-sm text-outline">856 KB</p>
+</div>
+</div>
+<button class="p-1 text-outline hover:text-danger hover:bg-danger-soft rounded-full transition-colors" title="Remove file">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="flex justify-between items-center pt-lg border-t border-border">
+<button class="px-lg py-2 border border-secondary text-secondary rounded-DEFAULT font-label-md text-label-md hover:bg-secondary-fixed-dim/20 transition-colors">
+                    Back
+                </button>
+<div class="flex gap-md">
+<button class="px-lg py-2 text-secondary font-label-md text-label-md hover:bg-surface-container transition-colors rounded-DEFAULT">
+                        Save Draft
+                    </button>
+<button class="px-lg py-2 bg-primary text-on-primary rounded-DEFAULT font-label-md text-label-md hover:bg-inverse-surface transition-colors shadow-[0_4px_12px_rgba(26,43,75,0.05)]">
+                        Next
+                    </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ProcureLink ERP - Audit Log Central</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Hanken+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#0051d5",
+                        "primary-fixed": "#d8e2ff",
+                        "border": "#E2E8F0",
+                        "on-primary-fixed-variant": "#364768",
+                        "primary": "#031635",
+                        "surface-container": "#e5eeff",
+                        "success-soft": "#ECFDF5",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed": "#291800",
+                        "primary-container": "#1a2b4b",
+                        "secondary-fixed": "#dbe1ff",
+                        "success": "#10B981",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#316bf3",
+                        "background": "#F8FAFC",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "info": "#3B82F6",
+                        "danger": "#E11D48",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "tertiary": "#231400",
+                        "tertiary-fixed-dim": "#e8c08a",
+                        "surface": "#FFFFFF",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-container": "#3e2700",
+                        "on-tertiary-container": "#b08d5b",
+                        "warning": "#F59E0B",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#5d4217",
+                        "on-primary-container": "#8293b8",
+                        "on-primary-fixed": "#081b3a",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#fefcff",
+                        "on-surface-variant": "#44474e",
+                        "inverse-primary": "#b6c6ef",
+                        "tertiary-fixed": "#ffddb1",
+                        "on-background": "#0b1c30",
+                        "outline": "#75777f",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#00174b",
+                        "outline-variant": "#c5c6cf",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "inverse-surface": "#213145",
+                        "surface-tint": "#4e5e81",
+                        "danger-soft": "#FFF1F2",
+                        "warning-soft": "#FFFBEB",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#0b1c30",
+                        "surface-container-high": "#dce9ff",
+                        "inverse-on-surface": "#eaf1ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "margin-desktop": "32px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "max-width": "1440px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "sm": "8px",
+                        "base": "4px",
+                        "gutter": "20px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "code-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "label-md": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for high-density tables */
+        .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .table-scroll::-webkit-scrollbar-track { background: transparent; }
+        .table-scroll::-webkit-scrollbar-thumb { background-color: #c5c6cf; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-border flex justify-between items-center w-full h-16 pl-64 pr-8 fixed top-0 left-0 z-30 transition-all">
+<div class="flex items-center gap-md w-1/3">
+<span class="font-headline-md text-headline-md font-bold text-primary">ProcureERP Audit</span>
+</div>
+<div class="flex-1 max-w-md mx-auto hidden md:block">
+<div class="relative w-full flex items-center group">
+<span class="material-symbols-outlined absolute left-sm text-on-surface-variant group-focus-within:text-primary transition-colors pointer-events-none">search</span>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-bright border border-border rounded text-body-sm font-body-sm focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all placeholder:text-on-surface-variant/70" placeholder="Search audit logs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg w-1/3 justify-end">
+<div class="flex items-center gap-sm">
+<button class="p-xs rounded hover:bg-surface-container-highest transition-all text-on-surface-variant flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-secondary/10">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-xs rounded hover:bg-surface-container-highest transition-all text-on-surface-variant flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-secondary/10">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-xs rounded hover:bg-surface-container-highest transition-all text-on-surface-variant flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-secondary/10">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="h-8 w-8 rounded-full bg-surface-dim border border-border overflow-hidden cursor-pointer focus:ring-2 focus:ring-secondary/10 transition-all">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user, neutral lighting, minimalist background, optimized for a small UI avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6guy1bKIpjAbnVzyYKxm7evARho0RVu2Xs2BTV1JfWDUvjunm3la5XBL9tQUB1I21P0-hfqxBAsoihgxIi2Jbfu4lFjR3vUxUOscmeOK1zlZYiVS6TvHjBPJ5eym3ozRP8mnSeJNMmVlYF-5Y2jr0Jbq-OozN_nSGJ0Xp_GJ7szRdCQ2lqXXyLcyM_I573f3gpi84GcHfyKM6Lt-moZVR1AoLDop-xtc90Uao4sg6-JrCN9HOUnHA7yDYOTdSOZGmG24tlHWQYvM"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-surface border-r border-border flex flex-col w-60 h-screen fixed left-0 top-0 z-40">
+<div class="h-16 flex items-center px-lg border-b border-border bg-surface shrink-0">
+<div class="flex items-center gap-sm w-full">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">corporate_fare</span>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">ProcureERP</span>
+<span class="font-label-md text-label-md text-on-surface-variant truncate">Enterprise Audit</span>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-md flex flex-col gap-xs px-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Materials</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Requisitions</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span>Approvals</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span>Vendors</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Workflow Admin</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded hover:bg-surface-container-low transition-colors text-on-surface-variant font-body-md text-body-md opacity-100 hover:opacity-80 duration-100" href="#">
+<span class="material-symbols-outlined">corporate_fare</span>
+<span>Org Management</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-md px-sm py-sm rounded-l rounded-r-none bg-surface-container-low text-secondary font-semibold border-r-2 border-secondary font-body-md text-body-md opacity-100 transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">gavel</span>
+<span>Audit &amp; Compliance</span>
+</a>
+</div>
+<div class="p-sm mt-auto border-t border-border">
+<div class="bg-surface-bright rounded p-sm border border-border flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">System Status</span>
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-success"></div>
+<span class="font-body-sm text-body-sm text-on-surface">All Systems Operational</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-60 pt-16 h-screen flex flex-col bg-background">
+<div class="flex-1 flex flex-col max-w-[1440px] w-full mx-auto p-lg lg:p-xl gap-lg overflow-hidden">
+<!-- Page Header -->
+<div class="flex justify-between items-end shrink-0">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary m-0">System Activity Logs</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Comprehensive immutable ledger of all organizational actions.</p>
+</div>
+<div class="flex gap-md">
+<button class="bg-surface border border-secondary text-secondary font-label-md text-label-md px-md py-sm rounded hover:bg-secondary/5 transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">manage_search</span>
+                        Saved Views
+                    </button>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-md py-sm rounded hover:bg-primary/90 transition-colors flex items-center gap-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export CSV
+                    </button>
+</div>
+</div>
+<!-- Filter Bar (High Density Surface) -->
+<div class="bg-surface border border-border rounded-lg p-md flex flex-wrap items-end gap-md shrink-0 shadow-sm">
+<div class="flex flex-col gap-xs flex-1 min-w-[200px]">
+<label class="font-label-md text-label-md text-on-surface-variant">Date Range</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-on-surface-variant text-[18px] pointer-events-none">calendar_today</span>
+<input class="w-full pl-xl pr-sm py-sm bg-surface border border-border rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all cursor-pointer" type="text" value="Oct 01, 2023 - Oct 07, 2023"/>
+</div>
+</div>
+<div class="flex flex-col gap-xs flex-1 min-w-[150px]">
+<label class="font-label-md text-label-md text-on-surface-variant">User</label>
+<input class="w-full px-sm py-sm bg-surface border border-border rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="Search by name or ID..." type="text"/>
+</div>
+<div class="flex flex-col gap-xs flex-1 min-w-[150px]">
+<label class="font-label-md text-label-md text-on-surface-variant">Entity Type</label>
+<div class="relative">
+<select class="w-full px-sm py-sm pr-xl bg-surface border border-border rounded font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all">
+<option>All Entities</option>
+<option>Requisition</option>
+<option>Purchase Order</option>
+<option>Vendor Profile</option>
+<option>User Role</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-xs flex-1 min-w-[150px]">
+<label class="font-label-md text-label-md text-on-surface-variant">Severity</label>
+<div class="relative">
+<select class="w-full px-sm py-sm pr-xl bg-surface border border-border rounded font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all">
+<option>All Severities</option>
+<option value="info">Info</option>
+<option value="warning">Warning</option>
+<option value="critical">Critical</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<button class="bg-surface-container-low text-secondary border border-secondary/20 hover:bg-secondary/10 transition-colors rounded p-sm h-[38px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-secondary/20">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+<!-- Data Table Canvas (High Density) -->
+<div class="flex-1 bg-surface border border-border rounded-lg shadow-sm flex flex-col overflow-hidden">
+<div class="flex-1 overflow-auto table-scroll relative">
+<table class="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+<thead class="sticky top-0 bg-surface-dim z-10 shadow-sm border-b border-border">
+<tr>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant w-[160px] select-none cursor-pointer hover:bg-black/5 transition-colors">
+<div class="flex items-center gap-xs">Timestamp <span class="material-symbols-outlined text-[16px]">arrow_downward</span></div>
+</th>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant w-[240px]">User</th>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant w-[180px]">Entity</th>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant min-w-[200px]">Action</th>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant w-[140px]">IP Address</th>
+<th class="p-sm font-label-md text-label-md text-on-surface-variant w-[100px] text-right">Details</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-border">
+<!-- Row 1 -->
+<tr class="hover:bg-secondary/5 transition-colors group">
+<td class="p-sm text-on-surface-variant">
+<div class="flex flex-col">
+<span>2023-10-07 14:32:01</span>
+<span class="text-[11px] text-on-surface-variant/70">UTC -05:00</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<div class="w-6 h-6 rounded-full bg-surface-dim overflow-hidden shrink-0">
+<img alt="Sarah Jenkins" class="w-full h-full object-cover" data-alt="A small UI avatar headshot of a professional woman with glasses, neutral expression, white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9ad3RpjQ3ZVOfOBjBHjKAgplLbNUZJBQ9uJIn2lRw8wDBDIpgp-Hr23tzG1aq0YlK9aWTpmidhiGRNHxDXh1fOuvGePlUUenY1Ji6RqqePto-FZScynrNONpcBdUyMwmuKPb24AIV7CjJpCbsKBo4PlFnOgp9H2xqZNhyPbyqv9Hgm16ML21pws_tiVs6nUpsx5USjqa8-pXxRajtQBQtSCTWs0w3AqhgvZcd5cnkeGcm5L7iWD-_16WJRBTPcWD5yjZ_qdZqgxQ"/>
+</div>
+<div class="flex flex-col">
+<span class="font-semibold">Sarah Jenkins</span>
+<span class="text-[11px] text-on-surface-variant">VP Procurement</span>
+</div>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">PO-2023-8891</span>
+<span class="text-[11px] text-on-surface-variant">Purchase Order</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-success-soft text-success font-label-md text-[11px]">Approved</span>
+<span class="truncate max-w-[250px]">Approved capital expenditure for Acme Global hardware refresh.</span>
+</div>
+</td>
+<td class="p-sm font-code-sm text-code-sm text-on-surface-variant">192.168.1.104</td>
+<td class="p-sm text-right">
+<button class="text-secondary font-label-md hover:underline focus:outline-none">View JSON</button>
+</td>
+</tr>
+<!-- Row 2 (Warning) -->
+<tr class="hover:bg-secondary/5 transition-colors bg-warning-soft/30 group">
+<td class="p-sm text-on-surface-variant">
+<div class="flex flex-col">
+<span>2023-10-07 13:15:44</span>
+<span class="text-[11px] text-on-surface-variant/70">UTC -05:00</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<div class="w-6 h-6 rounded-full bg-surface-dim overflow-hidden shrink-0">
+<img alt="Marcus Cho" class="w-full h-full object-cover" data-alt="A small UI avatar headshot of a professional man, smiling slightly, light gray background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDv-e9Lm1W9y9Mdz9BH1ZuKQ3hc9cUFSku1JJh4y6j9YgQ8xAq05Dh_BdSOSF12r7YJ74hO4qvRhp8bXZgM3Nb5-sRZvceJt-swHP5_q5GvGSSx41mBePZJLy_GOg5v3lWrjZbHWnKaUeKhTe9fKb4NgfMkIKLTYWFX_ippupqTGmvYRIsRHWE3G5-AR7SW97n9KaNjguYfi2qYPhCKqRgd7JYForJUZI7dOauZDuZf_dONwaDjdJGO67ntWlTU2fRWFks08Y2swko"/>
+</div>
+<div class="flex flex-col">
+<span class="font-semibold">Marcus Cho</span>
+<span class="text-[11px] text-on-surface-variant">System Admin</span>
+</div>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">Role: AP_Clerk</span>
+<span class="text-[11px] text-on-surface-variant">Security Policy</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-warning-soft text-warning font-label-md text-[11px]">Modified</span>
+<span class="truncate max-w-[250px]">Elevated privileges bypass limit rule altered.</span>
+</div>
+</td>
+<td class="p-sm font-code-sm text-code-sm text-on-surface-variant">10.0.45.22</td>
+<td class="p-sm text-right">
+<button class="text-secondary font-label-md hover:underline focus:outline-none">View JSON</button>
+</td>
+</tr>
+<!-- Row 3 (Critical) -->
+<tr class="hover:bg-secondary/5 transition-colors bg-danger-soft/40 group">
+<td class="p-sm text-on-surface-variant">
+<div class="flex flex-col">
+<span>2023-10-07 11:05:12</span>
+<span class="text-[11px] text-on-surface-variant/70">UTC -05:00</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<div class="w-6 h-6 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[14px]">api</span>
+</div>
+<div class="flex flex-col">
+<span class="font-semibold">API Gateway</span>
+<span class="text-[11px] text-on-surface-variant">System Process</span>
+</div>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">Vendor Sync</span>
+<span class="text-[11px] text-on-surface-variant">Integration</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-danger text-on-error font-label-md text-[11px]">Failed</span>
+<span class="truncate max-w-[250px] font-semibold text-danger">Authentication rejected from Oracle Financials node.</span>
+</div>
+</td>
+<td class="p-sm font-code-sm text-code-sm text-on-surface-variant">172.16.254.1</td>
+<td class="p-sm text-right">
+<button class="text-secondary font-label-md hover:underline focus:outline-none">View Details</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-secondary/5 transition-colors group">
+<td class="p-sm text-on-surface-variant">
+<div class="flex flex-col">
+<span>2023-10-07 09:44:20</span>
+<span class="text-[11px] text-on-surface-variant/70">UTC -05:00</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<div class="w-6 h-6 rounded-full bg-surface-dim overflow-hidden shrink-0">
+<img alt="Elena Rodriguez" class="w-full h-full object-cover" data-alt="A small UI avatar headshot of a professional woman, casual corporate attire, soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCylnpFDbLnZu0l2ERreqDXYrrydUGaM7VBuzEkpjZBzO66s9FE47L1F2CP5yE_YlKjG1ZbDZyC1EocufDFfzkPZHpmjRdSDRvNrSxfw-Nm3MQcHffAXkYXe2_HSPWTyAYbXQake7XPpa0aguHChIK8pSTt4WTypdoAb37N-xyVXqeDPxlvpsph8pCdkWI3Z3PsOX3u7whL7SraPVM0AwQtF23GN8yVc5cZFnKifhLqCdqxOrj16m2E5Hle8HOZMy0xL9jmwp8yrKc"/>
+</div>
+<div class="flex flex-col">
+<span class="font-semibold">Elena Rodriguez</span>
+<span class="text-[11px] text-on-surface-variant">Senior Buyer</span>
+</div>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex flex-col">
+<span class="font-semibold text-primary">REQ-2023-992</span>
+<span class="text-[11px] text-on-surface-variant">Requisition</span>
+</div>
+</td>
+<td class="p-sm">
+<div class="flex items-center gap-sm">
+<span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px]">Created</span>
+<span class="truncate max-w-[250px]">Drafted new requisition for Q4 marketing materials.</span>
+</div>
+</td>
+<td class="p-sm font-code-sm text-code-sm text-on-surface-variant">192.168.2.55</td>
+<td class="p-sm text-right">
+<button class="text-secondary font-label-md hover:underline focus:outline-none">View JSON</button>
+</td>
+</tr>
+<!-- Padding rows for density demonstration -->
+<tr class="hover:bg-secondary/5 transition-colors group"><td class="p-sm text-on-surface-variant">2023-10-06 18:22:11</td><td class="p-sm"><div class="flex items-center gap-sm"><div class="w-6 h-6 rounded-full bg-surface-dim overflow-hidden shrink-0"><img alt="User Profile" class="w-full h-full object-cover" data-alt="A small UI avatar headshot of a corporate user." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0nTReAKnXQPvGfWfNjJtYfn3xSou-H99S1C7Rhf7Mb8Yqcxflc2aGRBoOe6rBM2kKcIy5jfn5XgQHBX6QKo9f5qgV6hAyBl1IKBBLpDZJ9zZvpIDfTa3FbpJB4-AAaYK7tT1RPlAsy-pxonOhelQeSY5LzKYu-BrGvwsdus3jKt7rrkPvucXP0Qr9rpxqpO3nuGw3FrzifwWno5MC6eb8pDkIpaP21GU-_NyHc3T2jPnAhZ6OKAGLWG9KxeDqRED0BhAc0Cym5ZM"/></div><span class="font-semibold">David Kim</span></div></td><td class="p-sm"><span class="font-semibold text-primary">VND-8842</span></td><td class="p-sm"><span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px] mr-2">Updated</span> Updated tax routing ID.</td><td class="p-sm font-code-sm text-code-sm text-on-surface-variant">10.0.12.9</td><td class="p-sm text-right"><button class="text-secondary font-label-md hover:underline">View JSON</button></td></tr>
+<tr class="hover:bg-secondary/5 transition-colors group"><td class="p-sm text-on-surface-variant">2023-10-06 16:10:05</td><td class="p-sm"><div class="flex items-center gap-sm"><div class="w-6 h-6 rounded-full bg-surface-dim overflow-hidden shrink-0"><img alt="User Profile" class="w-full h-full object-cover" data-alt="A small UI avatar headshot of a corporate user." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3R8Ly4oZX_ougnSh1iEOnZ2A0dsLBhYc025bXaVLe3OZB9pirDupl0rsrKihqbn8R1BYWDSyuLT6p6EkqaIkNbbHlEfl25HUewyARoDu-8WUied8lqgbIhL-wogUF3BZz0ooJXNe4zgzHe70Sog7jc9UMMEDbRoyhWiLkfLCM6mFpNRzH_wtUz0cBBp54gD1ZNsqMhRRuAvAlTwTjnsi_sJJwo5j6Arg7oNWr_tnMuv7gLcJLZGJ7dmovqMo80d4fWYRct9TWIzo"/></div><span class="font-semibold">David Kim</span></div></td><td class="p-sm"><span class="font-semibold text-primary">Global Config</span></td><td class="p-sm"><span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px] mr-2">Viewed</span> Accessed compliance matrix.</td><td class="p-sm font-code-sm text-code-sm text-on-surface-variant">10.0.12.9</td><td class="p-sm text-right"><button class="text-secondary font-label-md hover:underline">View JSON</button></td></tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="h-[52px] border-t border-border bg-surface-bright flex items-center justify-between px-md shrink-0">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing <span class="font-semibold text-on-surface">1-50</span> of <span class="font-semibold text-on-surface">14,203</span> records</span>
+<div class="flex items-center gap-sm">
+<select class="bg-surface border border-border rounded py-1 pl-2 pr-6 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-secondary h-8 appearance-none">
+<option>50 per page</option>
+<option>100 per page</option>
+<option>250 per page</option>
+</select>
+<div class="flex items-center gap-xs ml-sm">
+<button class="w-8 h-8 rounded border border-border bg-surface flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50 transition-colors" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded border border-secondary bg-secondary/5 flex items-center justify-center text-secondary font-semibold text-body-sm transition-colors">1</button>
+<button class="w-8 h-8 rounded border border-transparent bg-transparent hover:bg-surface-container-low flex items-center justify-center text-on-surface font-body-sm transition-colors">2</button>
+<button class="w-8 h-8 rounded border border-transparent bg-transparent hover:bg-surface-container-low flex items-center justify-center text-on-surface font-body-sm transition-colors">3</button>
+<span class="text-on-surface-variant px-1">...</span>
+<button class="w-8 h-8 rounded border border-border bg-surface flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

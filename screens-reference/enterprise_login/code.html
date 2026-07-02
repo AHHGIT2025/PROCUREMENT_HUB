@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ProcureLink ERP - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#0b1c30",
+                        "on-primary-fixed": "#081b3a",
+                        "surface-container-high": "#dce9ff",
+                        "background": "#F8FAFC",
+                        "danger-soft": "#FFF1F2",
+                        "warning-soft": "#FFFBEB",
+                        "tertiary-fixed": "#ffddb1",
+                        "secondary-container": "#316bf3",
+                        "primary": "#031635",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed-variant": "#364768",
+                        "surface-container": "#e5eeff",
+                        "surface-tint": "#4e5e81",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1a2b4b",
+                        "primary-fixed": "#d8e2ff",
+                        "surface": "#FFFFFF",
+                        "warning": "#F59E0B",
+                        "outline": "#75777f",
+                        "on-tertiary-container": "#b08d5b",
+                        "info": "#3B82F6",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-container": "#3e2700",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c5c6cf",
+                        "success": "#10B981",
+                        "on-primary-container": "#8293b8",
+                        "on-secondary-container": "#fefcff",
+                        "inverse-surface": "#213145",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "tertiary": "#231400",
+                        "error": "#ba1a1a",
+                        "success-soft": "#ECFDF5",
+                        "on-background": "#0b1c30",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#00174b",
+                        "secondary-fixed": "#dbe1ff",
+                        "border": "#E2E8F0",
+                        "surface-variant": "#d3e4fe",
+                        "on-surface-variant": "#44474e",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary-fixed-variant": "#5d4217",
+                        "on-tertiary-fixed": "#291800",
+                        "secondary": "#0051d5",
+                        "danger": "#E11D48",
+                        "tertiary-fixed-dim": "#e8c08a",
+                        "inverse-primary": "#b6c6ef",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "max-width": "1440px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "margin-desktop": "32px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "2xl": "48px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-login-pattern {
+            background-color: #031635;
+            background-image: radial-gradient(circle at 50% 50%, #1a2b4b 0%, #031635 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-login-pattern min-h-screen flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-body-md text-on-surface">
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none">
+<img alt="Background pattern" class="w-full h-full object-cover" data-alt="A sophisticated abstract background depicting a global data network and supply chain logistics. Thin, glowing cyan and bright blue lines connect luminous nodes across a dark, deep navy canvas. The visual style is highly technical, modern, and corporate, emphasizing data flow, connectivity, and enterprise-scale operations. The lighting is dramatic, with soft glows emanating from the connection points, creating a sense of intelligent infrastructure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSDZHaXDKU4xX8hjkvrjaHoEqeAn2opC-2dhmpxt2ZRqFOulVWguJ393ujjTJ3jv9_lKKnOMbjdQNyngc_jMoacrjNnRz1ZsOS-zzJdg3A6PlkVG7PbVDOCyrvFW5VOJ8LIN2mrzV6eRhvev1kIPQJ-S45Y6XX_C0P5n__lCgWKmLg_OLXnzEfybv4bMj7RYcetioaMXLn3bSOwl3g2VwjwC_wT1fz89V2LXHdc_JOFXkmyrizAzvp3CL3JmKTo5VideXHMbXVEKo"/>
+</div>
+<main class="w-full max-w-md z-10">
+<div class="glass-panel rounded-xl shadow-[0_12px_32px_rgba(26,43,75,0.12)] border border-border p-8 md:p-10 flex flex-col items-center">
+<div class="mb-8 text-center w-full">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-surface-container-high text-primary mb-4">
+<span class="material-symbols-outlined text-headline-lg">corporate_fare</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">ProcureLink ERP</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Enterprise Procurement Management</p>
+</div>
+<form class="w-full space-y-6">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wider" for="username">Username or Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">person</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" id="username" name="username" placeholder="Enter your credentials" type="text"/>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider" for="password">Password</label>
+<a class="font-label-md text-label-md text-secondary hover:text-secondary-fixed-dim transition-colors" href="#">Forgot?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">lock</span>
+<input class="w-full pl-10 pr-10 py-2 bg-surface border border-border rounded-DEFAULT font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined">visibility_off</span>
+</button>
+</div>
+</div>
+<div class="flex items-center">
+<input class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary/20" id="remember" type="checkbox"/>
+<label class="ml-2 font-body-sm text-body-sm text-on-surface-variant" for="remember">Remember me on this device</label>
+</div>
+<div class="space-y-4 pt-2">
+<button class="w-full py-3 px-4 bg-primary text-on-primary font-headline-sm text-body-md rounded-DEFAULT hover:bg-primary-container transition-colors shadow-[0_4px_12px_rgba(26,43,75,0.05)] flex justify-center items-center gap-2" type="submit">
+                        Sign In
+                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<div class="relative flex py-2 items-center">
+<div class="flex-grow border-t border-border"></div>
+<span class="flex-shrink-0 mx-4 font-label-md text-label-md text-on-surface-variant uppercase">or</span>
+<div class="flex-grow border-t border-border"></div>
+</div>
+<button class="w-full py-3 px-4 bg-surface border border-secondary text-secondary font-headline-sm text-body-md rounded-DEFAULT hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">badge</span>
+                        SSO Login
+                    </button>
+</div>
+</form>
+<div class="mt-8 text-center">
+<p class="font-label-md text-label-md text-on-surface-variant">Secure Connection Established • System Status: <span class="text-success">Operational</span></p>
+</div>
+</div>
+</main>
+</body></html>

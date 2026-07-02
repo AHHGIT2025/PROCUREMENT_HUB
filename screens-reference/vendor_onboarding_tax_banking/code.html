@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vendor Onboarding - Tax &amp; Banking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#e8c08a",
+                        "tertiary": "#231400",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "info": "#3B82F6",
+                        "danger": "#E11D48",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "background": "#F8FAFC",
+                        "secondary-container": "#316bf3",
+                        "error": "#ba1a1a",
+                        "success": "#10B981",
+                        "primary-container": "#1a2b4b",
+                        "secondary-fixed": "#dbe1ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed": "#291800",
+                        "success-soft": "#ECFDF5",
+                        "surface-container": "#e5eeff",
+                        "primary": "#031635",
+                        "primary-fixed": "#d8e2ff",
+                        "border": "#E2E8F0",
+                        "on-primary-fixed-variant": "#364768",
+                        "secondary": "#0051d5",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-surface": "#0b1c30",
+                        "warning-soft": "#FFFBEB",
+                        "on-tertiary": "#ffffff",
+                        "danger-soft": "#FFF1F2",
+                        "surface-tint": "#4e5e81",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "inverse-surface": "#213145",
+                        "surface-variant": "#d3e4fe",
+                        "outline-variant": "#c5c6cf",
+                        "on-secondary-fixed": "#00174b",
+                        "outline": "#75777f",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffddb1",
+                        "on-background": "#0b1c30",
+                        "on-surface-variant": "#44474e",
+                        "inverse-primary": "#b6c6ef",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-container": "#8293b8",
+                        "on-primary-fixed": "#081b3a",
+                        "on-tertiary-fixed-variant": "#5d4217",
+                        "warning": "#F59E0B",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#b08d5b",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-container": "#3e2700",
+                        "surface": "#FFFFFF"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "max-width": "1440px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "gutter": "20px",
+                        "sm": "8px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "headline-md": ["Hanken Grotesk", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "display-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-sm": ["Hanken Grotesk", "sans-serif"],
+                        "headline-lg": ["Hanken Grotesk", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-border shadow-sm flex items-center justify-between px-lg py-sm w-full sticky top-0 z-50">
+<div class="flex items-center gap-lg">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">ProcureFlow ERP</span>
+<nav class="hidden md:flex gap-md">
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-secondary transition-colors py-sm" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-secondary transition-colors py-sm" href="#">Vendors</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-secondary transition-colors py-sm" href="#">Requisitions</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-secondary transition-colors py-sm" href="#">Approvals</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:flex items-center gap-xs bg-primary text-on-primary font-label-md text-label-md px-md py-sm rounded hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Vendor
+            </button>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<button class="p-sm hover:text-secondary transition-colors rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">notifications</span></button>
+<button class="p-sm hover:text-secondary transition-colors rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">help_outline</span></button>
+<button class="p-sm hover:text-secondary transition-colors rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">settings</span></button>
+</div>
+<img alt="Procurement Officer Profile" class="w-8 h-8 rounded-full border border-border" data-alt="Close up professional headshot of a procurement officer in modern corporate attire. Neutral background, soft studio lighting conveying trust and competence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMKer6PEuaTmbqEMkJl3HYUIezDHx2lDdnnHhshcbLzQXUmNdVYEop8wTFJQ2ASi1dlxsVwG5-Lv_AAERyLrG4gO-z4pe6brmAe8Mm0EItQ1a-fE3bANuKxzLiDGhuvJGG6VDbxoFMxr3jRJq1A2r4PuSBLW3ImpOz0ufJXmudpQkASQUDQbZePF4Gq8R5RwzDS2hiz35QuAFRIXTUjnAieAKxIY4DMF0fhYKuoqk3po9IWDowinfRwFslBi6tz9E800nxGQ1KDuc"/>
+</div>
+</header>
+<main class="flex-1 max-w-[1000px] w-full mx-auto px-margin-mobile md:px-margin-desktop py-xl flex flex-col gap-xl">
+<!-- Header & Stepper -->
+<div class="flex flex-col gap-lg">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-xs">Vendor Onboarding</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Complete your profile to become an approved supplier.</p>
+</div>
+<div class="flex items-center justify-between relative">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-border -z-10"></div>
+<!-- Step 1: Complete -->
+<div class="flex flex-col items-center gap-sm bg-background px-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[18px] icon-fill">check</span>
+</div>
+<span class="font-label-md text-label-md text-primary">Company Info</span>
+</div>
+<!-- Step 2: Active -->
+<div class="flex flex-col items-center gap-sm bg-background px-sm">
+<div class="w-8 h-8 rounded-full border-2 border-secondary bg-surface text-secondary flex items-center justify-center relative">
+<div class="w-3 h-3 bg-secondary rounded-full animate-pulse"></div>
+</div>
+<span class="font-label-md text-label-md text-secondary font-bold">Tax &amp; Banking</span>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex flex-col items-center gap-sm bg-background px-sm">
+<div class="w-8 h-8 rounded-full border border-outline bg-surface text-outline flex items-center justify-center">
+<span class="font-label-md text-label-md">3</span>
+</div>
+<span class="font-label-md text-label-md text-outline">Compliance</span>
+</div>
+<!-- Step 4: Pending -->
+<div class="flex flex-col items-center gap-sm bg-background px-sm">
+<div class="w-8 h-8 rounded-full border border-outline bg-surface text-outline flex items-center justify-center">
+<span class="font-label-md text-label-md">4</span>
+</div>
+<span class="font-label-md text-label-md text-outline">Review</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Main Form Area -->
+<div class="md:col-span-2 flex flex-col gap-lg">
+<!-- Tax Documents Card -->
+<div class="bg-surface border border-border rounded-xl shadow-sm p-lg">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-secondary text-[24px]">description</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Tax Documentation</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Please upload your W-9 (US) or relevant VAT/Tax forms to ensure compliance.</p>
+<!-- File Upload Zone -->
+<div class="border-2 border-dashed border-border rounded-lg p-xl flex flex-col items-center justify-center text-center hover:border-secondary hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-md group-hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-secondary">cloud_upload</span>
+</div>
+<p class="font-body-md text-body-md text-primary font-medium mb-xs">Drag and drop your tax forms here</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Supported formats: PDF, JPG, PNG (Max 10MB)</p>
+<button class="bg-surface border border-border text-primary font-label-md text-label-md px-md py-sm rounded hover:bg-surface-container transition-colors">Browse Files</button>
+</div>
+<!-- Uploaded File Item (Success State) -->
+<div class="mt-md flex items-center justify-between p-sm border border-border rounded-lg bg-surface">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-success">picture_as_pdf</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-primary">W9_Signed_2024.pdf</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">2.4 MB • Complete</span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-success icon-fill text-[18px]">check_circle</span>
+<button class="text-on-surface-variant hover:text-danger"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</div>
+</div>
+<!-- Banking Details Card -->
+<div class="bg-surface border border-border rounded-xl shadow-sm p-lg">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-secondary text-[24px]">account_balance</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Banking Information</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Enter details for ACH or Wire transfers. All data is encrypted and securely stored.</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs sm:col-span-2">
+<label class="font-label-md text-label-md text-on-surface">Account Holder Name</label>
+<input class="border border-border rounded px-sm py-[6px] font-body-sm text-body-sm text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" type="text" value="Acme Corp LLC"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Bank Name</label>
+<input class="border border-border rounded px-sm py-[6px] font-body-sm text-body-sm text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" placeholder="e.g. Chase Bank" type="text"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Account Type</label>
+<select class="border border-border rounded px-sm py-[6px] font-body-sm text-body-sm text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow bg-surface">
+<option>Checking</option>
+<option>Savings</option>
+<option>Corporate</option>
+</select>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Routing Number</label>
+<input class="border border-border rounded px-sm py-[6px] font-body-sm text-body-sm text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" placeholder="9-digit routing" type="text"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface">Account Number</label>
+<input class="border border-border rounded px-sm py-[6px] font-body-sm text-body-sm text-primary focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-shadow" placeholder="••••••••" type="password"/>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center justify-between pt-md">
+<button class="font-label-md text-label-md text-secondary hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span> Back
+                    </button>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-xl py-sm rounded hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-xs">
+                        Continue to Compliance <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Sidebar Info -->
+<div class="flex flex-col gap-md">
+<!-- Security Badge -->
+<div class="bg-success-soft border border-success/20 rounded-xl p-md flex gap-sm items-start">
+<span class="material-symbols-outlined text-success mt-[2px]">lock</span>
+<div>
+<h3 class="font-label-md text-label-md text-success mb-xs">Bank-Level Security</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[13px] leading-tight">Your financial data is encrypted at rest using AES-256 and transmitted via TLS 1.3. We never store raw account numbers.</p>
+</div>
+</div>
+<!-- Help Card -->
+<div class="bg-surface border border-border rounded-xl p-md shadow-sm">
+<h3 class="font-label-md text-label-md text-primary mb-sm">Need Help?</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md text-[13px]">If you are an international vendor, please contact procurement for alternative SWIFT forms.</p>
+<button class="font-label-md text-label-md text-secondary hover:underline flex items-center gap-xs text-[13px]">
+<span class="material-symbols-outlined text-[16px]">contact_support</span> Contact Support
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Workflow Configuration Engine - IT Purchase Flow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "danger-soft": "#FFF1F2",
+                      "tertiary-fixed-dim": "#e8c08a",
+                      "inverse-on-surface": "#eaf1ff",
+                      "outline-variant": "#c5c6cf",
+                      "tertiary-fixed": "#ffddb1",
+                      "success-soft": "#ECFDF5",
+                      "primary-fixed-dim": "#b6c6ef",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#44474e",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#3e2700",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#291800",
+                      "surface-bright": "#f8f9ff",
+                      "on-primary-fixed": "#081b3a",
+                      "tertiary": "#231400",
+                      "on-secondary-container": "#fefcff",
+                      "error-container": "#ffdad6",
+                      "on-secondary-fixed-variant": "#003ea8",
+                      "inverse-surface": "#213145",
+                      "surface-container-high": "#dce9ff",
+                      "on-background": "#0b1c30",
+                      "outline": "#75777f",
+                      "primary": "#031635",
+                      "success": "#10B981",
+                      "on-primary-container": "#8293b8",
+                      "surface-variant": "#d3e4fe",
+                      "surface-container-highest": "#d3e4fe",
+                      "secondary-fixed-dim": "#b4c5ff",
+                      "on-error-container": "#93000a",
+                      "background": "#F8FAFC",
+                      "secondary-fixed": "#dbe1ff",
+                      "secondary-container": "#316bf3",
+                      "on-primary": "#ffffff",
+                      "warning": "#F59E0B",
+                      "surface-tint": "#4e5e81",
+                      "on-error": "#ffffff",
+                      "surface-container": "#e5eeff",
+                      "on-tertiary-container": "#b08d5b",
+                      "primary-fixed": "#d8e2ff",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#0051d5",
+                      "surface-dim": "#cbdbf5",
+                      "on-primary-fixed-variant": "#364768",
+                      "on-surface": "#0b1c30",
+                      "inverse-primary": "#b6c6ef",
+                      "border": "#E2E8F0",
+                      "surface-container-low": "#eff4ff",
+                      "surface": "#FFFFFF",
+                      "primary-container": "#1a2b4b",
+                      "info": "#3B82F6",
+                      "on-tertiary-fixed-variant": "#5d4217",
+                      "warning-soft": "#FFFBEB",
+                      "on-secondary-fixed": "#00174b",
+                      "danger": "#E11D48"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "sm": "8px",
+                      "max-width": "1440px",
+                      "lg": "24px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "xs": "4px",
+                      "md": "16px",
+                      "2xl": "48px",
+                      "gutter": "20px",
+                      "base": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Hanken Grotesk"],
+                      "body-lg": ["Inter"],
+                      "code-sm": ["JetBrains Mono"],
+                      "display-lg": ["Hanken Grotesk"],
+                      "label-md": ["Inter"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "body-sm": ["Inter"],
+                      "headline-sm": ["Hanken Grotesk"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-grid-pattern {
+            background-size: 20px 20px;
+            background-image: 
+                linear-gradient(to right, #E2E8F0 1px, transparent 1px),
+                linear-gradient(to bottom, #E2E8F0 1px, transparent 1px);
+        }
+        
+        /* Smooth interactions */
+        .node-hover { transition: all 0.2s ease-in-out; }
+        .node-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26, 43, 75, 0.05); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-border flex flex-col py-md px-sm z-50">
+<div class="mb-lg px-sm">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary truncate">ProcureLink ERP</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Workflow Configuration</p>
+</div>
+<button class="mb-lg bg-primary text-on-primary font-label-md text-label-md py-sm px-md rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-weight="fill">add</span>
+            New Workflow
+        </button>
+<ul class="flex flex-col gap-xs flex-1">
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-body-sm text-body-sm">Requisitions</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-sm text-body-sm">Inventory</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-body-sm text-body-sm">Approvals</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-body-sm text-body-sm">Vendors</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-secondary font-bold border-r-4 border-secondary hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-weight="fill">account_tree</span>
+<span class="font-body-sm text-body-sm">Workflow Admin</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto border-t border-border pt-sm">
+<ul class="flex flex-col gap-xs">
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Layout -->
+<div class="ml-[240px] flex-1 flex flex-col h-screen overflow-hidden relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-border shadow-sm flex justify-between items-center px-lg z-40">
+<div class="flex items-center gap-md">
+<div class="font-headline-sm text-headline-sm font-semibold text-primary">Workflow Configuration Engine</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden cursor-pointer border border-border ml-sm">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj0880BSZaEq76aYcomYVP2AirGpl0RTp65hWT-ipbg8-FHRm9WK3euSIIA5_Q4MACw7GQ7On0Dj6HwWS6Dp3e7-u9uA7ncsJw4vDN5BAnUUfEoTd_ghtQr7BADPqQ6qCXMWHsyJoAEcEbrZrjiPS77Fj3pL5-edMx67GmC1GnsrwxAZOlh-G8ZfLMINIlL8WIyjlyssVncIdJy6h33AQw8T3hIeHZtDlesHVHiOyq0Dm4DLCcXv-pCpuUI0BVCEs8MVttXphNwXM"/>
+</div>
+</div>
+</header>
+<!-- Sub-header Toolbar -->
+<div class="mt-16 bg-surface border-b border-border px-lg py-sm flex items-center justify-between z-30">
+<div class="flex flex-col">
+<nav aria-label="Breadcrumb" class="flex text-on-surface-variant font-label-md text-label-md mb-xs">
+<ol class="inline-flex items-center space-x-1 md:space-x-3">
+<li class="inline-flex items-center">
+<a class="hover:text-primary transition-colors" href="#">Admin</a>
+</li>
+<li>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Workflow Management</a>
+</div>
+</li>
+<li aria-current="page">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
+<span class="text-primary font-semibold">IT Purchase Flow</span>
+</div>
+</li>
+</ol>
+</nav>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-sm font-label-md text-label-md text-secondary border border-border rounded-lg hover:bg-surface-container-low transition-colors">
+                    Save Draft
+                </button>
+<button class="px-md py-sm font-label-md text-label-md text-secondary border border-border rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    Validate
+                </button>
+<button class="px-md py-sm font-label-md text-label-md bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+                    Publish Workflow
+                </button>
+</div>
+</div>
+<!-- Designer Workspace -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Sidebar: Toolbox -->
+<aside class="w-64 bg-surface border-r border-border flex flex-col h-full z-20">
+<div class="px-md py-md border-b border-border font-headline-sm text-headline-sm font-semibold text-primary">
+                    Components
+                </div>
+<div class="p-md flex-1 overflow-y-auto">
+<div class="space-y-sm">
+<!-- Draggable Items -->
+<div class="p-sm bg-background border border-border rounded-lg cursor-grab hover:border-secondary transition-colors flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-surface-container-low text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">person_check</span>
+</div>
+<span class="font-body-sm text-body-sm">Approval Node</span>
+</div>
+<div class="p-sm bg-background border border-border rounded-lg cursor-grab hover:border-secondary transition-colors flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-warning-soft text-warning flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">call_split</span>
+</div>
+<span class="font-body-sm text-body-sm">Condition</span>
+</div>
+<div class="p-sm bg-background border border-border rounded-lg cursor-grab hover:border-secondary transition-colors flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-surface-container-low text-info flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+</div>
+<span class="font-body-sm text-body-sm">Notification</span>
+</div>
+<div class="p-sm bg-background border border-border rounded-lg cursor-grab hover:border-secondary transition-colors flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-surface-container-low text-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<span class="font-body-sm text-body-sm">Delay</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 bg-surface-bright bg-grid-pattern relative overflow-auto">
+<div class="absolute inset-0 min-w-[800px] min-h-[600px] p-xl flex flex-col items-center">
+<!-- Start Node -->
+<div class="w-12 h-12 rounded-full border-2 border-success bg-success-soft flex items-center justify-center node-hover z-10 cursor-pointer">
+<span class="material-symbols-outlined text-success">play_arrow</span>
+</div>
+<!-- Vertical Line -->
+<div class="w-0.5 h-8 bg-border"></div>
+<!-- Department Head Approval -->
+<div class="w-64 bg-surface border border-border rounded-xl p-md node-hover shadow-sm z-10 cursor-pointer relative">
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">person_check</span>
+<span class="font-label-md text-label-md text-primary uppercase tracking-wider">Approval</span>
+</div>
+<h3 class="font-body-md text-body-md font-semibold mb-xs">Dept. Head Review</h3>
+<div class="flex items-center gap-xs">
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant rounded font-code-sm text-code-sm">Role: Dept Head</span>
+</div>
+</div>
+<!-- Vertical Line -->
+<div class="w-0.5 h-8 bg-border"></div>
+<!-- Finance Review -->
+<div class="w-64 bg-surface border-2 border-secondary rounded-xl p-md node-hover shadow-md z-10 cursor-pointer relative ring-4 ring-secondary/10">
+<div class="absolute -right-2 -top-2 w-6 h-6 bg-secondary text-on-secondary rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px]">settings</span>
+</div>
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">person_check</span>
+<span class="font-label-md text-label-md text-primary uppercase tracking-wider">Approval</span>
+</div>
+<h3 class="font-body-md text-body-md font-semibold mb-xs">Finance Controller</h3>
+<div class="flex items-center gap-xs mb-xs">
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant rounded font-code-sm text-code-sm">Role: Fin Controller</span>
+</div>
+<div class="text-danger font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> Escalate: 48h
+                        </div>
+</div>
+<!-- Branching Line -->
+<div class="w-0.5 h-8 bg-border"></div>
+<!-- Condition Diamond -->
+<div class="w-16 h-16 bg-warning-soft border-2 border-warning rotate-45 flex items-center justify-center node-hover z-10 cursor-pointer mb-8">
+<span class="material-symbols-outlined text-warning -rotate-45">call_split</span>
+</div>
+<!-- End Node -->
+<div class="w-12 h-12 rounded-full border-2 border-danger bg-danger-soft flex items-center justify-center node-hover z-10 cursor-pointer mt-8">
+<span class="material-symbols-outlined text-danger">stop</span>
+</div>
+</div>
+</main>
+<!-- Right Sidebar: Configuration Panel -->
+<aside class="w-80 bg-surface border-l border-border shadow-[-4px_0_12px_rgba(26,43,75,0.02)] flex flex-col h-full z-20">
+<div class="px-md py-md border-b border-border flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">Node Settings</span>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-md flex-1 overflow-y-auto">
+<div class="mb-lg">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Node Name</label>
+<input class="w-full bg-surface border border-border rounded-lg px-sm py-sm font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-shadow" type="text" value="Finance Controller"/>
+</div>
+<div class="mb-lg border-t border-border pt-md">
+<h4 class="font-body-md text-body-md font-semibold text-primary mb-md">Approver Configuration</h4>
+<div class="mb-sm">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Approver Type</label>
+<select class="w-full bg-surface border border-border rounded-lg px-sm py-sm font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary outline-none appearance-none">
+<option>Role-Based</option>
+<option>Specific User</option>
+<option>Dynamic (Manager)</option>
+</select>
+</div>
+<div class="mb-sm">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Target Role</label>
+<select class="w-full bg-surface border border-border rounded-lg px-sm py-sm font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary outline-none appearance-none">
+<option>Financial Controller</option>
+<option>CFO</option>
+<option>Procurement Manager</option>
+</select>
+</div>
+</div>
+<div class="mb-lg border-t border-border pt-md">
+<h4 class="font-body-md text-body-md font-semibold text-primary mb-md">Threshold Rules</h4>
+<div class="bg-surface-container-low p-sm rounded-lg mb-sm border border-border flex items-center justify-between">
+<div>
+<span class="font-code-sm text-code-sm text-primary">Amount &gt; $10,000</span>
+</div>
+<button class="text-on-surface-variant hover:text-danger">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<button class="w-full py-sm border border-dashed border-border rounded-lg text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">add</span> Add Rule
+                        </button>
+</div>
+<div class="mb-lg border-t border-border pt-md">
+<h4 class="font-body-md text-body-md font-semibold text-primary mb-md">Escalation Settings</h4>
+<div class="flex items-center gap-sm mb-sm">
+<input checked="" class="rounded border-border text-secondary focus:ring-secondary" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-on-surface-variant">Enable Auto-Escalation</label>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Escalate After (Hours)</label>
+<input class="w-full bg-surface border border-border rounded-lg px-sm py-sm font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary outline-none" type="number" value="48"/>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</body></html>

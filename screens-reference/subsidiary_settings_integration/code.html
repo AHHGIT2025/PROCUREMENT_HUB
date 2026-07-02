@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Company Settings - ProcureLink</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "danger": "#E11D48",
+                    "inverse-surface": "#213145",
+                    "on-secondary-fixed-variant": "#003ea8",
+                    "on-tertiary-fixed-variant": "#5d4217",
+                    "border": "#E2E8F0",
+                    "background": "#F8FAFC",
+                    "surface-variant": "#d3e4fe",
+                    "warning-soft": "#FFFBEB",
+                    "inverse-primary": "#b6c6ef",
+                    "secondary-container": "#316bf3",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eff4ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "primary": "#031635",
+                    "on-surface-variant": "#44474e",
+                    "info": "#3B82F6",
+                    "tertiary-container": "#3e2700",
+                    "tertiary": "#231400",
+                    "surface-dim": "#cbdbf5",
+                    "danger-soft": "#FFF1F2",
+                    "outline": "#75777f",
+                    "on-primary-fixed": "#081b3a",
+                    "on-secondary-fixed": "#00174b",
+                    "tertiary-fixed-dim": "#e8c08a",
+                    "secondary-fixed": "#dbe1ff",
+                    "surface-bright": "#f8f9ff",
+                    "warning": "#F59E0B",
+                    "success": "#10B981",
+                    "on-surface": "#0b1c30",
+                    "tertiary-fixed": "#ffddb1",
+                    "on-tertiary-fixed": "#291800",
+                    "on-primary-fixed-variant": "#364768",
+                    "surface": "#FFFFFF",
+                    "error": "#ba1a1a",
+                    "success-soft": "#ECFDF5",
+                    "primary-fixed": "#d8e2ff",
+                    "outline-variant": "#c5c6cf",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "primary-container": "#1a2b4b",
+                    "on-secondary-container": "#fefcff",
+                    "secondary": "#0051d5",
+                    "on-primary-container": "#8293b8",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary-container": "#b08d5b",
+                    "surface-tint": "#4e5e81",
+                    "primary-fixed-dim": "#b6c6ef"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "2xl": "48px",
+                    "gutter": "20px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "max-width": "1440px",
+                    "base": "4px",
+                    "xs": "4px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "code-sm": [
+                            "JetBrains Mono"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "headline-sm": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "display-lg": [
+                            "Hanken Grotesk"
+                    ]
+            },
+            "fontSize": {
+                    "code-sm": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-md": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="text-on-background font-body-md bg-background antialiased min-h-screen flex flex-col md:flex-row">
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex flex-col h-screen w-[240px] sticky left-0 top-0 bg-surface border-r border-border z-30">
+<div class="p-xl border-b border-border">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">ProcureLink</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Enterprise ERP</p>
+</div>
+<nav class="flex-1 overflow-y-auto py-md">
+<ul class="space-y-sm px-sm">
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                        Dashboard
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                        Materials
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                        Requisitions
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+                        Approvals
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+                        Vendors
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+                        Workflow Admin
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-secondary font-bold border-l-4 border-secondary bg-surface-container-low px-4 py-3 rounded-r-lg" href="#">
+<span class="material-symbols-outlined icon-fill" data-icon="corporate_fare">corporate_fare</span>
+                        Org Management
+                    </a>
+</li>
+</ul>
+</nav>
+<div class="p-sm border-t border-border">
+<ul class="space-y-sm">
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+                        Support
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-md text-on-surface-variant font-body-sm px-4 py-3 hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                        Log Out
+                    </a>
+</li>
+</ul>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- TopAppBar (Mobile & Desktop) -->
+<header class="flex items-center justify-between px-xl h-16 w-full sticky top-0 z-40 bg-surface border-b border-border shadow-sm">
+<div class="flex items-center gap-md md:hidden">
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">ProcureLink</span>
+</div>
+<div class="hidden md:flex flex-1 max-w-md ml-lg">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="ml-sm w-8 h-8 rounded-full bg-primary-container overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiosnz65_8k4Xp7PGzVZMeTQD4IdxS-oy39bBQjqQpgefN2B1KNwmCWGy0HRsPg12LMsf_wG4ajIkb8XcrzGgQKnkzGee-K1PHTF8R01NMutrW5ZLJgovaVbGXt1JWqWGmq475fk23BDusCzWqZ72MWHJ7a_w1qwSRk8tKNCJ4juTibpGFC-cyN51n18Qf8uRYYw9QkOfNVq5WvUQHJqm1IXYO5IYL4RS-Hq70b8nBwUOAedD02bMIQNU_w9PKIF-a-nGtOsnKTjQ"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop">
+<div class="max-w-[1440px] mx-auto">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-xl gap-md">
+<div>
+<div class="flex items-center gap-sm text-on-surface-variant font-body-sm mb-2">
+<a class="hover:text-primary transition-colors" href="#">Org Management</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Subsidiaries</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Acme European Holdings</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Company Settings</h2>
+</div>
+<div class="flex items-center gap-md">
+<button class="px-md py-sm border border-border text-primary font-label-md rounded hover:bg-surface-container-low transition-colors">
+                            Discard Changes
+                        </button>
+<button class="px-md py-sm bg-primary text-on-primary font-label-md rounded hover:bg-primary/90 transition-colors shadow-sm">
+                            Save Settings
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Left Column: General Info & Access Controls -->
+<div class="lg:col-span-2 space-y-lg">
+<!-- General Info Card -->
+<section class="bg-surface border border-border rounded-xl p-xl shadow-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">domain</span>
+                                General Information
+                            </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-lg gap-y-md">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Legal Company Name</label>
+<input class="w-full px-sm py-2 bg-surface border border-border rounded text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" type="text" value="Acme European Holdings GmbH"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Trading Name (Optional)</label>
+<input class="w-full px-sm py-2 bg-surface border border-border rounded text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" type="text" value="Acme EU"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Legal Entity Identifier (LEI)</label>
+<input class="w-full px-sm py-2 bg-background border border-border rounded text-body-sm font-code-sm text-on-surface-variant outline-none" readonly="" type="text" value="5493006MHB84DD0ZWV18"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">VAT / Tax ID</label>
+<input class="w-full px-sm py-2 bg-surface border border-border rounded text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" type="text" value="DE123456789"/>
+</div>
+<div class="col-span-1 md:col-span-2 space-y-1 mt-sm">
+<label class="font-label-md text-label-md text-on-surface-variant block">Registered Address</label>
+<textarea class="w-full px-sm py-2 bg-surface border border-border rounded text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" rows="3">Friedrichstraße 123
+10117 Berlin
+Germany</textarea>
+</div>
+</div>
+</section>
+<!-- Organizational Structure (Departments) -->
+<section class="bg-surface border border-border rounded-xl p-xl shadow-sm">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">account_tree</span>
+                                    Organizational Structure
+                                </h3>
+<button class="text-secondary font-label-md flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-[18px]">add</span> Add Department
+                                </button>
+</div>
+<div class="border border-border rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-background border-b border-border">
+<tr>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Department</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Cost Center</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Manager</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-border">
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-md py-sm font-semibold">Operations EU</td>
+<td class="px-md py-sm font-code-sm text-on-surface-variant">CC-EU-100</td>
+<td class="px-md py-sm">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center text-[10px] font-bold text-primary">KS</div>
+                                                    Klaus Schmidt
+                                                </div>
+</td>
+<td class="px-md py-sm text-right">
+<button class="text-secondary font-label-md hover:underline">Edit</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-md py-sm font-semibold">Logistics Central</td>
+<td class="px-md py-sm font-code-sm text-on-surface-variant">CC-EU-205</td>
+<td class="px-md py-sm">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center text-[10px] font-bold text-primary">MR</div>
+                                                    Maria Rossi
+                                                </div>
+</td>
+<td class="px-md py-sm text-right">
+<button class="text-secondary font-label-md hover:underline">Edit</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-md py-sm font-semibold">Finance &amp; Tax</td>
+<td class="px-md py-sm font-code-sm text-on-surface-variant">CC-EU-900</td>
+<td class="px-md py-sm">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center text-[10px] font-bold text-primary">JL</div>
+                                                    Jameson Locke
+                                                </div>
+</td>
+<td class="px-md py-sm text-right">
+<button class="text-secondary font-label-md hover:underline">Edit</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Right Column: Integrations & Access Controls -->
+<div class="space-y-lg">
+<!-- Integration Settings -->
+<section class="bg-surface border border-border rounded-xl p-xl shadow-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">sync_alt</span>
+                                ERP Integration
+                            </h3>
+<div class="space-y-lg">
+<div class="flex items-start justify-between">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Oracle Cloud ERP Sync</h4>
+<p class="font-body-sm text-label-md text-on-surface-variant mt-1">Enable bi-directional sync for POs and Invoices.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer mt-1">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-border rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success"></div>
+</label>
+</div>
+<div class="space-y-1 pt-md border-t border-border">
+<label class="font-label-md text-label-md text-on-surface-variant block">API Endpoint URL</label>
+<input class="w-full px-sm py-2 bg-surface border border-border rounded text-body-sm font-code-sm text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary/10 outline-none" type="text" value="https://api.oracle.cloud/v1/acme-eu"/>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-success text-[20px]">check_circle</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Last Sync: Successful</p>
+<p class="font-body-sm text-[11px] text-on-surface-variant">Today, 14:32 UTC</p>
+</div>
+</div>
+<button class="text-secondary font-label-md hover:underline">Force Sync</button>
+</div>
+</div>
+</section>
+<!-- Access Controls -->
+<section class="bg-surface border border-border rounded-xl p-xl shadow-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">admin_panel_settings</span>
+                                Access &amp; Policies
+                            </h3>
+<div class="space-y-md">
+<div class="flex items-start gap-3">
+<div class="flex items-center h-5 mt-0.5">
+<input class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-secondary/20" id="cross-company" type="checkbox"/>
+</div>
+<label class="flex flex-col" for="cross-company">
+<span class="font-label-md text-label-md text-on-surface">Cross-Company Visibility</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant mt-1 leading-snug">Allow parent company auditors to view subsidiary requisitions directly.</span>
+</label>
+</div>
+<div class="flex items-start gap-3">
+<div class="flex items-center h-5 mt-0.5">
+<input checked="" class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-secondary/20" id="inherit-policies" type="checkbox"/>
+</div>
+<label class="flex flex-col" for="inherit-policies">
+<span class="font-label-md text-label-md text-on-surface">Inherit Holding Policies</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant mt-1 leading-snug">Override local approval thresholds with Global Corporate Governance rules.</span>
+</label>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

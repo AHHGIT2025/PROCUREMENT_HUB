@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ProcureLink ERP - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Hanken+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#0b1c30",
+                        "on-primary-fixed": "#081b3a",
+                        "surface-container-high": "#dce9ff",
+                        "background": "#F8FAFC",
+                        "danger-soft": "#FFF1F2",
+                        "warning-soft": "#FFFBEB",
+                        "tertiary-fixed": "#ffddb1",
+                        "secondary-container": "#316bf3",
+                        "primary": "#031635",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed-variant": "#364768",
+                        "surface-container": "#e5eeff",
+                        "surface-tint": "#4e5e81",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1a2b4b",
+                        "primary-fixed": "#d8e2ff",
+                        "surface": "#FFFFFF",
+                        "warning": "#F59E0B",
+                        "outline": "#75777f",
+                        "on-tertiary-container": "#b08d5b",
+                        "info": "#3B82F6",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-container": "#3e2700",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c5c6cf",
+                        "success": "#10B981",
+                        "on-primary-container": "#8293b8",
+                        "on-secondary-container": "#fefcff",
+                        "inverse-surface": "#213145",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "tertiary": "#231400",
+                        "error": "#ba1a1a",
+                        "success-soft": "#ECFDF5",
+                        "on-background": "#0b1c30",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#00174b",
+                        "secondary-fixed": "#dbe1ff",
+                        "border": "#E2E8F0",
+                        "surface-variant": "#d3e4fe",
+                        "on-surface-variant": "#44474e",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary-fixed-variant": "#5d4217",
+                        "on-tertiary-fixed": "#291800",
+                        "secondary": "#0051d5",
+                        "danger": "#E11D48",
+                        "tertiary-fixed-dim": "#e8c08a",
+                        "inverse-primary": "#b6c6ef",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "max-width": "1440px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "margin-desktop": "32px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "2xl": "48px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .shadow-level-2 { box-shadow: 0 4px 12px rgba(26, 43, 75, 0.05); }
+        .shadow-level-3 { box-shadow: 0 12px 32px rgba(26, 43, 75, 0.12); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col fixed h-full w-[240px] left-0 top-0 border-r border-border bg-surface py-lg z-50">
+<div class="px-md mb-xl flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-body-lg">storefront</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary">ProcureLink ERP</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Enterprise Procurement</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto scrollbar-hide px-sm flex flex-col gap-base">
+<a class="flex items-center gap-sm px-sm py-sm rounded-md text-secondary font-bold border-r-4 border-secondary bg-surface-container-low active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">space_dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm rounded-md text-on-surface-variant hover:bg-surface-container-lowest transition-colors duration-200 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-sm text-body-sm">Materials</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm rounded-md text-on-surface-variant hover:bg-surface-container-lowest transition-colors duration-200 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">shopping_cart_checkout</span>
+<span class="font-body-sm text-body-sm">Requests</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm rounded-md text-on-surface-variant hover:bg-surface-container-lowest transition-colors duration-200 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+<span class="font-body-sm text-body-sm">Admin</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm rounded-md text-on-surface-variant hover:bg-surface-container-lowest transition-colors duration-200 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-body-sm text-body-sm">Reports</span>
+</a>
+</div>
+<div class="px-md mt-auto pt-lg border-t border-border">
+<button class="w-full bg-primary text-on-primary font-body-sm text-body-sm py-sm rounded-md hover:bg-primary-container transition-colors shadow-level-2">
+                Create Requisition
+            </button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-[240px] h-16 border-b border-border z-40 bg-surface flex justify-between items-center px-margin-mobile md:px-margin-desktop">
+<div class="flex items-center gap-sm md:hidden">
+<button class="text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">Holding Co. Management</h2>
+</div>
+<div class="hidden md:flex items-center gap-md flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-xl pr-sm py-sm bg-background border border-border rounded-md font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all" placeholder="Search requests, materials..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md ml-auto">
+<div class="hidden md:flex items-center gap-xs px-sm py-xs bg-success-soft rounded-full">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-success">Oracle Synced</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined">cloud_sync</span>
+</button>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-border">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnWVwUHjuHWY7GUCRNoey1p104O4lwDHYRuJOySG9Jagtspps9mekpVxdJZSLi1P4D4b1EDclQI07mFBP7CtXsUFkXoERQuzaiebFkCtx3MSci4FF9St4KBvB16xFWxP8_XdWxeIwV75z9tllDd5HWNLPnWybPWmH4vYe0uIQ_R77SPsbvB04H2kPAY4u8reLFPip_MH608dl5g0xjtp1ttK7JynluF9saLZ3reKayhNRXQ-ff48Mz0J01vcs5iP5AHf5i15vKZKg"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-[80px] pb-xl px-margin-mobile md:px-margin-desktop ml-0 md:ml-[240px] w-full max-w-max-width mx-auto">
+<div class="mb-lg">
+<h2 class="font-headline-lg text-headline-lg text-primary">Executive Dashboard</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Real-time overview of procurement activities and system health.</p>
+</div>
+<!-- KPI Widgets -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-xl">
+<!-- KPI 1 -->
+<div class="bg-surface border border-border rounded-lg p-md hover:shadow-level-2 transition-shadow group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-warning-soft rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Pending Approvals</span>
+<span class="material-symbols-outlined text-warning">pending_actions</span>
+</div>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-primary">24</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">requests</span>
+</div>
+<div class="mt-sm flex items-center gap-xs font-label-md text-label-md text-success">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span>-12% vs last week</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface border border-border rounded-lg p-md hover:shadow-level-2 transition-shadow group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-danger-soft rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">SLA Breaches</span>
+<span class="material-symbols-outlined text-danger">warning</span>
+</div>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-danger">2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">critical</span>
+</div>
+<div class="mt-sm flex items-center gap-xs font-label-md text-label-md text-danger">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+2 vs last week</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface border border-border rounded-lg p-md hover:shadow-level-2 transition-shadow group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-success-soft rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Oracle Sync Health</span>
+<span class="material-symbols-outlined text-success">sync_saved_locally</span>
+</div>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-primary">98%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">uptime</span>
+</div>
+<div class="mt-sm flex items-center gap-xs font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Last sync: 2 mins ago</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface border border-border rounded-lg p-md hover:shadow-level-2 transition-shadow group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-surface-container-high rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Monthly Request Value</span>
+<span class="material-symbols-outlined text-secondary">payments</span>
+</div>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-lg text-display-lg text-primary">$1.2M</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">USD</span>
+</div>
+<div class="mt-sm flex items-center gap-xs font-label-md text-label-md text-success">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+5% vs last month</span>
+</div>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-xl">
+<!-- Line Chart -->
+<div class="bg-surface border border-border rounded-lg p-md shadow-level-2">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-sm text-headline-sm text-primary">Request Trends</h3>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="relative h-[300px] w-full">
+<canvas id="requestTrendsChart"></canvas>
+</div>
+</div>
+<!-- Bar Chart -->
+<div class="bg-surface border border-border rounded-lg p-md shadow-level-2">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-sm text-headline-sm text-primary">Departmental Spend</h3>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="relative h-[300px] w-full">
+<canvas id="spendChart"></canvas>
+</div>
+</div>
+</div>
+<!-- Recent Activity Table -->
+<div class="bg-surface border border-border rounded-lg shadow-level-2 overflow-hidden">
+<div class="p-md border-b border-border flex justify-between items-center bg-background">
+<h3 class="font-headline-sm text-headline-sm text-primary">Recent Requests</h3>
+<button class="font-label-md text-label-md text-secondary hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-bright border-b border-border">
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Req ID</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Requester</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Company</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Amount</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Status</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold text-right">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm">
+<tr class="border-b border-border hover:bg-surface-container-lowest transition-colors">
+<td class="py-sm px-md font-code-sm text-primary font-medium">REQ-2023-089</td>
+<td class="py-sm px-md">Sarah Jenkins</td>
+<td class="py-sm px-md text-on-surface-variant">TechCorp Global</td>
+<td class="py-sm px-md">$12,450.00</td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-warning-soft text-warning font-label-md text-label-md">Pending</span>
+</td>
+<td class="py-sm px-md text-right">
+<button class="text-secondary font-label-md text-label-md hover:underline">Review</button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-surface-container-lowest transition-colors">
+<td class="py-sm px-md font-code-sm text-primary font-medium">REQ-2023-088</td>
+<td class="py-sm px-md">Michael Chang</td>
+<td class="py-sm px-md text-on-surface-variant">Logistics Inc.</td>
+<td class="py-sm px-md">$3,200.00</td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-success-soft text-success font-label-md text-label-md">Approved</span>
+</td>
+<td class="py-sm px-md text-right">
+<button class="text-secondary font-label-md text-label-md hover:underline">View</button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-surface-container-lowest transition-colors">
+<td class="py-sm px-md font-code-sm text-primary font-medium">REQ-2023-087</td>
+<td class="py-sm px-md">Emily Rodriguez</td>
+<td class="py-sm px-md text-on-surface-variant">Design Studio X</td>
+<td class="py-sm px-md">$850.00</td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-danger-soft text-danger font-label-md text-label-md">Rejected</span>
+</td>
+<td class="py-sm px-md text-right">
+<button class="text-secondary font-label-md text-label-md hover:underline">View</button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-surface-container-lowest transition-colors">
+<td class="py-sm px-md font-code-sm text-primary font-medium">REQ-2023-086</td>
+<td class="py-sm px-md">David Kim</td>
+<td class="py-sm px-md text-on-surface-variant">TechCorp Global</td>
+<td class="py-sm px-md">$45,000.00</td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-warning-soft text-warning font-label-md text-label-md">Pending</span>
+</td>
+<td class="py-sm px-md text-right">
+<button class="text-secondary font-label-md text-label-md hover:underline">Review</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<script>
+        // Chart.js configurations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Request Trends Line Chart
+            const ctxTrends = document.getElementById('requestTrendsChart').getContext('2d');
+            new Chart(ctxTrends, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Submitted Requests',
+                        data: [65, 59, 80, 81, 56, 95],
+                        borderColor: '#0051d5', // secondary
+                        backgroundColor: 'rgba(0, 81, 213, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Approved',
+                        data: [45, 49, 70, 71, 46, 85],
+                        borderColor: '#10B981', // success
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                },
+                                usePointStyle: true,
+                                boxWidth: 6
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#E2E8F0',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Departmental Spend Bar Chart
+            const ctxSpend = document.getElementById('spendChart').getContext('2d');
+            new Chart(ctxSpend, {
+                type: 'bar',
+                data: {
+                    labels: ['IT', 'Marketing', 'Operations', 'HR', 'Sales'],
+                    datasets: [{
+                        label: 'Spend ($k)',
+                        data: [120, 85, 95, 45, 110],
+                        backgroundColor: '#1a2b4b', // primary-container
+                        borderRadius: 4,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#E2E8F0',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body></html>

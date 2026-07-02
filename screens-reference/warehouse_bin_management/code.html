@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Warehouse Map &amp; Bin Configuration - Executive Flux ERP</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Scrollbar for Tree View */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #E2E8F0;
+            border-radius: 4px;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary": "#ffffff",
+                      "danger": "#E11D48",
+                      "on-tertiary-fixed": "#291800",
+                      "secondary-container": "#316bf3",
+                      "danger-soft": "#FFF1F2",
+                      "warning": "#F59E0B",
+                      "on-primary-fixed": "#081b3a",
+                      "primary": "#031635",
+                      "inverse-surface": "#213145",
+                      "tertiary-fixed-dim": "#e8c08a",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-container": "#b08d5b",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#0051d5",
+                      "background": "#F8FAFC",
+                      "on-secondary-fixed": "#00174b",
+                      "on-tertiary-fixed-variant": "#5d4217",
+                      "surface-dim": "#cbdbf5",
+                      "on-background": "#0b1c30",
+                      "outline": "#75777f",
+                      "surface-container-high": "#dce9ff",
+                      "inverse-primary": "#b6c6ef",
+                      "tertiary": "#231400",
+                      "primary-container": "#1a2b4b",
+                      "error-container": "#ffdad6",
+                      "on-secondary-container": "#fefcff",
+                      "on-primary-fixed-variant": "#364768",
+                      "error": "#ba1a1a",
+                      "on-tertiary": "#ffffff",
+                      "info": "#3B82F6",
+                      "inverse-on-surface": "#eaf1ff",
+                      "surface-variant": "#d3e4fe",
+                      "surface-container-low": "#eff4ff",
+                      "on-error": "#ffffff",
+                      "primary-fixed": "#d8e2ff",
+                      "primary-fixed-dim": "#b6c6ef",
+                      "on-secondary-fixed-variant": "#003ea8",
+                      "surface-tint": "#4e5e81",
+                      "on-surface": "#0b1c30",
+                      "on-secondary": "#ffffff",
+                      "border": "#E2E8F0",
+                      "tertiary-container": "#3e2700",
+                      "on-primary-container": "#8293b8",
+                      "tertiary-fixed": "#ffddb1",
+                      "secondary-fixed": "#dbe1ff",
+                      "surface-container-highest": "#d3e4fe",
+                      "outline-variant": "#c5c6cf",
+                      "surface-container": "#e5eeff",
+                      "warning-soft": "#FFFBEB",
+                      "surface": "#FFFFFF",
+                      "surface-bright": "#f8f9ff",
+                      "success-soft": "#ECFDF5",
+                      "success": "#10B981",
+                      "on-surface-variant": "#44474e",
+                      "secondary-fixed-dim": "#b4c5ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "xs": "4px",
+                      "gutter": "20px",
+                      "margin-mobile": "16px",
+                      "xl": "32px",
+                      "margin-desktop": "32px",
+                      "base": "4px",
+                      "max-width": "1440px",
+                      "sm": "8px",
+                      "2xl": "48px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "headline-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "code-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md h-screen w-full overflow-hidden flex flex-col">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface dark:bg-inverse-surface h-16 border-b border-border dark:border-outline-variant">
+<!-- Brand & Search -->
+<div class="flex items-center gap-lg h-full">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-on-primary-fixed tracking-tight shrink-0">
+                Executive Flux ERP
+            </span>
+<div class="relative hidden lg:flex items-center w-64 ml-md">
+<span class="material-symbols-outlined absolute left-sm text-outline text-[18px]">search</span>
+<input class="w-full pl-xl pr-sm py-sm bg-background border border-border rounded-lg text-body-sm font-body-sm focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all outline-none" placeholder="Search resources..." type="text"/>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center h-full gap-md ml-lg flex-1">
+<a class="h-full flex items-center px-sm text-on-surface-variant dark:text-surface-variant hover:text-primary text-label-md font-label-md border-b-2 border-transparent hover:border-border transition-colors" href="#">Dashboard</a>
+<a class="h-full flex items-center px-sm text-on-surface-variant dark:text-surface-variant hover:text-primary text-label-md font-label-md border-b-2 border-transparent hover:border-border transition-colors" href="#">Analytics</a>
+<a class="h-full flex items-center px-sm text-on-surface-variant dark:text-surface-variant hover:text-primary text-label-md font-label-md border-b-2 border-transparent hover:border-border transition-colors" href="#">Reports</a>
+<a class="h-full flex items-center px-sm text-on-surface-variant dark:text-surface-variant hover:text-primary text-label-md font-label-md border-b-2 border-transparent hover:border-border transition-colors" href="#">Settings</a>
+</nav>
+<!-- Actions & Profile -->
+<div class="flex items-center gap-md shrink-0">
+<button class="hidden lg:flex items-center justify-center px-md py-sm bg-surface border border-secondary text-secondary text-label-md font-label-md rounded-lg hover:bg-surface-container-low transition-colors">
+                Bulk Import
+            </button>
+<button class="flex items-center justify-center px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded-lg hover:bg-primary/90 shadow-sm transition-all">
+                New Material
+            </button>
+<div class="flex items-center gap-sm border-l border-border pl-md ml-xs">
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">apps</span>
+</button>
+<button class="ml-xs h-8 w-8 rounded-full bg-surface-variant border border-border overflow-hidden focus:ring-2 focus:ring-secondary focus:outline-none">
+<img alt="Executive User Profile" class="h-full w-full object-cover" data-alt="A professional headshot of a corporate executive. The individual is wearing a sharp, modern navy blue suit against a clean, light gray background. The lighting is studio-quality, bright and flattering, aligning with a high-end enterprise software aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzwuc5mGl5c_4EGZF6l756HvHtI36IG00JP38ybN9oxbH0Y4Ge3qx9NTLbTU2PulXl4TxX9Z0uE1OPl5Up9BB2L4qtDK0dEy_rWVfNc8QUKjVV30rYga2npaENiY2eB23tIULuMG-EsUJoIlLN1hhIXn6I37-Ph5q_zpX3wrDnDu9511Bi--QF4DFRj-Jj-A2QpMyLGiIaFpA3pYDHTGsKmZhR6Ez4cmWtk1dbTHKSaePhqFY0tRAV952iZfId5TjxVsneU7mW4FM"/>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-60 flex flex-col pt-16 bg-surface-container-low dark:bg-inverse-surface border-r border-border dark:border-outline-variant z-40 pb-md">
+<!-- Header/Profile Area -->
+<div class="p-md border-b border-border mb-sm">
+<div class="flex items-center gap-sm">
+<div class="h-10 w-10 rounded-lg bg-surface flex items-center justify-center border border-border shrink-0">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</div>
+<div class="overflow-hidden text-ellipsis whitespace-nowrap">
+<h2 class="text-label-md font-label-md font-black text-primary">Inventory Ops</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">Global Warehouse A</p>
+</div>
+</div>
+</div>
+<!-- Primary Navigation Tabs -->
+<div class="flex-1 px-sm space-y-xs overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-highest dark:hover:bg-primary-container rounded-lg Transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">inventory_2</span>
+<span class="text-label-md font-label-md group-hover:text-primary">Material Master</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-highest dark:hover:bg-primary-container rounded-lg Transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">analytics</span>
+<span class="text-label-md font-label-md group-hover:text-primary">Stock Monitor</span>
+</a>
+<!-- ACTIVE TAB -->
+<a class="flex items-center gap-sm px-md py-sm bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg Transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined icon-fill text-[20px]">warehouse</span>
+<span class="text-label-md font-label-md font-semibold">Warehouse Map</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-highest dark:hover:bg-primary-container rounded-lg Transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">view_module</span>
+<span class="text-label-md font-label-md group-hover:text-primary">Bin Config</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-highest dark:hover:bg-primary-container rounded-lg Transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">history</span>
+<span class="text-label-md font-label-md group-hover:text-primary">Audit Logs</span>
+</a>
+</div>
+<!-- CTA & Footer -->
+<div class="p-sm mt-auto border-t border-border space-y-sm">
+<button class="w-full flex items-center justify-center gap-sm px-md py-sm bg-primary text-on-primary text-label-md font-label-md rounded-lg hover:bg-primary/90 shadow-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                    Quick Scan
+                </button>
+<div class="space-y-xs pt-sm">
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-highest rounded-lg Transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[18px]">support_agent</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-container-highest rounded-lg Transition-all duration-200 ease-in-out text-danger hover:text-danger hover:bg-danger-soft" href="#">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md font-label-md">Sign Out</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-60 bg-background overflow-y-auto p-margin-desktop w-full max-w-max-width mx-auto">
+<!-- Page Header -->
+<div class="flex items-end justify-between mb-lg">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-background tracking-tight">Warehouse &amp; Bin Configuration</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant mt-xs">Manage physical storage hierarchy and granular bin capacities.</p>
+</div>
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs px-sm py-xs border border-border bg-surface text-on-surface rounded-lg hover:bg-surface-container-low transition-colors text-label-md font-label-md">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filter View
+                    </button>
+<button class="flex items-center gap-xs px-sm py-xs border border-border bg-surface text-on-surface rounded-lg hover:bg-surface-container-low transition-colors text-label-md font-label-md">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export Matrix
+                    </button>
+</div>
+</div>
+<!-- Complex Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter h-[calc(100vh-200px)] min-h-[600px]">
+<!-- Left Panel: Hierarchy Tree -->
+<div class="col-span-12 md:col-span-4 lg:col-span-3 bg-surface rounded-xl border border-border flex flex-col overflow-hidden shadow-sm shadow-[#1a2b4b]/[0.02]">
+<div class="p-md border-b border-border bg-surface-bright flex items-center justify-between">
+<h3 class="text-headline-sm font-headline-sm text-on-background">Storage Hierarchy</h3>
+<span class="material-symbols-outlined text-outline text-[20px] cursor-pointer hover:text-primary">unfold_more</span>
+</div>
+<div class="flex-1 overflow-y-auto p-sm custom-scrollbar">
+<!-- Tree Item 1 -->
+<div class="space-y-xs">
+<div class="flex items-center gap-sm p-sm hover:bg-surface-container-low rounded-lg cursor-pointer text-on-background">
+<span class="material-symbols-outlined text-[20px] text-primary">domain</span>
+<span class="text-body-md font-body-md font-medium">Global Warehouse A</span>
+<span class="material-symbols-outlined text-[18px] ml-auto text-outline">expand_more</span>
+</div>
+<!-- Sub-items -->
+<div class="pl-xl space-y-xs border-l border-border ml-md pb-sm">
+<div class="flex items-center gap-sm p-sm bg-primary-container/10 rounded-lg cursor-pointer text-primary border border-primary/20">
+<span class="material-symbols-outlined text-[18px] icon-fill">shelves</span>
+<span class="text-body-sm font-body-sm font-semibold">Zone 1 - Ambient</span>
+</div>
+<div class="flex items-center gap-sm p-sm hover:bg-surface-container-low rounded-lg cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">ac_unit</span>
+<span class="text-body-sm font-body-sm">Zone 2 - Cold Storage</span>
+</div>
+<div class="flex items-center gap-sm p-sm hover:bg-surface-container-low rounded-lg cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">gate</span>
+<span class="text-body-sm font-body-sm">Zone 3 - Secure Lockup</span>
+</div>
+</div>
+</div>
+<!-- Tree Item 2 -->
+<div class="mt-sm">
+<div class="flex items-center gap-sm p-sm hover:bg-surface-container-low rounded-lg cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">domain</span>
+<span class="text-body-md font-body-md font-medium">Regional Hub B</span>
+<span class="material-symbols-outlined text-[18px] ml-auto text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Bin Configuration Grid -->
+<div class="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col gap-gutter">
+<!-- Bento Top Row: Zone Stats -->
+<div class="grid grid-cols-3 gap-gutter shrink-0">
+<div class="bg-surface rounded-xl border border-border p-md flex flex-col justify-center relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-surface-container-low rounded-full opacity-50 pointer-events-none"></div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-xs">Total Bins</span>
+<div class="flex items-baseline gap-sm">
+<span class="text-headline-lg font-headline-lg text-on-background">1,240</span>
+<span class="text-body-sm font-body-sm text-success flex items-center"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 12 added</span>
+</div>
+</div>
+<div class="bg-surface rounded-xl border border-border p-md flex flex-col justify-center">
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-xs">Zone Capacity</span>
+<div class="flex items-baseline gap-sm">
+<span class="text-headline-lg font-headline-lg text-on-background">85%</span>
+<span class="text-body-sm font-body-sm text-warning">Optimized</span>
+</div>
+<div class="w-full bg-surface-variant h-1.5 rounded-full mt-sm overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+<div class="bg-primary text-on-primary rounded-xl p-md flex items-center justify-between shadow-sm shadow-[#1a2b4b]/[0.1] relative overflow-hidden group cursor-pointer transition-all hover:bg-primary/95">
+<div class="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-secondary to-transparent opacity-20 group-hover:opacity-30 transition-opacity"></div>
+<div>
+<h4 class="text-headline-sm font-headline-sm mb-xs">Zone 1 - Ambient</h4>
+<p class="text-body-sm font-body-sm opacity-80">Aisle A1 to F4 • Floor Level</p>
+</div>
+<span class="material-symbols-outlined text-[32px] opacity-50 group-hover:opacity-100 transition-opacity">settings_overscan</span>
+</div>
+</div>
+<!-- Bin Grid Container -->
+<div class="bg-surface rounded-xl border border-border flex-1 flex flex-col overflow-hidden">
+<!-- Grid Toolbar -->
+<div class="p-sm border-b border-border bg-surface-bright flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="pl-xl pr-sm py-xs bg-surface border border-border rounded text-body-sm font-body-sm w-48 focus:border-secondary focus:ring-1 focus:ring-secondary outline-none" placeholder="Search bin ID..." type="text"/>
+</div>
+<div class="flex items-center gap-xs text-body-sm font-body-sm text-on-surface-variant border-l border-border pl-md">
+<span class="material-symbols-outlined text-[16px]">sort</span>
+                                    Sort by: <span class="font-semibold text-primary cursor-pointer hover:underline">Utilization</span>
+</div>
+</div>
+<!-- Legend -->
+<div class="flex items-center gap-sm text-label-md font-label-md text-on-surface-variant">
+<div class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-success"></div> Available</div>
+<div class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-warning"></div> Partial</div>
+<div class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-danger"></div> Full</div>
+</div>
+</div>
+<!-- Scrollable Grid -->
+<div class="p-md overflow-y-auto flex-1 bg-background/50 custom-scrollbar">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
+<!-- Bin Card 1 -->
+<div class="bg-surface border border-border rounded-lg p-sm hover:shadow-[0_4px_12px_rgba(26,43,75,0.05)] hover:border-outline-variant transition-all group relative">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">inbox</span>
+<span class="font-code-sm text-code-sm font-bold text-on-background">A1-01</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-success-soft text-success text-[10px] font-bold tracking-wide uppercase">Available</span>
+</div>
+<div class="space-y-xs mb-md">
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Dimensions</span>
+<span class="text-on-background font-medium">120x80x100 cm</span>
+</div>
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Max Weight</span>
+<span class="text-on-background font-medium">1,000 kg</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-xs">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="text-primary font-bold">15%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+<div class="bg-success h-full rounded-full" style="width: 15%;"></div>
+</div>
+</div>
+<button class="absolute top-sm right-sm opacity-0 group-hover:opacity-100 p-1 bg-surface-container-low text-primary rounded transition-opacity">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<!-- Bin Card 2 (Full) -->
+<div class="bg-surface border border-border rounded-lg p-sm hover:shadow-[0_4px_12px_rgba(26,43,75,0.05)] hover:border-outline-variant transition-all group relative">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">inbox</span>
+<span class="font-code-sm text-code-sm font-bold text-on-background">A1-02</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-danger-soft text-danger text-[10px] font-bold tracking-wide uppercase">Full</span>
+</div>
+<div class="space-y-xs mb-md">
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Dimensions</span>
+<span class="text-on-background font-medium">120x80x100 cm</span>
+</div>
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Max Weight</span>
+<span class="text-on-background font-medium">1,000 kg</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-xs">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="text-danger font-bold">98%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+<div class="bg-danger h-full rounded-full" style="width: 98%;"></div>
+</div>
+</div>
+<button class="absolute top-sm right-sm opacity-0 group-hover:opacity-100 p-1 bg-surface-container-low text-primary rounded transition-opacity">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<!-- Bin Card 3 (Partial) -->
+<div class="bg-surface border border-border rounded-lg p-sm hover:shadow-[0_4px_12px_rgba(26,43,75,0.05)] hover:border-outline-variant transition-all group relative">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">inbox</span>
+<span class="font-code-sm text-code-sm font-bold text-on-background">A1-03</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-warning-soft text-warning text-[10px] font-bold tracking-wide uppercase">Partial</span>
+</div>
+<div class="space-y-xs mb-md">
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Dimensions</span>
+<span class="text-on-background font-medium">120x80x100 cm</span>
+</div>
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Max Weight</span>
+<span class="text-on-background font-medium">1,000 kg</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-xs">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="text-warning font-bold">65%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+<div class="bg-warning h-full rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+<button class="absolute top-sm right-sm opacity-0 group-hover:opacity-100 p-1 bg-surface-container-low text-primary rounded transition-opacity">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<!-- Bin Card 4 -->
+<div class="bg-surface border border-border rounded-lg p-sm hover:shadow-[0_4px_12px_rgba(26,43,75,0.05)] hover:border-outline-variant transition-all group relative">
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">inbox</span>
+<span class="font-code-sm text-code-sm font-bold text-on-background">A1-04</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-success-soft text-success text-[10px] font-bold tracking-wide uppercase">Available</span>
+</div>
+<div class="space-y-xs mb-md">
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Dimensions</span>
+<span class="text-on-background font-medium">120x80x100 cm</span>
+</div>
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Max Weight</span>
+<span class="text-on-background font-medium">1,000 kg</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-xs">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="text-primary font-bold">0%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+<div class="bg-surface-variant h-full rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+<button class="absolute top-sm right-sm opacity-0 group-hover:opacity-100 p-1 bg-surface-container-low text-primary rounded transition-opacity">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<!-- Add more cards similarly to fill out the grid nicely for demonstration -->
+<!-- Bin Card 5 -->
+<div class="bg-surface border border-border rounded-lg p-sm hover:shadow-[0_4px_12px_rgba(26,43,75,0.05)] hover:border-outline-variant transition-all group relative opacity-60">
+<div class="absolute inset-0 bg-surface/50 backdrop-blur-[1px] rounded-lg z-10 flex items-center justify-center">
+<span class="bg-surface border border-border px-sm py-xs rounded text-label-md font-label-md text-on-surface-variant shadow-sm shadow-[#1a2b4b]/[0.1]">Under Maintenance</span>
+</div>
+<div class="flex justify-between items-start mb-sm">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">inbox</span>
+<span class="font-code-sm text-code-sm font-bold text-on-background">A1-05</span>
+</div>
+</div>
+<div class="space-y-xs mb-md">
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Dimensions</span>
+<span class="text-on-background font-medium">120x80x100 cm</span>
+</div>
+<div class="flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Max Weight</span>
+<span class="text-on-background font-medium">1,000 kg</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-xs">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="text-on-surface-variant font-bold">N/A</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Grid Footer/Pagination -->
+<div class="p-sm border-t border-border bg-surface flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Showing 1 to 24 of 1,240 bins</span>
+<div class="flex items-center gap-sm">
+<button class="p-1 hover:bg-surface-container-low rounded border border-transparent hover:border-border transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+<span class="px-2 py-1 bg-primary-container text-primary rounded font-semibold">1</span>
+<span class="px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors">2</span>
+<span class="px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors">3</span>
+<span>...</span>
+<button class="p-1 hover:bg-surface-container-low rounded border border-transparent hover:border-border transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Flux ERP - Stock Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff", "danger": "#E11D48", "on-tertiary-fixed": "#291800", "secondary-container": "#316bf3", "danger-soft": "#FFF1F2", "warning": "#F59E0B", "on-primary-fixed": "#081b3a", "primary": "#031635", "inverse-surface": "#213145", "tertiary-fixed-dim": "#e8c08a", "on-error-container": "#93000a", "on-tertiary-container": "#b08d5b", "surface-container-lowest": "#ffffff", "secondary": "#0051d5", "background": "#F8FAFC", "on-secondary-fixed": "#00174b", "on-tertiary-fixed-variant": "#5d4217", "surface-dim": "#cbdbf5", "on-background": "#0b1c30", "outline": "#75777f", "surface-container-high": "#dce9ff", "inverse-primary": "#b6c6ef", "tertiary": "#231400", "primary-container": "#1a2b4b", "error-container": "#ffdad6", "on-secondary-container": "#fefcff", "on-primary-fixed-variant": "#364768", "error": "#ba1a1a", "on-tertiary": "#ffffff", "info": "#3B82F6", "inverse-on-surface": "#eaf1ff", "surface-variant": "#d3e4fe", "surface-container-low": "#eff4ff", "on-error": "#ffffff", "primary-fixed": "#d8e2ff", "primary-fixed-dim": "#b6c6ef", "on-secondary-fixed-variant": "#003ea8", "surface-tint": "#4e5e81", "on-surface": "#0b1c30", "on-secondary": "#ffffff", "border": "#E2E8F0", "tertiary-container": "#3e2700", "on-primary-container": "#8293b8", "tertiary-fixed": "#ffddb1", "secondary-fixed": "#dbe1ff", "surface-container-highest": "#d3e4fe", "outline-variant": "#c5c6cf", "surface-container": "#e5eeff", "warning-soft": "#FFFBEB", "surface": "#FFFFFF", "surface-bright": "#f8f9ff", "success-soft": "#ECFDF5", "success": "#10B981", "on-surface-variant": "#44474e", "secondary-fixed-dim": "#b4c5ff"
+                    },
+                    "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                    "spacing": { "lg": "24px", "xs": "4px", "gutter": "20px", "margin-mobile": "16px", "xl": "32px", "margin-desktop": "32px", "base": "4px", "max-width": "1440px", "sm": "8px", "2xl": "48px", "md": "16px" },
+                    "fontFamily": { "headline-sm": ["Hanken Grotesk"], "headline-md": ["Hanken Grotesk"], "label-md": ["Inter"], "code-sm": ["JetBrains Mono"], "body-lg": ["Inter"], "display-lg": ["Hanken Grotesk"], "headline-lg": ["Hanken Grotesk"], "body-sm": ["Inter"], "body-md": ["Inter"] },
+                    "fontSize": { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }], "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }] }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-sm antialiased overflow-hidden flex flex-col h-screen">
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin-desktop bg-surface h-16 border-b border-border flex-none">
+<div class="flex items-center gap-xl">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Executive Flux ERP</h1>
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="pl-xl pr-sm py-sm rounded border border-border bg-surface text-body-sm font-body-sm w-64 focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 placeholder:text-outline" placeholder="Search resources..." type="text"/>
+</div>
+<nav class="hidden md:flex gap-lg ml-md">
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors py-sm" href="#">Dashboard</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors py-sm" href="#">Analytics</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors py-sm" href="#">Reports</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors py-sm" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:flex items-center gap-xs px-md py-sm bg-surface border border-secondary text-secondary rounded text-label-md font-label-md hover:bg-surface-container-low transition-colors">
+                Bulk Import
+            </button>
+<button class="flex items-center gap-xs px-md py-sm bg-primary text-on-primary rounded text-label-md font-label-md hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                New Material
+            </button>
+<div class="flex items-center gap-xs ml-sm text-on-surface-variant border-l border-border pl-md">
+<button class="p-sm rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<button class="p-sm rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+</button>
+<button class="p-sm rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="apps">apps</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden ml-sm cursor-pointer border border-border">
+<img alt="Executive User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate executive in a modern, well-lit office setting. The individual is wearing formal business attire. The background is slightly blurred, emphasizing a clean, contemporary corporate aesthetic with soft white and subtle blue tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6wDRMl5kYHTn-hOfk5fNrF1AQQ0fzBqw7sR824pEr_fyJGrNalVY9frSCNo1p7GCiZ1UPodpq11mH9yOwRZu4eH58CZbfGnakyK-P8OM9puuCoyk6iqvq5YCNiwPHeRvm9v93TTixsx9hxOCECob2Ek2za-t39nFkH7ida4nLPJv9Duymk63xqCGq82s-xuI0-Qs6DVm3cEiLoW4nJJGYkgP7LzDBlMCOu65z1N1KCtnx_6dPAIWwqCLG5a0A9kJqMq5BYEA5r-Y"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<aside class="hidden md:flex flex-col w-60 bg-surface-container-low border-r border-border h-full flex-none overflow-y-auto pt-md pb-md">
+<div class="px-md mb-xl flex items-center gap-sm">
+<div class="w-10 h-10 rounded bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-headline-sm">
+                    IO
+                </div>
+<div>
+<div class="text-label-md font-label-md font-bold text-primary truncate">Inventory Ops</div>
+<div class="text-label-md font-label-md text-on-surface-variant truncate">Global Warehouse A</div>
+</div>
+</div>
+<nav class="flex-1 px-sm flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+                    Material Master
+                </a>
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md bg-secondary-container text-on-secondary-container transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px] icon-fill" data-icon="analytics">analytics</span>
+                    Stock Monitor
+                </a>
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="warehouse">warehouse</span>
+                    Warehouse Map
+                </a>
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="view_module">view_module</span>
+                    Bin Config
+                </a>
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="history">history</span>
+                    Audit Logs
+                </a>
+</nav>
+<div class="px-md mt-auto mb-md">
+<button class="w-full flex justify-center items-center gap-xs px-md py-sm border border-border bg-surface text-primary rounded text-label-md font-label-md hover:bg-surface-container-low transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                    Quick Scan
+                </button>
+</div>
+<div class="px-sm border-t border-border pt-md flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="support_agent">support_agent</span>
+                    Support
+                </a>
+<a class="flex items-center gap-sm px-md py-sm rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+                    Sign Out
+                </a>
+</div>
+</aside>
+<main class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop">
+<div class="max-w-max-width mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-xl gap-md">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-primary mb-xs">Stock Monitor</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Real-time overview of inventory levels and critical alerts.</p>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-label-md font-label-md text-on-surface-variant">Last updated: Just now</span>
+<button class="p-xs rounded text-primary hover:bg-surface-container-low transition-colors" title="Refresh Data">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-xl">
+<div class="bg-surface rounded-lg border border-border p-lg flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<span class="text-label-md font-label-md text-on-surface-variant">Total Inventory Value</span>
+<span class="material-symbols-outlined text-info">account_balance_wallet</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-primary mb-xs">$12,450,200</div>
+<div class="text-label-md font-label-md text-success flex items-center gap-xs mt-auto">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                            +2.4% vs last month
+                        </div>
+</div>
+<div class="bg-surface rounded-lg border border-border p-lg flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<span class="text-label-md font-label-md text-on-surface-variant">Low Stock Alerts</span>
+<span class="material-symbols-outlined text-danger">warning</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-danger mb-xs">14</div>
+<div class="text-label-md font-label-md text-on-surface-variant mt-auto">
+                            Requires immediate review
+                        </div>
+</div>
+<div class="bg-surface rounded-lg border border-border p-lg flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<span class="text-label-md font-label-md text-on-surface-variant">Pending Receipts</span>
+<span class="material-symbols-outlined text-warning">local_shipping</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-primary mb-xs">320</div>
+<div class="text-label-md font-label-md text-on-surface-variant mt-auto">
+                            Items expected this week
+                        </div>
+</div>
+</div>
+<div class="bg-surface rounded-lg border border-border overflow-hidden">
+<div class="px-lg py-md border-b border-border flex justify-between items-center bg-surface-container-lowest">
+<h3 class="text-headline-sm font-headline-sm text-primary">Inventory Levels</h3>
+<div class="flex gap-sm">
+<button class="flex items-center gap-xs px-sm py-xs border border-border rounded text-label-md font-label-md hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">filter_list</span> Filter
+                            </button>
+<button class="flex items-center gap-xs px-sm py-xs border border-border rounded text-label-md font-label-md hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">download</span> Export
+                            </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-border">
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold">Material Name</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold">Warehouse</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold">Bin Location</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold text-right">Qty On Hand</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold text-right">Reserved</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold text-right">ATP</th>
+<th class="px-md py-sm text-label-md font-label-md text-on-surface-variant font-semibold text-center">Status</th>
+<th class="px-md py-sm w-10"></th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm text-on-surface">
+<tr class="border-b border-border hover:bg-primary/5 transition-colors">
+<td class="px-md py-md font-medium">Lithium Ion Cells - Type C</td>
+<td class="px-md py-md text-on-surface-variant">Global Warehouse A</td>
+<td class="px-md py-md text-on-surface-variant">A1-R4-B12</td>
+<td class="px-md py-md text-right">450</td>
+<td class="px-md py-md text-right">400</td>
+<td class="px-md py-md text-right font-semibold text-primary">50</td>
+<td class="px-md py-md text-center">
+<span class="inline-block px-sm py-xs bg-danger-soft text-danger text-label-md font-label-md rounded-full">Critical</span>
+</td>
+<td class="px-md py-md text-center">
+<button class="text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-primary/5 transition-colors">
+<td class="px-md py-md font-medium">Aluminum Heat Sinks</td>
+<td class="px-md py-md text-on-surface-variant">Global Warehouse A</td>
+<td class="px-md py-md text-on-surface-variant">C3-R1-B04</td>
+<td class="px-md py-md text-right">1,200</td>
+<td class="px-md py-md text-right">850</td>
+<td class="px-md py-md text-right font-semibold text-primary">350</td>
+<td class="px-md py-md text-center">
+<span class="inline-block px-sm py-xs bg-warning-soft text-warning text-label-md font-label-md rounded-full">Low</span>
+</td>
+<td class="px-md py-md text-center">
+<button class="text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-primary/5 transition-colors">
+<td class="px-md py-md font-medium">Copper Wiring Rolls (100m)</td>
+<td class="px-md py-md text-on-surface-variant">Regional Hub B</td>
+<td class="px-md py-md text-on-surface-variant">F2-R8-B22</td>
+<td class="px-md py-md text-right">4,500</td>
+<td class="px-md py-md text-right">1,200</td>
+<td class="px-md py-md text-right font-semibold text-primary">3,300</td>
+<td class="px-md py-md text-center">
+<span class="inline-block px-sm py-xs bg-success-soft text-success text-label-md font-label-md rounded-full">Healthy</span>
+</td>
+<td class="px-md py-md text-center">
+<button class="text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-border hover:bg-primary/5 transition-colors">
+<td class="px-md py-md font-medium">Microcontroller Unit V2</td>
+<td class="px-md py-md text-on-surface-variant">Global Warehouse A</td>
+<td class="px-md py-md text-on-surface-variant">Secure-Zone-1</td>
+<td class="px-md py-md text-right">85</td>
+<td class="px-md py-md text-right">80</td>
+<td class="px-md py-md text-right font-semibold text-primary">5</td>
+<td class="px-md py-md text-center">
+<span class="inline-block px-sm py-xs bg-danger-soft text-danger text-label-md font-label-md rounded-full">Critical</span>
+</td>
+<td class="px-md py-md text-center">
+<button class="text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-md py-md font-medium">Polycarbonate Casings</td>
+<td class="px-md py-md text-on-surface-variant">Regional Hub C</td>
+<td class="px-md py-md text-on-surface-variant">B4-R2-B09</td>
+<td class="px-md py-md text-right">12,000</td>
+<td class="px-md py-md text-right">4,000</td>
+<td class="px-md py-md text-right font-semibold text-primary">8,000</td>
+<td class="px-md py-md text-center">
+<span class="inline-block px-sm py-xs bg-success-soft text-success text-label-md font-label-md rounded-full">Healthy</span>
+</td>
+<td class="px-md py-md text-center">
+<button class="text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

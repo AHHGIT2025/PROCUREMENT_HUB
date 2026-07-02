@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Workflow Approval Matrix</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "danger-soft": "#FFF1F2",
+                      "tertiary-fixed-dim": "#e8c08a",
+                      "inverse-on-surface": "#eaf1ff",
+                      "outline-variant": "#c5c6cf",
+                      "tertiary-fixed": "#ffddb1",
+                      "success-soft": "#ECFDF5",
+                      "primary-fixed-dim": "#b6c6ef",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#44474e",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#3e2700",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#291800",
+                      "surface-bright": "#f8f9ff",
+                      "on-primary-fixed": "#081b3a",
+                      "tertiary": "#231400",
+                      "on-secondary-container": "#fefcff",
+                      "error-container": "#ffdad6",
+                      "on-secondary-fixed-variant": "#003ea8",
+                      "inverse-surface": "#213145",
+                      "surface-container-high": "#dce9ff",
+                      "on-background": "#0b1c30",
+                      "outline": "#75777f",
+                      "primary": "#031635",
+                      "success": "#10B981",
+                      "on-primary-container": "#8293b8",
+                      "surface-variant": "#d3e4fe",
+                      "surface-container-highest": "#d3e4fe",
+                      "secondary-fixed-dim": "#b4c5ff",
+                      "on-error-container": "#93000a",
+                      "background": "#F8FAFC",
+                      "secondary-fixed": "#dbe1ff",
+                      "secondary-container": "#316bf3",
+                      "on-primary": "#ffffff",
+                      "warning": "#F59E0B",
+                      "surface-tint": "#4e5e81",
+                      "on-error": "#ffffff",
+                      "surface-container": "#e5eeff",
+                      "on-tertiary-container": "#b08d5b",
+                      "primary-fixed": "#d8e2ff",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#0051d5",
+                      "surface-dim": "#cbdbf5",
+                      "on-primary-fixed-variant": "#364768",
+                      "on-surface": "#0b1c30",
+                      "inverse-primary": "#b6c6ef",
+                      "border": "#E2E8F0",
+                      "surface-container-low": "#eff4ff",
+                      "surface": "#FFFFFF",
+                      "primary-container": "#1a2b4b",
+                      "info": "#3B82F6",
+                      "on-tertiary-fixed-variant": "#5d4217",
+                      "warning-soft": "#FFFBEB",
+                      "on-secondary-fixed": "#00174b",
+                      "danger": "#E11D48"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "sm": "8px",
+                      "max-width": "1440px",
+                      "lg": "24px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "xs": "4px",
+                      "md": "16px",
+                      "2xl": "48px",
+                      "gutter": "20px",
+                      "base": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Hanken Grotesk"],
+                      "body-lg": ["Inter"],
+                      "code-sm": ["JetBrains Mono"],
+                      "display-lg": ["Hanken Grotesk"],
+                      "label-md": ["Inter"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "body-sm": ["Inter"],
+                      "headline-sm": ["Hanken Grotesk"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                      "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                      "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                      "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                      "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                      "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                      "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                      "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                      "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        /* Base styles to ensure consistency with design system intent */
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm text-body-sm antialiased h-screen flex overflow-hidden selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- SideNavBar Component -->
+<!-- JSON: {"name": "SideNavBar", "style_component_shape": "fixed left-0 top-0 h-full w-[240px]", "style_bg_color": "bg-surface dark:bg-surface-container-low", "style_separation_logic": "border-r border-border dark:border-outline-variant", "style_shell_layout": "flex flex-col h-full py-md px-sm"} -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-border flex-col py-md px-sm z-50">
+<!-- Header area -->
+<div class="px-md pb-lg pt-sm mb-md flex items-center gap-sm border-b border-border">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[20px] icon-fill">hexagon</span>
+</div>
+<div class="flex flex-col">
+<!-- JSON: {"style_brand_logo": "font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed"} -->
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate leading-tight">ProcureLink ERP</span>
+<span class="font-label-md text-label-md text-on-surface-variant truncate">Workflow Configuration</span>
+</div>
+</div>
+<!-- CTA -->
+<div class="px-xs mb-lg">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-sm px-md rounded flex items-center justify-center gap-xs hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Workflow
+            </button>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 overflow-y-auto flex flex-col gap-xs px-xs">
+<!-- Active logic: The page is about "Workflow Approval Matrix" which is a configuration task. "Workflow Admin" is the closest semantic match. -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-body-sm text-body-sm">Requisitions</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-body-sm text-body-sm">Inventory</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+<span class="font-body-sm text-body-sm">Approvals</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+<span class="font-body-sm text-body-sm">Vendors</span>
+</a>
+<!-- ACTIVE ITEM -->
+<!-- JSON: {"style_active_navigation": "text-secondary dark:text-secondary-fixed-dim font-bold border-r-4 border-secondary"} -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-surface-container-low text-secondary font-bold border-r-4 border-secondary active:scale-[0.98] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-[20px] icon-fill">account_tree</span>
+<span class="font-body-sm text-body-sm">Workflow Admin</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="mt-auto pt-md border-t border-border flex flex-col gap-xs px-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col relative w-full md:w-[calc(100%-240px)] md:ml-[240px]">
+<!-- TopAppBar Component -->
+<!-- JSON: {"name": "TopAppBar", "style_component_shape": "fixed top-0 right-0 w-[calc(100%-240px)] h-16", "style_bg_color": "bg-surface dark:bg-surface-container-lowest", "style_separation_logic": "border-b border-border dark:border-outline-variant", "style_shadows_and_elevation": "shadow-sm dark:shadow-none", "style_shell_layout": "flex justify-between items-center px-lg w-full z-40"} -->
+<header class="hidden md:flex fixed top-0 right-0 w-[calc(100%-240px)] h-16 bg-surface border-b border-border shadow-sm flex justify-between items-center px-lg z-40">
+<!-- Left Side: Product Name & Search -->
+<div class="flex items-center gap-lg flex-1">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">Workflow Configuration Engine</span>
+<!-- Search Bar (on_left as per JSON) -->
+<div class="relative w-64 hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-[36px] pr-sm py-sm rounded border border-border bg-background focus:border-secondary focus:ring-2 focus:ring-secondary/10 font-body-sm text-body-sm transition-all outline-none" placeholder="Search rules..." type="text"/>
+</div>
+</div>
+<!-- Right Side: Actions & Profile -->
+<div class="flex items-center gap-sm">
+<!-- Trailing Icon Actions -->
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-opacity active:opacity-80 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-opacity active:opacity-80 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">apps</span>
+</button>
+<!-- Divider -->
+<div class="w-[1px] h-8 bg-border mx-sm"></div>
+<!-- Profile Image -->
+<button class="w-8 h-8 rounded-full overflow-hidden border border-border hover:ring-2 hover:ring-secondary/20 transition-all">
+<!-- Placeholder using styling since no data placeholder provided -->
+<div class="w-full h-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-md text-label-md font-bold">
+                        JD
+                    </div>
+</button>
+</div>
+</header>
+<!-- Canvas / Content Area -->
+<main class="flex-1 overflow-y-auto mt-0 md:mt-16 p-sm md:p-lg bg-background w-full max-w-[1440px] mx-auto">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-lg gap-md pt-lg md:pt-0">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-xs">Workflow Approval Matrix</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage threshold-based routing rules for financial and procurement requests.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md py-[10px] px-lg rounded flex items-center gap-sm hover:bg-primary-container transition-colors shadow-sm shrink-0 whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Create New Rule
+                </button>
+</div>
+<!-- Advanced Filters (Level 1 Surface) -->
+<div class="bg-surface border border-border rounded-lg p-md mb-lg grid grid-cols-1 md:grid-cols-4 gap-md items-end shadow-[0_4px_12px_rgba(26,43,75,0.02)]">
+<!-- Filter: Company -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Company/Subsidiary</label>
+<div class="relative">
+<select class="w-full appearance-none pl-sm pr-lg py-sm rounded border border-border bg-surface font-body-sm text-body-sm focus:border-secondary focus:ring-2 focus:ring-secondary/10 outline-none text-primary cursor-pointer">
+<option>All Companies</option>
+<option>Acme Global</option>
+<option>Acme Europe</option>
+<option>Acme APAC</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Filter: Department -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Department</label>
+<div class="relative">
+<select class="w-full appearance-none pl-sm pr-lg py-sm rounded border border-border bg-surface font-body-sm text-body-sm focus:border-secondary focus:ring-2 focus:ring-secondary/10 outline-none text-primary cursor-pointer">
+<option>All Departments</option>
+<option>Information Technology</option>
+<option>Human Resources</option>
+<option>Facilities &amp; Operations</option>
+<option>Marketing</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Filter: Amount Range -->
+<div class="flex flex-col gap-xs md:col-span-2 lg:col-span-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Amount Range (USD)</label>
+<div class="flex items-center gap-xs">
+<input class="w-full px-sm py-sm rounded border border-border bg-surface font-body-sm text-body-sm focus:border-secondary focus:ring-2 focus:ring-secondary/10 outline-none" placeholder="Min" type="text"/>
+<span class="text-on-surface-variant">-</span>
+<input class="w-full px-sm py-sm rounded border border-border bg-surface font-body-sm text-body-sm focus:border-secondary focus:ring-2 focus:ring-secondary/10 outline-none" placeholder="Max" type="text"/>
+</div>
+</div>
+<!-- Filter Actions -->
+<div class="flex items-center gap-sm md:col-span-4 lg:col-span-1 justify-end lg:justify-start h-[36px]">
+<button class="px-md py-sm border border-border rounded text-primary font-label-md text-label-md hover:bg-surface-container-low transition-colors bg-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">filter_alt</span>
+                        Apply
+                    </button>
+<button class="px-md py-sm text-secondary font-label-md text-label-md hover:bg-surface-container-low rounded transition-colors flex items-center gap-xs">
+                        Clear
+                    </button>
+</div>
+</div>
+<!-- Data Table Section (High Density) -->
+<div class="bg-surface border border-border rounded-lg overflow-x-auto shadow-[0_4px_12px_rgba(26,43,75,0.02)]">
+<table class="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-border">
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Company</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Department</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Request Type</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold text-right">Min Amt</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold text-right">Max Amt</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Level 1</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Level 2</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold">Level 3</th>
+<th class="py-sm px-md font-label-md text-label-md text-on-surface-variant font-semibold text-center">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-primary">
+<!-- Row 1 -->
+<tr class="border-b border-border hover:bg-info/5 transition-colors group">
+<td class="py-[6px] px-md">Acme Global</td>
+<td class="py-[6px] px-md">Information Tech</td>
+<td class="py-[6px] px-md">
+<span class="inline-flex items-center px-[8px] py-[2px] rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px]">Hardware</span>
+</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$0</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$5,000</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-label-md text-[9px]">IT</div>
+<span>IT Manager</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-label-md text-[9px]">VP</div>
+<span>VP of IT</span>
+</div>
+</td>
+<td class="py-[6px] px-md text-on-surface-variant text-center">-</td>
+<td class="py-[6px] px-md text-center">
+<div class="flex items-center justify-center gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-secondary hover:text-primary transition-colors p-1" title="Edit"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Duplicate"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="text-danger hover:text-error transition-colors p-1" title="Delete"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-border hover:bg-info/5 transition-colors group">
+<td class="py-[6px] px-md">Acme Global</td>
+<td class="py-[6px] px-md">Information Tech</td>
+<td class="py-[6px] px-md">
+<span class="inline-flex items-center px-[8px] py-[2px] rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px]">Software</span>
+</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$5,000</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$50,000</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-label-md text-[9px]">VP</div>
+<span>VP of IT</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-md text-[9px]">FN</div>
+<span>CFO</span>
+</div>
+</td>
+<td class="py-[6px] px-md text-on-surface-variant text-center">-</td>
+<td class="py-[6px] px-md text-center">
+<div class="flex items-center justify-center gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-secondary hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="text-danger hover:text-error transition-colors p-1"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-border hover:bg-info/5 transition-colors group">
+<td class="py-[6px] px-md">Acme Europe</td>
+<td class="py-[6px] px-md">Marketing</td>
+<td class="py-[6px] px-md">
+<span class="inline-flex items-center px-[8px] py-[2px] rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px]">Campaign</span>
+</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$10,000</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">No Limit</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-label-md text-[9px]">MK</div>
+<span>CMO</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-md text-[9px]">FN</div>
+<span>EU Finance Dir.</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-md text-[9px]">EX</div>
+<span>Global CEO</span>
+</div>
+</td>
+<td class="py-[6px] px-md text-center">
+<div class="flex items-center justify-center gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-secondary hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="text-danger hover:text-error transition-colors p-1"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-info/5 transition-colors group">
+<td class="py-[6px] px-md">Acme APAC</td>
+<td class="py-[6px] px-md">Facilities</td>
+<td class="py-[6px] px-md">
+<span class="inline-flex items-center px-[8px] py-[2px] rounded-full bg-surface-container-high text-on-surface font-label-md text-[11px]">Capital Ex</span>
+</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">$50,000</td>
+<td class="py-[6px] px-md text-right font-code-sm text-code-sm">No Limit</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-label-md text-[9px]">FC</div>
+<span>Head of Facilities</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-md text-[9px]">FN</div>
+<span>APAC Controller</span>
+</div>
+</td>
+<td class="py-[6px] px-md">
+<div class="flex items-center gap-xs">
+<div class="w-5 h-5 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-md text-[9px]">EX</div>
+<span>Global CFO</span>
+</div>
+</td>
+<td class="py-[6px] px-md text-center">
+<div class="flex items-center justify-center gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-secondary hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[18px]">content_copy</span></button>
+<button class="text-danger hover:text-error transition-colors p-1"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination/Footer Context -->
+<div class="flex justify-between items-center mt-md px-xs text-on-surface-variant font-body-sm text-body-sm">
+<span>Showing 1-4 of 142 Rules</span>
+<div class="flex gap-sm">
+<button class="hover:text-primary transition-colors disabled:opacity-50"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

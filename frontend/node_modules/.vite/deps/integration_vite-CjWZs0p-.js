@@ -1,0 +1,10 @@
+import { t as __commonJSMin } from "./chunk-B4lejLz5.js";
+//#region optional-peer-dep:__vite-optional-peer-dep:@vitejs/devtools/integration:vite
+var require_integration_vite = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	module.exports = {};
+	throw new Error(`Could not resolve "@vitejs/devtools/integration" imported by "vite". Is it installed?`);
+}));
+//#endregion
+export default require_integration_vite();
+
+//# sourceMappingURL=integration_vite-CjWZs0p-.js.map

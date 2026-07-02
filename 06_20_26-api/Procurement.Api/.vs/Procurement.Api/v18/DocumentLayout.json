@@ -1,0 +1,670 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\integration\\brightoracleconnector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\integration\\brightoracleconnector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\integration\\erpsyncorchestrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\integration\\erpsyncorchestrator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\integration\\erpsynccontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\integration\\erpsynccontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\integration\\oraclesourcemappingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\integration\\oraclesourcemappingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\integration\\integrationlogscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\integration\\integrationlogscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\middleware\\exceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:middleware\\exceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\project-backend.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:project-backend.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\integration\\ierpconnector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\integration\\ierpconnector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\organization\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\organization\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\projects\\projectscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\projects\\projectscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\integration\\oraclesourcemapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\integration\\oraclesourcemapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\integration\\erpsyncwatermark.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\integration\\erpsyncwatermark.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\materials\\unitscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\materials\\unitscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\materials\\materialsubgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\materials\\materialsubgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\materials\\materialscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\materials\\materialscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\materials\\materialgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\materials\\materialgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\notification\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\notification\\notificationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\integration\\oraclesourcemapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\integration\\oraclesourcemapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\dtos\\integration\\oraclesourcemappingdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:dtos\\integration\\oraclesourcemappingdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\common\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:common\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\integration\\erpsyncwatermark.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\integration\\erpsyncwatermark.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\materials\\item.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\materials\\item.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\dtos\\materials\\createitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:dtos\\materials\\createitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\common\\attachmentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\common\\attachmentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\storage\\localfilestorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\storage\\localfilestorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\services\\storage\\ifilestorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:services\\storage\\ifilestorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\common\\crudcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\common\\crudcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\purchase requests\\purchaserequestscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\purchase requests\\purchaserequestscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\purchase requests\\procurementcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\purchase requests\\procurementcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\purchaserequests\\purchaserequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\purchaserequests\\purchaserequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\dtos\\purchaserequests\\createpurchaserequestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:dtos\\purchaserequests\\createpurchaserequestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\purchaserequests\\purchaserequestitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\purchaserequests\\purchaserequestitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\models\\common\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:models\\common\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\organization\\companiescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\organization\\companiescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|c:\\source code\\procurement-full-app\\procurement-full-app\\backend\\procurement.api\\controllers\\users\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D337ABA4-1CBE-FB3D-8687-D8B1F45B0398}|Procurement.Api.csproj|solutionrelative:controllers\\users\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ExceptionMiddleware.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Middleware\\ExceptionMiddleware.cs",
+              "RelativeDocumentMoniker": "Middleware\\ExceptionMiddleware.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Middleware\\ExceptionMiddleware.cs",
+              "RelativeToolTip": "Middleware\\ExceptionMiddleware.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-20T08:56:35.71Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "project-backend.txt",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\project-backend.txt",
+              "RelativeDocumentMoniker": "project-backend.txt",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\project-backend.txt",
+              "RelativeToolTip": "project-backend.txt",
+              "ViewState": "AgIAAJETAAAAAAAAAAAEwJ0TAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-06-20T08:49:20.455Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ErpSyncOrchestrator.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\ErpSyncOrchestrator.cs",
+              "RelativeDocumentMoniker": "Services\\Integration\\ErpSyncOrchestrator.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\ErpSyncOrchestrator.cs",
+              "RelativeToolTip": "Services\\Integration\\ErpSyncOrchestrator.cs",
+              "ViewState": "AgIAAOAAAAAAAAAAAAAqwO4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T07:36:44.104Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "OracleSourceMappingsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\OracleSourceMappingsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Integration\\OracleSourceMappingsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\OracleSourceMappingsController.cs",
+              "RelativeToolTip": "Controllers\\Integration\\OracleSourceMappingsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC4BAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T12:25:55.234Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ErpSyncController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\ErpSyncController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Integration\\ErpSyncController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\ErpSyncController.cs",
+              "RelativeToolTip": "Controllers\\Integration\\ErpSyncController.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAkwDkAAABmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T12:52:16.934Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BrightOracleConnector.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\BrightOracleConnector.cs",
+              "RelativeDocumentMoniker": "Services\\Integration\\BrightOracleConnector.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\BrightOracleConnector.cs",
+              "RelativeToolTip": "Services\\Integration\\BrightOracleConnector.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAADgv08AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T08:03:03.349Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IntegrationLogsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\IntegrationLogsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Integration\\IntegrationLogsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Integration\\IntegrationLogsController.cs",
+              "RelativeToolTip": "Controllers\\Integration\\IntegrationLogsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-20T09:02:31.361Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAgwBQAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-14T08:00:35.937Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Project.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Organization\\Project.cs",
+              "RelativeDocumentMoniker": "Models\\Organization\\Project.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Organization\\Project.cs",
+              "RelativeToolTip": "Models\\Organization\\Project.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAwAwAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T07:51:40.5Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IErpConnector.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\IErpConnector.cs",
+              "RelativeDocumentMoniker": "Services\\Integration\\IErpConnector.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\IErpConnector.cs",
+              "RelativeToolTip": "Services\\Integration\\IErpConnector.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAA7wCIAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T07:32:55.383Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAFkAAAAAAAAAAAAtwGUAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T06:36:39.67Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "OracleSourceMapping.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\OracleSourceMapping.cs",
+              "RelativeDocumentMoniker": "Services\\Integration\\OracleSourceMapping.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\OracleSourceMapping.cs",
+              "RelativeToolTip": "Services\\Integration\\OracleSourceMapping.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T05:43:19.557Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ErpSyncWatermark.cs.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\ErpSyncWatermark.cs.cs",
+              "RelativeDocumentMoniker": "Services\\Integration\\ErpSyncWatermark.cs.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Integration\\ErpSyncWatermark.cs.cs",
+              "RelativeToolTip": "Services\\Integration\\ErpSyncWatermark.cs.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T09:22:56.715Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ProjectsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Projects\\ProjectsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Projects\\ProjectsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Projects\\ProjectsController.cs",
+              "RelativeToolTip": "Controllers\\Projects\\ProjectsController.cs",
+              "ViewState": "AgIAAGAAAAAAAAAAAADwv3wAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-18T08:49:12.13Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "MaterialsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Materials\\MaterialsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialsController.cs",
+              "RelativeToolTip": "Controllers\\Materials\\MaterialsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T06:48:59.991Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "MaterialGroupsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialGroupsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Materials\\MaterialGroupsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialGroupsController.cs",
+              "RelativeToolTip": "Controllers\\Materials\\MaterialGroupsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T06:48:57.855Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UnitsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\UnitsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Materials\\UnitsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\UnitsController.cs",
+              "RelativeToolTip": "Controllers\\Materials\\UnitsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T13:36:21.425Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "NotificationsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Notification\\NotificationsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Notification\\NotificationsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Notification\\NotificationsController.cs",
+              "RelativeToolTip": "Controllers\\Notification\\NotificationsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T13:12:06.801Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "MaterialSubGroupsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialSubGroupsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Materials\\MaterialSubGroupsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Materials\\MaterialSubGroupsController.cs",
+              "RelativeToolTip": "Controllers\\Materials\\MaterialSubGroupsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T06:49:02.032Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "OracleSourceMappingDtos.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\Integration\\OracleSourceMappingDtos.cs",
+              "RelativeDocumentMoniker": "DTOs\\Integration\\OracleSourceMappingDtos.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\Integration\\OracleSourceMappingDtos.cs",
+              "RelativeToolTip": "DTOs\\Integration\\OracleSourceMappingDtos.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAAwwBwAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T12:25:19.768Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "ApiResponse.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Common\\ApiResponse.cs",
+              "RelativeDocumentMoniker": "Common\\ApiResponse.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Common\\ApiResponse.cs",
+              "RelativeToolTip": "Common\\ApiResponse.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAADwvxwAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T12:24:14.104Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "ErpSyncWatermark.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Integration\\ErpSyncWatermark.cs",
+              "RelativeDocumentMoniker": "Models\\Integration\\ErpSyncWatermark.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Integration\\ErpSyncWatermark.cs",
+              "RelativeToolTip": "Models\\Integration\\ErpSyncWatermark.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T07:56:36.176Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "OracleSourceMapping.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Integration\\OracleSourceMapping.cs",
+              "RelativeDocumentMoniker": "Models\\Integration\\OracleSourceMapping.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Integration\\OracleSourceMapping.cs",
+              "RelativeToolTip": "Models\\Integration\\OracleSourceMapping.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T07:55:48.198Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "Data\\AppDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-17T05:45:51.732Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "Item.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Materials\\Item.cs",
+              "RelativeDocumentMoniker": "Models\\Materials\\Item.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Materials\\Item.cs",
+              "RelativeToolTip": "Models\\Materials\\Item.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAABYAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T07:06:36.142Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "CreateItemDto.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\Materials\\CreateItemDto.cs",
+              "RelativeDocumentMoniker": "DTOs\\Materials\\CreateItemDto.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\Materials\\CreateItemDto.cs",
+              "RelativeToolTip": "DTOs\\Materials\\CreateItemDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T07:06:10.294Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "LocalFileStorageService.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Storage\\LocalFileStorageService.cs",
+              "RelativeDocumentMoniker": "Services\\Storage\\LocalFileStorageService.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Storage\\LocalFileStorageService.cs",
+              "RelativeToolTip": "Services\\Storage\\LocalFileStorageService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T05:19:08.124Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "IFileStorageService.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Storage\\IFileStorageService.cs",
+              "RelativeDocumentMoniker": "Services\\Storage\\IFileStorageService.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Services\\Storage\\IFileStorageService.cs",
+              "RelativeToolTip": "Services\\Storage\\IFileStorageService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-16T05:18:53.518Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "AttachmentsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Common\\AttachmentsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Common\\AttachmentsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Common\\AttachmentsController.cs",
+              "RelativeToolTip": "Controllers\\Common\\AttachmentsController.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAkwEEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T09:52:32.886Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "PurchaseRequest.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\PurchaseRequests\\PurchaseRequest.cs",
+              "RelativeDocumentMoniker": "Models\\PurchaseRequests\\PurchaseRequest.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\PurchaseRequests\\PurchaseRequest.cs",
+              "RelativeToolTip": "Models\\PurchaseRequests\\PurchaseRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T09:46:32.532Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "CreatePurchaseRequestDto.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\PurchaseRequests\\CreatePurchaseRequestDto.cs",
+              "RelativeDocumentMoniker": "DTOs\\PurchaseRequests\\CreatePurchaseRequestDto.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\DTOs\\PurchaseRequests\\CreatePurchaseRequestDto.cs",
+              "RelativeToolTip": "DTOs\\PurchaseRequests\\CreatePurchaseRequestDto.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAQwDQAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T09:46:42.557Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "CrudController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Common\\CrudController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Common\\CrudController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Common\\CrudController.cs",
+              "RelativeToolTip": "Controllers\\Common\\CrudController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T10:58:43.29Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "PurchaseRequestItem.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\PurchaseRequests\\PurchaseRequestItem.cs",
+              "RelativeDocumentMoniker": "Models\\PurchaseRequests\\PurchaseRequestItem.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\PurchaseRequests\\PurchaseRequestItem.cs",
+              "RelativeToolTip": "Models\\PurchaseRequests\\PurchaseRequestItem.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T09:46:16.698Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "ProcurementController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Purchase Requests\\ProcurementController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Purchase Requests\\ProcurementController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Purchase Requests\\ProcurementController.cs",
+              "RelativeToolTip": "Controllers\\Purchase Requests\\ProcurementController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T11:50:44.762Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "PurchaseRequestsController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Purchase Requests\\PurchaseRequestsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Purchase Requests\\PurchaseRequestsController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Purchase Requests\\PurchaseRequestsController.cs",
+              "RelativeToolTip": "Controllers\\Purchase Requests\\PurchaseRequestsController.cs",
+              "ViewState": "AgIAAAEBAAAAAAAAAAAvwCQBAABOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T11:50:36.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "CompaniesController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Organization\\CompaniesController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Organization\\CompaniesController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Organization\\CompaniesController.cs",
+              "RelativeToolTip": "Controllers\\Organization\\CompaniesController.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAYwBMAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-15T09:44:35.556Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "BaseEntity.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Common\\BaseEntity.cs",
+              "RelativeDocumentMoniker": "Models\\Common\\BaseEntity.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Models\\Common\\BaseEntity.cs",
+              "RelativeToolTip": "Models\\Common\\BaseEntity.cs",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAqwE0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T11:18:23.193Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Users\\UsersController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Users\\UsersController.cs",
+              "ToolTip": "C:\\Source Code\\procurement-full-app\\procurement-full-app\\backend\\Procurement.Api\\Controllers\\Users\\UsersController.cs",
+              "RelativeToolTip": "Controllers\\Users\\UsersController.cs",
+              "ViewState": "AgIAAIgAAAAAAAAAAAAowJIAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T11:14:27.838Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

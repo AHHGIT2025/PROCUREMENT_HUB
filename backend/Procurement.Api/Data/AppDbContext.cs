@@ -3,8 +3,11 @@ using Procurement.Api.Models;
 using Procurement.Api.Models.Categories;
 using Procurement.Api.Models.PurchaseRequests;
 using Procurement.Api.Models.System;
+using Procurement.Api.Models.Menu;
+
 using Procurement.Api.Services.Integration;
 using System.Reflection.Emit;
+ 
 
 namespace Procurement.Api.Data;
 
@@ -39,6 +42,8 @@ public class AppDbContext : DbContext
     public DbSet<BusinessVertical> BusinessVerticals => Set<BusinessVertical>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<MenuPermission> MenuPermissions { get; set; }
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
@@ -52,7 +57,7 @@ public class AppDbContext : DbContext
     public DbSet<BudgetCenter> BudgetCenters => Set<BudgetCenter>();
     public DbSet<PurchaseRequest> PurchaseRequests => Set<PurchaseRequest>();
     public DbSet<PurchaseRequestItem> PurchaseRequestItems => Set<PurchaseRequestItem>();
-
+ 
     public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
     public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
     public DbSet<WorkflowCondition> WorkflowConditions => Set<WorkflowCondition>();

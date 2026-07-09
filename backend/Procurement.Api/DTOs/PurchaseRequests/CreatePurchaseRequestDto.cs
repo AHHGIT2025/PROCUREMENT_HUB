@@ -43,6 +43,8 @@
         public string Justification { get; set; } = "";
         public List<CreatePurchaseRequestItemDto> Items { get; set; } = new();
         public bool Submit { get; set; }
+        public string DeliveryLocation { get; set; } = "";
+        public string ContactNumber { get; set; } = "";
     }
 
     public class CreatePurchaseRequestItemDto

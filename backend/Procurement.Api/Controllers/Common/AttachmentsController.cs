@@ -9,7 +9,7 @@ namespace Procurement.Api.Controllers.System
     public class AttachmentsController : ControllerBase
     {
         private readonly IFileStorageService _storage;
-
+         
         public AttachmentsController(IFileStorageService storage)
         {
             _storage = storage;

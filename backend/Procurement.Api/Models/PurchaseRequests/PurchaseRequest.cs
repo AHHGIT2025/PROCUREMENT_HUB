@@ -1,5 +1,4 @@
-﻿ 
-namespace Procurement.Api.Models.PurchaseRequests
+﻿namespace Procurement.Api.Models.PurchaseRequests
 {
 
     public class PurchaseRequest : BaseEntity
@@ -38,5 +37,11 @@ namespace Procurement.Api.Models.PurchaseRequests
         public DateTime? PoUpdatedAt { get; set; }
         public Guid? PoUpdatedById { get; set; }
 
+        public string? ExternalReferenceNo { get; set; }   // "Xpe. Ref. No." equivalent
+
+        // ── DELIVERY DETAILS (mandatory) ──────────────────────
+        public string DeliveryLocation { get; set; } = "";
+        public string ContactNumber { get; set; } = "";
+
     }
-    }
+}

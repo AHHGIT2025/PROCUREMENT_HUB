@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Procurement.Api.Data;
@@ -24,11 +22,11 @@ namespace Procurement.Api.Controllers.PurchaseRequests
         public PurchaseRequestsController(
       AppDbContext db,
       IApprovalEngineService engine,
-      RequestNumberGeneratorService numberGenerator) // ← add
+      RequestNumberGeneratorService numberGenerator)
         {
             _db = db;
             _engine = engine;
-            _numberGenerator = numberGenerator; // ← add
+            _numberGenerator = numberGenerator;
         }
         // ── CREATE ────────────────────────────────────────────
         [HttpPost]
@@ -45,6 +43,12 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                 if (dto.Items == null || !dto.Items.Any())
                     return BadRequest(new { message = "At least one item required" });
 
+                if (string.IsNullOrWhiteSpace(dto.DeliveryLocation))
+                    return BadRequest(new { message = "Delivery Location is required" });
+
+                if (string.IsNullOrWhiteSpace(dto.ContactNumber))
+                    return BadRequest(new { message = "Contact Number is required" });
+
                 var company = await _db.Companies
                     .FirstOrDefaultAsync(x => x.Id == dto.CompanyId);
 
@@ -54,7 +58,6 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                 var yy = DateTime.UtcNow.Year.ToString().Substring(2);
                 var count = await _db.PurchaseRequests
                     .CountAsync(x => x.CompanyId == dto.CompanyId);
-                //var requestNumber = $"{yy}{company.Code}{(count + 1):00000}";
                 var requestNumber = await _numberGenerator.GenerateRequestNumber(company.Code);
                 var pr = new PurchaseRequest
                 {
@@ -67,6 +70,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     Justification = dto.Justification,
                     Status = RequestStatus.Draft,
                     TotalAmount = dto.Items.Sum(i => i.Quantity * i.EstimatedUnitPrice),
+                    DeliveryLocation = dto.DeliveryLocation,
+                    ContactNumber = dto.ContactNumber,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -84,8 +89,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         RequiredDate = i.RequiredDate,
                         Justification = i.Justification,
                         EstimatedUnitPrice = i.EstimatedUnitPrice,
-                        AttachmentUrl = i.AttachmentUrl,            // NEW
-                        AttachmentFileName = i.AttachmentFileName,  // NEW
+                        AttachmentUrl = i.AttachmentUrl,
+                        AttachmentFileName = i.AttachmentFileName,
                         CreatedAt = DateTime.UtcNow
                     });
                 }
@@ -133,7 +138,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     error = ex.Message,
                     inner = ex.InnerException?.Message
                 });
-              
+
             }
         }
 
@@ -209,6 +214,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     pr.Justification,
                     pr.TotalAmount,
                     pr.CreatedAt,
+                    pr.DeliveryLocation,
+                    pr.ContactNumber,
                     Company = _db.Companies
                                     .Where(c => c.Id == pr.CompanyId)
                                     .Select(c => c.Name).FirstOrDefault(),
@@ -244,6 +251,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     companyId = x.CompanyId,
                     projectId = x.ProjectId,
                     departmentId = x.DepartmentId,
+                    deliveryLocation = x.DeliveryLocation,
+                    contactNumber = x.ContactNumber,
 
                     companyName = _db.Companies
                         .Where(c => c.Id == x.CompanyId)
@@ -270,6 +279,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                                  : x.Status == RequestStatus.OracleReady ? "Ready For Oracle"
                                  : x.Status == RequestStatus.OraclePosted ? "Posted To Oracle"
                                  : x.Status == RequestStatus.Deleted ? "Deleted"
+                                 : x.Status == RequestStatus.FulfilledFromStock ? "Fulfilled From Stock"
                                  : "Unknown",
 
                     canEdit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
@@ -277,24 +287,15 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     canDelete = x.Status == RequestStatus.Draft,
 
                     // ── Current pending stage ────────────────────────────
-                    //currentPendingStage = _db.ApprovalInstances
-                    //    .Where(ai => ai.EntityId == x.Id
-                    //              && ai.Status == "PENDING"
-                    //              && ai.IsActive)
-                    //    .OrderBy(ai => ai.StepOrder)
-                    //    .Join(_db.WorkflowSteps,
-                    //          ai => ai.WorkflowStepId,
-                    //          ws => ws.Id,
-                    //          (ai, ws) => ws.Name)
-                    //    .FirstOrDefault(),
                     currentPendingStage = _db.ApprovalInstances
-    .Where(ai => ai.EntityId == x.Id)
-    .OrderByDescending(ai => ai.StepOrder)
-    .Join(_db.WorkflowSteps,
-          ai => ai.WorkflowStepId,
-          ws => ws.Id,
-          (ai, ws) => ws.Name)
-    .FirstOrDefault(),
+                        .Where(ai => ai.EntityId == x.Id)
+                        .OrderByDescending(ai => ai.StepOrder)
+                        .Join(_db.WorkflowSteps,
+                              ai => ai.WorkflowStepId,
+                              ws => ws.Id,
+                              (ai, ws) => ws.Name)
+                        .FirstOrDefault(),
+
                     // ── Latest rejection / return comment ────────────────
                     rejectionComment = _db.ApprovalActions
                         .Where(aa =>
@@ -322,7 +323,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .FirstOrDefault(),
 
-                    // ── Items ────────────────────────────────────────────
+                    // ── Items (✅ now includes store verification outcome) ──
                     items = _db.PurchaseRequestItems
                         .Where(i => i.PurchaseRequestId == x.Id)
                         .Select(i => new
@@ -342,14 +343,20 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                                                         g => g.Id,
                                                         (item, g) => g.Name)
                                                     .FirstOrDefault(),
-                            quantity = i.Quantity,
+                            quantity = i.Quantity,                       // original requested qty — never changes
                             uom = i.Uom,
                             estimatedUnitPrice = i.EstimatedUnitPrice,
                             lineTotal = i.Quantity * i.EstimatedUnitPrice,
                             requiredDate = i.RequiredDate,
                             justification = i.Justification,
                             attachmentUrl = i.AttachmentUrl,
-                            attachmentFileName = i.AttachmentFileName
+                            attachmentFileName = i.AttachmentFileName,
+
+                            // ✅ NEW — store verification outcome (0 = not yet checked)
+                            storeStatus = (int)i.StoreStatus,
+                            availableQty = i.AvailableQty,
+                            purchaseQty = i.PurchaseQty,                 // qty that still needs purchasing after store check
+                            storeRemarks = i.StoreRemarks
                         })
                         .ToList(),
 
@@ -376,10 +383,6 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             if (request == null) return NotFound();
             return Ok(request);
         }
-
-
-         
-
 
         // POST /api/purchase-requests/{id}/resubmit
         [HttpPost("{id}/resubmit")]
@@ -411,11 +414,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
-
-      
-
-         // -- GET BY USER ---------------------------------------
-         [HttpGet("user/{userId:guid}")]
+        // -- GET BY USER ---------------------------------------
+        [HttpGet("user/{userId:guid}")]
         public async Task<IActionResult> GetUserRequests(Guid userId)
         {
             var data = await _db.PurchaseRequests
@@ -429,6 +429,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     justification = x.Justification,
                     createdAt = x.CreatedAt,
                     totalAmount = x.TotalAmount,
+                    deliveryLocation = x.DeliveryLocation,
+                    contactNumber = x.ContactNumber,
 
                     companyName = _db.Companies
                         .Where(c => c.Id == x.CompanyId)
@@ -446,24 +448,15 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         .FirstOrDefault(),
 
                     // ── Current pending approval stage name ──────────────
-                    //currentPendingStage = _db.ApprovalInstances
-                    //    .Where(ai => ai.EntityId == x.Id
-                    //              && ai.Status == "PENDING"
-                    //              && ai.IsActive)
-                    //    .OrderBy(ai => ai.StepOrder)
-                    //    .Join(_db.WorkflowSteps,
-                    //          ai => ai.WorkflowStepId,
-                    //          ws => ws.Id,
-                    //          (ai, ws) => ws.Name)
-                    //    .FirstOrDefault(),
                     currentPendingStage = _db.ApprovalInstances
-    .Where(ai => ai.EntityId == x.Id)
-    .OrderByDescending(ai => ai.StepOrder)
-    .Join(_db.WorkflowSteps,
-          ai => ai.WorkflowStepId,
-          ws => ws.Id,
-          (ai, ws) => ws.Name)
-    .FirstOrDefault(),
+                        .Where(ai => ai.EntityId == x.Id)
+                        .OrderByDescending(ai => ai.StepOrder)
+                        .Join(_db.WorkflowSteps,
+                              ai => ai.WorkflowStepId,
+                              ws => ws.Id,
+                              (ai, ws) => ws.Name)
+                        .FirstOrDefault(),
+
                     // ── Latest rejection / return comment ────────────────
                     rejectionComment = _db.ApprovalActions
                         .Where(aa =>
@@ -484,7 +477,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .FirstOrDefault(),
 
-                    // ── Items with individual justification ──────────────
+                    // ── Items with individual justification (✅ store fields added) ──
                     items = _db.PurchaseRequestItems
                         .Where(i => i.PurchaseRequestId == x.Id)
                         .Select(i => new
@@ -506,7 +499,13 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                             requiredDate = i.RequiredDate,
                             justification = i.Justification,
                             attachmentUrl = i.AttachmentUrl,
-                            attachmentFileName = i.AttachmentFileName
+                            attachmentFileName = i.AttachmentFileName,
+
+                            // ✅ NEW
+                            storeStatus = (int)i.StoreStatus,
+                            availableQty = i.AvailableQty,
+                            purchaseQty = i.PurchaseQty,
+                            storeRemarks = i.StoreRemarks
                         })
                         .ToList(),
 
@@ -520,34 +519,6 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(data);
         }
-        //// ── GET BY USER ───────────────────────────────────────
-        //[HttpGet("user/{userId:guid}")]
-        //public async Task<IActionResult> GetUserRequests(Guid userId)
-        //{
-        //    var data = await _db.PurchaseRequests
-        //        .Where(x => x.RequestedById == userId)
-        //        .OrderByDescending(x => x.CreatedAt)
-        //        .Select(x => new
-        //        {
-        //            id = x.Id,
-        //            requestNumber = x.RequestNumber,
-        //            status = x.Status.ToString(),
-        //            createdAt = x.CreatedAt,
-        //            totalAmount = x.TotalAmount,
-        //            companyName = _db.Companies
-        //                                .Where(c => c.Id == x.CompanyId)
-        //                                .Select(c => c.Name).FirstOrDefault(),
-        //            projectName = _db.Projects
-        //                                .Where(p => p.Id == x.ProjectId)
-        //                                .Select(p => p.Name).FirstOrDefault(),
-        //            canEdit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
-        //            canSubmit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
-        //            canDelete = x.Status == RequestStatus.Draft
-        //        })
-        //        .ToListAsync();
-
-        //    return Ok(data);
-        //}
 
         // ── UPDATE ────────────────────────────────────────────
         [HttpPut("{id:guid}")]
@@ -562,11 +533,19 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                 pr.Status != RequestStatus.Returned)
                 return BadRequest(new { message = "Editing not allowed" });
 
+            if (string.IsNullOrWhiteSpace(dto.DeliveryLocation))
+                return BadRequest(new { message = "Delivery Location is required" });
+
+            if (string.IsNullOrWhiteSpace(dto.ContactNumber))
+                return BadRequest(new { message = "Contact Number is required" });
+
             pr.CompanyId = dto.CompanyId;
             pr.ProjectId = dto.ProjectId;
             pr.DepartmentId = dto.DepartmentId;
             pr.Justification = dto.Justification;
             pr.TotalAmount = dto.Items.Sum(x => x.Quantity * x.EstimatedUnitPrice);
+            pr.DeliveryLocation = dto.DeliveryLocation;
+            pr.ContactNumber = dto.ContactNumber;
             pr.UpdatedAt = DateTime.UtcNow;
 
             var oldItems = await _db.PurchaseRequestItems
@@ -583,8 +562,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     Quantity = i.Quantity,
                     Uom = i.Uom,
                     EstimatedUnitPrice = i.EstimatedUnitPrice,
-                    AttachmentUrl = i.AttachmentUrl,            // NEW
-                    AttachmentFileName = i.AttachmentFileName,  // NEW
+                    AttachmentUrl = i.AttachmentUrl,
+                    AttachmentFileName = i.AttachmentFileName,
                     RequiredDate = i.RequiredDate,
                     Justification = i.Justification,
                     CreatedAt = DateTime.UtcNow

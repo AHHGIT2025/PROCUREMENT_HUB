@@ -1,4 +1,3 @@
-
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../api/client';
@@ -19,309 +18,341 @@ import {
   ShieldCheck,
   Tag,
   Upload,
+   FileText,        // ← puthiyath add cheyyuka
   Users,
+  FolderTree,
+  Send,
 } from 'lucide-react';
 
-const links = [
+// ── Standalone top-level items ───────────────────────────────────────────────
+const standaloneLinks = [
   {
     to: '/dashboard',
+    key: 'dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    roles: [
-      'System Admin', 'Requester', 'Manager',
-      'IT Manager', 'Budget Manager', 'Asset Manager',
-      'Finance Approver', 'Purchase Officer', 'Purchase Manager', // ✅ FIXED
-      'CEO', 'Approver', 'Material Admin', 'Workflow Admin',
-    ],
-  },
-  {
-    to: '/purchase-requests',
-    label: 'Purchase Requests',
-    icon: FileClock,
-    roles: ['System Admin'],
-  },
-  {
-    to: '/create-request',
-    label: 'Create Request',
-    icon: ClipboardCheck,
-    roles: ['Requester', 'System Admin'],
-  },
-  {
-    to: '/my-requests',
-    label: 'My Requests',
-    icon: ClipboardCheck,
-    roles: ['Requester', 'System Admin'],
-  },
-  {
-    to: '/approvals',
-    label: 'Approvals',
-    icon: ShieldCheck,
-    roles: [
-      'Manager', 'IT Manager', 'Budget Manager',
-      'Asset Manager', 'Finance Approver', 'Purchase Officer',
-      'Purchase Manager', // ✅ FIXED
-      'CEO', 'Approver', 'System Admin',
-    ],
-  },
-  {
-    to: '/materials',
-    label: 'Materials',
-    icon: Boxes,
-    roles: ['Material Admin', 'System Admin'],
-  },
-  {
-    to: '/projects',
-    label: 'Projects',
-    icon: Building2,
-    roles: ['Material Admin', 'System Admin'],
-  },
-  {
-    to: '/procurement',
-    label: 'Procurement Queue',
-    icon: ClipboardCheck,
-    roles: ['Purchase Officer', 'Procurement Officer', 'Purchase Manager', 'Manager', 'System Admin'], // ✅ FIXED
-  },
-  {
-    to: '/upload-center',
-    label: 'Upload Center',
-    icon: Upload,
-    roles: ['System Admin'],
-  },
-  {
-    to: '/settings/item-category-flow',
-    label: 'Category Flow',
-    icon: GitBranch,
-    roles: ['System Admin'],
   },
 ];
 
-const integrationSuite = {
-  label: 'Integration Suite',
-  icon: Plug,
-  roles: ['System Admin'],
+// ── Requests group ───────────────────────────────────────────────────────────
+const requestsGroup = {
+  key: 'requests-group',
+  label: 'Requests',
+  icon: FileClock,
   children: [
-    {
-      to: '/oracle-monitor',
-      label: 'Oracle Monitor',
-      icon: BarChart3,
-      roles: ['System Admin'],
-    },
-    {
-      to: '/item-categories',
-      label: 'Item Categories',
-      icon: Tag,
-      roles: ['System Admin'],
-    },
+    { to: '/create-request', key: 'create-request', label: 'Create Request', icon: ClipboardCheck },
+    { to: '/my-requests', key: 'my-requests', label: 'My Requests', icon: ClipboardCheck },
+    { to: '/purchase-requests', key: 'purchase-requests', label: 'Purchase Requests', icon: FileClock },
+    { to: '/approvals', key: 'approvals', label: 'Approvals', icon: ShieldCheck },
+       { to: '/approval-history', key: 'approval-history', label: 'My Approval History', icon: FileText },
   ],
 };
 
-const settingsGroup = {
-  label: 'Settings',
-  icon: Settings,
-  roles: ['System Admin'],
+// ── Materials group ───────────────────────────────────────────────────────────
+const materialsGroup = {
+  key: 'materials-group',
+  label: 'Materials',
+  icon: Boxes,
   children: [
-    {
-      to: '/workflows',
-      label: 'Workflow',
-      icon: GitBranch,
-      roles: ['Workflow Admin', 'System Admin'],
-    },
-    {
-      to: '/users',
-      label: 'Users',
-      icon: Users,
-      roles: ['System Admin'],
-    },
-    {
-      to: '/organization',
-      label: 'Organization',
-      icon: Building2,
-      roles: ['System Admin'],
-    },
-    {
-      to: '/settings/company-categories',
-      label: 'Company Categories',
-      icon: Building2,
-      roles: ['System Admin'],
-    },
-    {
-      to: '/audit-logs',
-      label: 'Audit Log',
-      icon: ShieldCheck,
-      roles: ['System Admin'],
-    },
+    { to: '/materials', key: 'materials', label: 'Materials', icon: Boxes },
+    { to: '/projects', key: 'projects', label: 'Projects', icon: Building2 },
   ],
 };
+
+// ── Procurement group ─────────────────────────────────────────────────────────
+const procurementGroup = {
+  key: 'procurement-group',
+  label: 'Procurement',
+  icon: ClipboardCheck,
+  children: [
+    { to: '/procurement', key: 'procurement', label: 'Procurement Queue', icon: ClipboardCheck },
+    { to: '/procurement/indent-transfer', key: 'indent-transfer', label: 'Transfer to Bright ERP', icon: Send },
+  ],
+};
+
+// ── Standalone items (own team / own heading) ────────────────────────────────
+const midStandaloneLinks = [
+  {
+    to: '/store-verification',
+    key: 'store-verification',
+    label: 'Store Verification',
+    icon: Boxes,
+  },
+  {
+    to: '/upload-center',
+    key: 'upload-center',
+    label: 'Upload Center',
+    icon: Upload,
+  },
+];
+
+// ── Integration Suite (nested inside Settings) ───────────────────────────────
+const integrationSuite = {
+  key: 'integration-suite',
+  label: 'Integration Suite',
+  icon: Plug,
+  children: [
+    { to: '/oracle-monitor', key: 'oracle-monitor', label: 'Oracle Monitor', icon: BarChart3 },
+  ],
+};
+
+// ── Settings group ────────────────────────────────────────────────────────────
+const settingsGroup = {
+  key: 'settings-group',
+  label: 'Settings',
+  icon: Settings,
+  children: [
+    { to: '/organization', key: 'organization', label: 'Organization', icon: Building2 },
+    { to: '/departments', key: 'departments', label: 'Departments', icon: Building2 },
+    { to: '/users', key: 'users', label: 'Users', icon: Users },
+    { to: '/settings/roles', key: 'roles', label: 'Roles', icon: ShieldCheck },
+    { to: '/workflows', key: 'workflows', label: 'Workflow', icon: GitBranch },
+    { to: '/settings/item-category-flow', key: 'category-flow', label: 'Category Flow', icon: FolderTree },
+    { to: '/settings/company-categories', key: 'company-categories', label: 'Company Categories', icon: Tag },
+    { to: '/settings/menu-permissions', key: 'menu-permissions', label: 'Menu Permissions', icon: ShieldCheck },
+    { to: '/audit-logs', key: 'audit-logs', label: 'Audit Log', icon: ShieldCheck },
+  ],
+};
+
+// ── Generic collapsible group component ──────────────────────────────────────
+function NavGroup({
+  group, isOpen, onToggle, isActive, visibleChildren, nested,
+}: {
+  group: { label: string; icon: any };
+  isOpen: boolean;
+  onToggle: () => void;
+  isActive: boolean;
+  visibleChildren: React.ReactNode;
+  nested?: boolean;
+}) {
+  const GroupIcon = group.icon;
+  return (
+    <div className={nested ? '' : 'pt-1'}>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition ${
+          isActive
+            ? 'bg-slate-800 text-white'
+            : nested
+            ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+            : 'text-slate-300 hover:bg-slate-800'
+        }`}
+      >
+        <span className="flex items-center gap-3">
+          <GroupIcon size={nested ? 15 : 17} />
+          {group.label}
+        </span>
+        <ChevronDown
+          size={nested ? 13 : 15}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {isOpen && (
+        <div className="mt-1 ml-4 pl-3 border-l border-slate-800 space-y-1">
+          {visibleChildren}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChildLink({ to, label, icon: Icon, size = 15 }: { to: string; label: string; icon: any; size?: number }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
+          isActive
+            ? 'bg-white text-slate-950'
+            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+        }`
+      }
+    >
+      <Icon size={size} />
+      {label}
+    </NavLink>
+  );
+}
 
 export default function AppLayout() {
   const nav = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRoles: string[] = user.roles ?? [];
 
-  const visibleSettingsChildren = settingsGroup.children.filter((c) =>
-    c.roles.some((r) => userRoles.includes(r))
-  
-  );
+  // ── Dynamic menu permissions ───────────────────────────────────────────
+  const [allowedMenuKeys, setAllowedMenuKeys] = useState<string[]>([]);
+  const [menusLoaded, setMenusLoaded] = useState(false);
 
-  const visibleIntegrationChildren = integrationSuite.children.filter((c) =>
-    c.roles.some((r) => userRoles.includes(r))
-  );
+  useEffect(() => {
+    api.get('/menu-permissions/my-menus')
+      .then(r => setAllowedMenuKeys(r.data?.data ?? r.data ?? []))
+      .catch(() => setAllowedMenuKeys([]))
+      .finally(() => setMenusLoaded(true));
+  }, []);
 
-  const showIntegrationSuite =
-    integrationSuite.roles.some((r) => userRoles.includes(r)) &&
-    visibleIntegrationChildren.length > 0;
+  const canSee = (key: string) => allowedMenuKeys.includes(key);
 
-  const showSettingsGroup =
-    settingsGroup.roles.some((r) => userRoles.includes(r)) &&
-    (visibleSettingsChildren.length > 0 || showIntegrationSuite);
+  const visibleRequests    = requestsGroup.children.filter(c => canSee(c.key));
+  const visibleMaterials   = materialsGroup.children.filter(c => canSee(c.key));
+  const visibleProcurement = procurementGroup.children.filter(c => canSee(c.key));
+  const visibleSettings    = settingsGroup.children.filter(c => canSee(c.key));
+  const visibleIntegration = integrationSuite.children.filter(c => canSee(c.key));
+  const visibleStandalone  = standaloneLinks.filter(l => canSee(l.key));
+  const visibleMidStandalone = midStandaloneLinks.filter(l => canSee(l.key));
 
-  const isOnIntegrationPage = visibleIntegrationChildren.some((c) =>
-    location.pathname.startsWith(c.to)
-  );
-  const isOnSettingsPage =
-    visibleSettingsChildren.some((c) => location.pathname.startsWith(c.to)) ||
-    isOnIntegrationPage;
+  const showRequests    = visibleRequests.length > 0;
+  const showMaterials   = visibleMaterials.length > 0;
+  const showProcurement = visibleProcurement.length > 0;
+  const showIntegration = visibleIntegration.length > 0;
+  const showSettings    = visibleSettings.length > 0 || showIntegration;
 
-  const [settingsOpen, setSettingsOpen] = useState(isOnSettingsPage);
+  const isOnRequestsPage    = visibleRequests.some(c => location.pathname.startsWith(c.to));
+  const isOnMaterialsPage   = visibleMaterials.some(c => location.pathname.startsWith(c.to));
+  const isOnProcurementPage = visibleProcurement.some(c => location.pathname.startsWith(c.to));
+  const isOnIntegrationPage = visibleIntegration.some(c => location.pathname.startsWith(c.to));
+  const isOnSettingsPage    = visibleSettings.some(c => location.pathname.startsWith(c.to)) || isOnIntegrationPage;
+
+  const [requestsOpen, setRequestsOpen]     = useState(isOnRequestsPage);
+  const [materialsOpen, setMaterialsOpen]   = useState(isOnMaterialsPage);
+  const [procurementOpen, setProcurementOpen] = useState(isOnProcurementPage);
+  const [settingsOpen, setSettingsOpen]     = useState(isOnSettingsPage);
   const [integrationOpen, setIntegrationOpen] = useState(isOnIntegrationPage);
 
   useEffect(() => {
+    if (isOnRequestsPage) setRequestsOpen(true);
+    if (isOnMaterialsPage) setMaterialsOpen(true);
+    if (isOnProcurementPage) setProcurementOpen(true);
     if (isOnSettingsPage) setSettingsOpen(true);
     if (isOnIntegrationPage) setIntegrationOpen(true);
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (!menusLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen text-slate-400">
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
-      <aside className="w-72 bg-slate-950 text-white p-5">
+      <aside className="w-72 bg-slate-950 text-white p-5 overflow-y-auto">
         <div className="mb-8">
           <div className="text-xl font-bold">Al Hattab Holding</div>
           <div className="text-xs text-slate-400">Procurement Hub</div>
         </div>
 
         <nav className="space-y-1">
-          {links
-            .filter((link) => link.roles.some((r) => userRoles.includes(r)))
-            .map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) =>
-                    `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
-                      isActive
-                        ? 'bg-white text-slate-950'
-                        : 'text-slate-300 hover:bg-slate-800'
-                    }`
-                  }
-                >
-                  <Icon size={17} />
-                  {link.label}
-                </NavLink>
-              );
-            })}
-
-          {showSettingsGroup && (
-            <div className="pt-1">
-              <button
-                onClick={() => setSettingsOpen((prev) => !prev)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition ${
-                  isOnSettingsPage
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-300 hover:bg-slate-800'
-                }`}
+          {/* Dashboard */}
+          {visibleStandalone.map(link => {
+            const Icon = link.icon;
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
+                    isActive ? 'bg-white text-slate-950' : 'text-slate-300 hover:bg-slate-800'
+                  }`
+                }
               >
-                <span className="flex items-center gap-3">
-                  <settingsGroup.icon size={17} />
-                  {settingsGroup.label}
-                </span>
-                <ChevronDown
-                  size={15}
-                  className={`transition-transform duration-200 ${
-                    settingsOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+                <Icon size={17} />
+                {link.label}
+              </NavLink>
+            );
+          })}
 
-              {settingsOpen && (
-                <div className="mt-1 ml-4 pl-3 border-l border-slate-800 space-y-1">
-                  {visibleSettingsChildren.map((child) => {
-                    const ChildIcon = child.icon;
-                    return (
-                      <NavLink
-                        key={child.to}
-                        to={child.to}
-                        className={({ isActive }) =>
-                          `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
-                            isActive
-                              ? 'bg-white text-slate-950'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                          }`
-                        }
-                      >
-                        <ChildIcon size={15} />
-                        {child.label}
-                      </NavLink>
-                    );
-                  })}
+          {/* Requests group */}
+          {showRequests && (
+            <NavGroup
+              group={requestsGroup}
+              isOpen={requestsOpen}
+              onToggle={() => setRequestsOpen(p => !p)}
+              isActive={isOnRequestsPage}
+              visibleChildren={visibleRequests.map(c => (
+                <ChildLink key={c.to} to={c.to} label={c.label} icon={c.icon} />
+              ))}
+            />
+          )}
 
-                  {showIntegrationSuite && (
-                    <div>
-                      <button
-                        onClick={() => setIntegrationOpen((prev) => !prev)}
-                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm transition ${
-                          isOnIntegrationPage
-                            ? 'bg-slate-800 text-white'
-                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          <integrationSuite.icon size={15} />
-                          {integrationSuite.label}
-                        </span>
-                        <ChevronDown
-                          size={13}
-                          className={`transition-transform duration-200 ${
-                            integrationOpen ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
+          {/* Materials group */}
+          {showMaterials && (
+            <NavGroup
+              group={materialsGroup}
+              isOpen={materialsOpen}
+              onToggle={() => setMaterialsOpen(p => !p)}
+              isActive={isOnMaterialsPage}
+              visibleChildren={visibleMaterials.map(c => (
+                <ChildLink key={c.to} to={c.to} label={c.label} icon={c.icon} />
+              ))}
+            />
+          )}
 
-                      {integrationOpen && (
-                        <div className="mt-1 ml-4 pl-3 border-l border-slate-800 space-y-1">
-                          {visibleIntegrationChildren.map((child) => {
-                            const ChildIcon = child.icon;
-                            return (
-                              <NavLink
-                                key={child.to}
-                                to={child.to}
-                                className={({ isActive }) =>
-                                  `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
-                                    isActive
-                                      ? 'bg-white text-slate-950'
-                                      : 'text-slate-500 hover:bg-slate-800 hover:text-slate-200'
-                                  }`
-                                }
-                              >
-                                <ChildIcon size={14} />
-                                {child.label}
-                              </NavLink>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+          {/* Procurement group */}
+          {showProcurement && (
+            <NavGroup
+              group={procurementGroup}
+              isOpen={procurementOpen}
+              onToggle={() => setProcurementOpen(p => !p)}
+              isActive={isOnProcurementPage}
+              visibleChildren={visibleProcurement.map(c => (
+                <ChildLink key={c.to} to={c.to} label={c.label} icon={c.icon} />
+              ))}
+            />
+          )}
+
+          {/* Store Verification, Upload Center — standalone, own team */}
+          {visibleMidStandalone.map(link => {
+            const Icon = link.icon;
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `flex gap-3 items-center px-3 py-2 rounded-xl text-sm ${
+                    isActive ? 'bg-white text-slate-950' : 'text-slate-300 hover:bg-slate-800'
+                  }`
+                }
+              >
+                <Icon size={17} />
+                {link.label}
+              </NavLink>
+            );
+          })}
+
+          {/* Settings group */}
+          {showSettings && (
+            <NavGroup
+              group={settingsGroup}
+              isOpen={settingsOpen}
+              onToggle={() => setSettingsOpen(p => !p)}
+              isActive={isOnSettingsPage}
+              visibleChildren={
+                <>
+                  {visibleSettings.map(c => (
+                    <ChildLink key={c.to} to={c.to} label={c.label} icon={c.icon} />
+                  ))}
+                  {showIntegration && (
+                    <NavGroup
+                      group={integrationSuite}
+                      isOpen={integrationOpen}
+                      onToggle={() => setIntegrationOpen(p => !p)}
+                      isActive={isOnIntegrationPage}
+                      nested
+                      visibleChildren={visibleIntegration.map(c => (
+                        <ChildLink key={c.to} to={c.to} label={c.label} icon={c.icon} size={14} />
+                      ))}
+                    />
                   )}
-                </div>
-              )}
-            </div>
+                </>
+              }
+            />
           )}
         </nav>
       </aside>
 
-      <main className="flex-1">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-7">
+      <main className="flex-1 min-w-0 flex flex-col">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-7 shrink-0 sticky top-0 z-30">
           <div>
             <div className="font-semibold">Enterprise Procurement Management</div>
             <div className="text-xs text-slate-500">
@@ -343,7 +374,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <section className="p-7">
+        <section className="p-7 overflow-x-auto">
           <Outlet />
         </section>
       </main>

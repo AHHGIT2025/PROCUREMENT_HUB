@@ -4,7 +4,7 @@ import { useNavigate ,useSearchParams } from "react-router-dom";
 import api from "../../api/client";
 import {
   FileText, Paperclip, AlertTriangle,
-  Clock, CheckCircle2, XCircle, RotateCcw, Calendar
+  Clock, CheckCircle2, XCircle, RotateCcw, Calendar, Printer
 } from "lucide-react";
  
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
@@ -89,6 +89,12 @@ useEffect(() => {
   function showToast(msg: string, type: "success" | "error") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  }
+
+  // ── Print — opens the same print report used by Store Keeper / Approver ───
+  function printRequest(id: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    window.open(`/purchase-requests/${id}/print`, "_blank", "noopener,noreferrer");
   }
 
   // ── Quick date filter ─────────────────────────────────────────────────────
@@ -362,10 +368,17 @@ useEffect(() => {
                         {Number(r.totalAmount || 0).toLocaleString("en-QA", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => viewRequest(r.id)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-sm hover:underline">
-                          View
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => viewRequest(r.id)}
+                            className="text-blue-600 hover:text-blue-800 font-medium text-sm hover:underline">
+                            View
+                          </button>
+                          <button onClick={(e) => printRequest(r.id, e)}
+                            title="Print MR"
+                            className="flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium text-sm hover:underline">
+                            <Printer size={13} /> Print
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -394,8 +407,16 @@ useEffect(() => {
                   </p>
                 )}
               </div>
-              <button onClick={() => { setOpenView(false); setSelectedRequest(null); }}
-                className="text-gray-400 hover:text-gray-700 text-2xl leading-none">✕</button>
+              <div className="flex items-center gap-3">
+                {selectedRequest && (
+                  <button onClick={(e) => printRequest(selectedRequest.id, e)}
+                    className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-xl px-3 py-2 hover:bg-gray-50 transition">
+                    <Printer size={14} /> Print
+                  </button>
+                )}
+                <button onClick={() => { setOpenView(false); setSelectedRequest(null); }}
+                  className="text-gray-400 hover:text-gray-700 text-2xl leading-none">✕</button>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -456,14 +477,16 @@ useEffect(() => {
                     {/* Info Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {[
-                        { label: "Request No",   value: req.requestNumber },
-                        { label: "Company",      value: req.companyName },
-                        { label: "Project",      value: req.projectName    || "—" },
-                        { label: "Department",   value: req.departmentName || "—" },
-                        { label: "Requested By", value: req.requestedBy },
-                        { label: "Date",         value: new Date(req.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) },
-                        { label: "Total (QAR)",  value: Number(req.totalAmount || 0).toLocaleString("en-QA", { minimumFractionDigits: 2 }) },
-                        { label: "Status",       value: req.status },
+                        { label: "Request No",       value: req.requestNumber },
+                        { label: "Company",          value: req.companyName },
+                        { label: "Project",          value: req.projectName    || "—" },
+                        { label: "Department",       value: req.departmentName || "—" },
+                        { label: "Requested By",     value: req.requestedBy },
+                        { label: "Date",             value: new Date(req.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) },
+                        { label: "Total (QAR)",      value: Number(req.totalAmount || 0).toLocaleString("en-QA", { minimumFractionDigits: 2 }) },
+                        { label: "Status",           value: req.status },
+                        { label: "Delivery Location", value: req.deliveryLocation || "—" },
+                        { label: "Contact Number",    value: req.contactNumber || "—" },
                       ].map(({ label, value }) => (
                         <div key={label} className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
                           <p className="text-xs text-gray-400 mb-1">{label}</p>

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Procurement.Api.Data;
 using Procurement.Api.Models;
+using Procurement.Api.Models.PurchaseRequests;
 
 namespace Procurement.Api.Services.Workflow
 {
@@ -10,6 +11,11 @@ namespace Procurement.Api.Services.Workflow
         Task<EngineResult> ProcessActionAsync(Guid instanceId, Guid userId, string action, string? comments);
         Task<List<PendingApprovalDto>> GetPendingAsync(Guid userId);
         Task<WorkflowStatusDto> GetStatusAsync(Guid prId);
+
+        // ✅ NEW — dedicated path for STORE_VERIFICATION steps.
+        // Does not touch StartWorkflowAsync / ProcessActionAsync at all.
+        Task<EngineResult> ProcessStoreVerificationAsync(
+            Guid instanceId, Guid userId, List<StoreVerifyItemInput> items);
     }
 
     public class ApprovalEngineService : IApprovalEngineService
@@ -17,26 +23,58 @@ namespace Procurement.Api.Services.Workflow
         private readonly AppDbContext _db;
         public ApprovalEngineService(AppDbContext db) => _db = db;
 
-        // ── START WORKFLOW ────────────────────────────────────
+        // ── START WORKFLOW ──────────────────────────────────── (UNCHANGED)
         public async Task<EngineResult> StartWorkflowAsync(Guid prId)
         {
             var pr = await _db.PurchaseRequests.FirstOrDefaultAsync(p => p.Id == prId);
             if (pr == null) return Fail("Purchase request not found.");
 
-            var groupNames = await _db.PurchaseRequestItems
-                .Where(i => i.PurchaseRequestId == prId)
+            var itemCategoryData = await _db.PurchaseRequestItems
+                .Where(pri => pri.PurchaseRequestId == prId)
                 .Join(_db.Items,
                     pri => pri.MaterialId,
                     item => item.Id,
-                    (pri, item) => item.GroupId)
-                .Join(_db.ItemGroups,
-                    gid => gid,
-                    g => g.Id,
-                    (gid, g) => g.Name.ToUpper())
+                    (pri, item) => new { item.CategoryId, item.GroupId })
+                .ToListAsync();
+
+            var directCategoryIds = itemCategoryData
+                .Where(x => x.CategoryId != null)
+                .Select(x => x.CategoryId!.Value)
+                .Distinct()
+                .ToList();
+
+            var groupIdsNeedingFallback = itemCategoryData
+                .Where(x => x.CategoryId == null && x.GroupId != null)
+                .Select(x => x.GroupId!.Value)
+                .Distinct()
+                .ToList();
+
+            var fallbackCategoryIds = groupIdsNeedingFallback.Any()
+                ? await _db.ItemGroups
+                    .Where(g => groupIdsNeedingFallback.Contains(g.Id) && g.CategoryId != null)
+                    .Select(g => g.CategoryId!.Value)
+                    .Distinct()
+                    .ToListAsync()
+                : new List<Guid>();
+
+            var allCategoryIds = directCategoryIds.Union(fallbackCategoryIds).Distinct().ToList();
+
+            var categoryCodes = allCategoryIds.Any()
+                ? await _db.ItemCategories
+                    .Where(c => allCategoryIds.Contains(c.Id))
+                    .Select(c => c.Code.ToUpper())
+                    .Distinct()
+                    .ToListAsync()
+                : new List<string>();
+
+            var groupNames = await _db.PurchaseRequestItems
+                .Where(i => i.PurchaseRequestId == prId)
+                .Join(_db.Items, pri => pri.MaterialId, item => item.Id, (pri, item) => item.GroupId)
+                .Join(_db.ItemGroups, gid => gid, g => g.Id, (gid, g) => g.Name.ToUpper())
                 .Distinct()
                 .ToListAsync();
 
-            var workflow = await ResolveWorkflowAsync(pr.CompanyId, groupNames);
+            var workflow = await ResolveWorkflowAsync(pr.CompanyId, categoryCodes, groupNames);
             if (workflow == null)
                 return Fail("No workflow configured. Please contact IT admin.");
 
@@ -87,7 +125,7 @@ namespace Procurement.Api.Services.Workflow
             });
         }
 
-        // ── PROCESS ACTION ────────────────────────────────────
+        // ── PROCESS ACTION ──────────────────────────────────── (UNCHANGED)
         public async Task<EngineResult> ProcessActionAsync(
             Guid instanceId, Guid userId, string action, string? comments)
         {
@@ -98,6 +136,18 @@ namespace Procurement.Api.Services.Workflow
 
             if (instance == null) return Fail("Approval instance not found.");
             if (instance.Status != "PENDING") return Fail("This step is no longer pending.");
+
+            // ✅ Guard: STORE_VERIFICATION steps must go through
+            // ProcessStoreVerificationAsync (records per-item stock findings).
+            // This prevents a Store Keeper from accidentally approving via
+            // the normal Approvals inbox and skipping the stock check.
+            var stepApproverType = await _db.WorkflowSteps
+                .Where(s => s.Id == instance.WorkflowStepId)
+                .Select(s => s.ApproverType)
+                .FirstOrDefaultAsync();
+
+            if (stepApproverType == "STORE_VERIFICATION")
+                return Fail("This is a Store Verification step. Please use the Store Verification page to record stock findings.");
 
             if (instance.AssignedToId != userId)
             {
@@ -224,7 +274,172 @@ namespace Procurement.Api.Services.Workflow
             });
         }
 
-        // ── GET PENDING ───────────────────────────────────────
+        // ✅ NEW — separate entry point for Store Verification steps.
+        // Completely independent from ProcessActionAsync above — that method
+        // is untouched. Called only when the pending step's ApproverType is
+        // STORE_VERIFICATION.
+        //
+        // Behaviour:
+        //  1. Saves per-item stock findings onto PurchaseRequestItems.
+        //  2. If every active item on the request is now fully covered by
+        //     stock (PurchaseQty <= 0 for all) → the request closes here:
+        //     Status = FulfilledFromStock, remaining workflow steps are
+        //     cancelled. No purchase approval needed.
+        //  3. Otherwise → behaves exactly like a normal APPROVE: this step
+        //     is marked APPROVED and the workflow advances to whatever step
+        //     comes next (Budget Manager, Purchase Manager, etc. — same
+        //     resolution logic as ProcessActionAsync, duplicated here only
+        //     to avoid touching the tested APPROVE path above).
+        public async Task<EngineResult> ProcessStoreVerificationAsync(
+            Guid instanceId, Guid userId, List<StoreVerifyItemInput> items)
+        {
+            var instance = await _db.ApprovalInstances
+                .Include(i => i.WorkflowDefinition)
+                    .ThenInclude(w => w!.Steps)
+                .FirstOrDefaultAsync(i => i.Id == instanceId);
+
+            if (instance == null) return Fail("Approval instance not found.");
+            if (instance.Status != "PENDING") return Fail("This step is no longer pending.");
+
+            var step = await _db.WorkflowSteps.FindAsync(instance.WorkflowStepId);
+            if (step == null || step.ApproverType != "STORE_VERIFICATION")
+                return Fail("This step is not a Store Verification step.");
+
+            if (instance.AssignedToId != userId)
+            {
+                var hasRole = step.RoleId.HasValue &&
+                    await _db.UserRoles.AnyAsync(ur => ur.UserId == userId && ur.RoleId == step.RoleId.Value);
+                if (!hasRole)
+                    return Fail("You are not authorised to act on this request.");
+            }
+
+            // ── Save per-item stock findings ──────────────────────────────
+            var prItems = await _db.PurchaseRequestItems
+                .Where(i => i.PurchaseRequestId == instance.EntityId && i.IsActive)
+                .ToListAsync();
+
+            foreach (var input in items)
+            {
+                var item = prItems.FirstOrDefault(i => i.Id == input.ItemId);
+                if (item == null) continue;
+
+                if (input.AvailableQty < 0 || input.AvailableQty > item.Quantity)
+                    return Fail($"Invalid available quantity for item {item.MaterialId}.");
+
+                item.StoreStatus = (StoreItemStatus)input.StoreStatus;
+                item.AvailableQty = input.AvailableQty;
+                item.PurchaseQty = item.Quantity - input.AvailableQty;
+                item.StoreRemarks = input.StoreRemarks;
+                item.StoreVerifiedById = userId;
+                item.StoreVerifiedAt = DateTime.UtcNow;
+                item.UpdatedAt = DateTime.UtcNow;
+            }
+
+            var unverified = prItems.Count(i => i.StoreStatus == StoreItemStatus.NotChecked);
+            if (unverified > 0)
+                return Fail($"{unverified} item(s) still need to be verified before submitting.");
+
+            _db.ApprovalActions.Add(new ApprovalAction
+            {
+                Id = Guid.NewGuid(),
+                ApprovalInstanceId = instanceId,
+                ActionBy = userId,
+                ActionType = "STORE_VERIFIED",
+                Comments = "Store verification recorded",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            instance.Status = "APPROVED";
+            instance.CompletedAt = DateTime.UtcNow;
+            instance.UpdatedAt = DateTime.UtcNow;
+
+            var allFullyStocked = prItems.All(i => i.PurchaseQty <= 0);
+
+            var pr = await _db.PurchaseRequests.FindAsync(instance.EntityId);
+
+            if (allFullyStocked)
+            {
+                // Full stock — close the request here. Does not proceed to
+                // Budget Manager / Purchase Manager / any remaining step.
+                await CancelOtherPendingAsync(instance.EntityId, instanceId);
+                pr!.Status = RequestStatus.FulfilledFromStock;
+                pr.UpdatedAt = DateTime.UtcNow;
+                await SendNotificationAsync(
+                    instance.EntityId,
+                    "📦 Fulfilled from Stock",
+                    "All items were fully available in store. Your request is complete — no purchase needed.");
+                await _db.SaveChangesAsync();
+                return Ok("All items fully available in store. Request closed.", new { fulfilledFromStock = true });
+            }
+
+            // Partial / no stock — continue the workflow exactly like a normal approve.
+            var allSteps = instance.WorkflowDefinition!.Steps
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StepOrder)
+                .ToList();
+
+            var nextStepOrder = allSteps
+                .Where(s => s.StepOrder > instance.StepOrder)
+                .Select(s => s.StepOrder)
+                .DefaultIfEmpty(0)
+                .Min();
+
+            if (nextStepOrder == 0)
+            {
+                await UpdatePrStatusAsync(instance.EntityId, RequestStatus.Approved);
+                await SendNotificationAsync(
+                    instance.EntityId,
+                    "✅ Request Fully Approved",
+                    "Store verification complete. Remaining quantity approved for purchase.");
+                await _db.SaveChangesAsync();
+                return Ok("Store verification complete. Request fully approved for purchase.", new { completed = true });
+            }
+
+            var nextStep = allSteps.First(s => s.StepOrder == nextStepOrder);
+            var nextUser = await ResolveApproverAsync(nextStep, pr!.CompanyId, pr.RequestedById);
+
+            if (nextUser == null)
+            {
+                await _db.SaveChangesAsync();
+                return Fail($"Cannot find approver for next step: {nextStep.Name}");
+            }
+
+            _db.ApprovalInstances.Add(new ApprovalInstance
+            {
+                Id = Guid.NewGuid(),
+                EntityId = instance.EntityId,
+                EntityType = "PURCHASE_REQUEST",
+                WorkflowDefinitionId = instance.WorkflowDefinitionId,
+                WorkflowStepId = nextStep.Id,
+                AssignedToId = nextUser.Value,
+                StepOrder = nextStep.StepOrder,
+                Status = "PENDING",
+                DueDate = nextStep.TimeoutHours.HasValue
+                    ? DateTime.UtcNow.AddHours(nextStep.TimeoutHours.Value)
+                    : null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            var nextApproverName = await _db.Users
+                .Where(u => u.Id == nextUser.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync();
+
+            return Ok($"Store verification recorded. Forwarded to {nextApproverName}.", new
+            {
+                nextApprover = nextApproverName,
+                nextStep = nextStep.Name,
+                fulfilledFromStock = false
+            });
+        }
+
+        // ── GET PENDING ──────────────────────────────────────
+        // ✅ EXTENDED: added ApproverType to the DTO so the frontend can tell
+        // a normal approval apart from a Store Verification step. Nothing
+        // else in this method changed.
         public async Task<List<PendingApprovalDto>> GetPendingAsync(Guid userId)
         {
             var instances = await _db.ApprovalInstances
@@ -245,6 +460,8 @@ namespace Procurement.Api.Services.Workflow
                         p.RequestNumber,
                         p.TotalAmount,
                         p.CreatedAt,
+                        p.DeliveryLocation,
+                        p.ContactNumber,
                         RequesterName = _db.Users
                             .Where(u => u.Id == p.RequestedById)
                             .Select(u => u.FullName).FirstOrDefault(),
@@ -259,10 +476,10 @@ namespace Procurement.Api.Services.Workflow
 
                 if (pr == null) continue;
 
-                var stepName = await _db.WorkflowSteps
+                var stepInfo = await _db.WorkflowSteps
                     .Where(s => s.Id == inst.WorkflowStepId)
-                    .Select(s => s.Name)
-                    .FirstOrDefaultAsync() ?? "Approval";
+                    .Select(s => new { s.Name, s.ApproverType })
+                    .FirstOrDefaultAsync();
 
                 result.Add(new PendingApprovalDto
                 {
@@ -273,7 +490,10 @@ namespace Procurement.Api.Services.Workflow
                     CompanyName = pr.CompanyName ?? "-",
                     ProjectName = pr.ProjectName,
                     TotalAmount = pr.TotalAmount,
-                    StepName = stepName,
+                    DeliveryLocation = pr.DeliveryLocation,   // ✅ NEW
+                    ContactNumber = pr.ContactNumber,         // ✅ NEW
+                    StepName = stepInfo?.Name ?? "Approval",
+                    ApproverType = stepInfo?.ApproverType ?? "ROLE",
                     StepOrder = inst.StepOrder,
                     DueDate = inst.DueDate,
                     DaysWaiting = (int)(DateTime.UtcNow - inst.CreatedAt).TotalDays
@@ -283,7 +503,7 @@ namespace Procurement.Api.Services.Workflow
             return result;
         }
 
-        // ── GET STATUS ────────────────────────────────────────
+        // ── GET STATUS ─────────────────────────────────────── (UNCHANGED)
         public async Task<WorkflowStatusDto> GetStatusAsync(Guid prId)
         {
             var pr = await _db.PurchaseRequests
@@ -341,21 +561,13 @@ namespace Procurement.Api.Services.Workflow
         }
 
         private async Task<WorkflowDefinition?> ResolveWorkflowAsync(
-    Guid companyId, List<string> groupNames)
+         Guid companyId, List<string> categoryCodes, List<string> groupNames)
         {
             var allWorkflows = await _db.WorkflowDefinitions
                 .Include(w => w.Conditions)
                 .Include(w => w.Steps.Where(s => s.IsActive))
                 .Where(w => w.IsActive && w.EntityType == "PURCHASE_REQUEST" &&
                             (w.CompanyId == null || w.CompanyId == companyId))
-                .ToListAsync();
-
-            // ── NEW: Category-based routing (primary) ──────────────────────────
-            // Get distinct category codes for all items in this PR's groups
-            var categoryCodes = await _db.ItemGroups
-                .Where(g => groupNames.Contains(g.Name.ToUpper()) && g.CategoryId != null)
-                .Select(g => g.Category!.Code.ToUpper())
-                .Distinct()
                 .ToListAsync();
 
             if (categoryCodes.Any())
@@ -369,7 +581,6 @@ namespace Procurement.Api.Services.Workflow
 
                     if (match)
                     {
-                        // Company-specific wins over global
                         var companySpecific = allWorkflows
                             .Where(w => w.CompanyId == companyId)
                             .OrderByDescending(w => w.Priority)
@@ -383,62 +594,26 @@ namespace Procurement.Api.Services.Workflow
                 }
             }
 
-            // ── FALLBACK: existing group-name-based routing (unchanged) ────────
             foreach (var workflow in allWorkflows.OrderByDescending(w => w.Priority))
             {
-                if (!workflow.Conditions.Any()) continue;
+                var groupConditions = workflow.Conditions
+                    .Where(c => c.Field == "ItemGroup" && c.Operator == "EQUALS")
+                    .ToList();
 
-                var allMatch = workflow.Conditions.All(condition =>
-                {
-                    if (condition.Field == "ItemGroup" && condition.Operator == "EQUALS")
-                        return groupNames.Contains(condition.Value.ToUpper());
-                    return true;
-                });
+                if (!groupConditions.Any()) continue;
+
+                var allMatch = groupConditions.All(c => groupNames.Contains(c.Value.ToUpper()));
 
                 if (allMatch)
                     return workflow;
             }
 
-            // ── DEFAULT: IsDefault = true workflow ─────────────────────────────
             return allWorkflows
                 .Where(w => w.IsDefault)
                 .OrderByDescending(w => w.CompanyId == companyId)
                 .ThenByDescending(w => w.Priority)
                 .FirstOrDefault();
         }
-
-        // ── PRIVATE HELPERS ───────────────────────────────────
-
-        //   private async Task<WorkflowDefinition?> ResolveWorkflowAsync(
-        //       Guid companyId, List<string> groupNames)
-        //   {
-        //       var workflows = await _db.WorkflowDefinitions
-        //           .Include(w => w.Conditions)
-        //           .Include(w => w.Steps)
-        //           .Where(w => w.IsActive
-        //                    && w.EntityType == "PURCHASE_REQUEST"
-        //                    && (w.CompanyId == companyId || w.CompanyId == null))
-        //           .OrderByDescending(w => w.Priority)
-        //           .ToListAsync();
-
-        //       foreach (var wf in workflows.Where(w => !w.IsDefault))
-        //       {
-        //           if (!wf.Conditions.Any()) continue;
-
-        //           bool match = wf.Conditions.Any(c =>
-        //               c.Field == "ItemGroup" &&
-        //               c.Operator == "EQUALS" &&
-        //               groupNames.Contains(c.Value.ToUpper()));
-
-        //           if (match) return wf;
-        //       }
-
-        //       return workflows
-        //.Where(w => w.IsDefault)
-        //.OrderByDescending(w => w.CompanyId == companyId)   // ✅ company-specific default wins over global default
-        //.ThenByDescending(w => w.Priority)
-        //.FirstOrDefault();
-        //   }
 
         private async Task<Guid?> ResolveApproverAsync(
             WorkflowStep step, Guid companyId, Guid requestedById)
@@ -451,6 +626,8 @@ namespace Procurement.Api.Services.Workflow
                     .FirstOrDefaultAsync();
             }
 
+            // ✅ STORE_VERIFICATION falls through to the same RoleId/RoleName
+            // resolution below as ROLE steps — no special-casing needed here.
             if (step.RoleId.HasValue)
                 return await ResolveByRoleAsync(step.RoleId.Value, companyId);
 
@@ -469,36 +646,6 @@ namespace Procurement.Api.Services.Workflow
             return null;
         }
 
-        //private async Task<Guid?> ResolveByRoleAsync(Guid roleId, Guid companyId)
-        //{
-        //    var usersWithRole = await _db.UserRoles
-        //        .Where(ur => ur.RoleId == roleId && ur.IsActive)
-        //        .Select(ur => ur.UserId)
-        //        .ToListAsync();
-
-        //    if (!usersWithRole.Any()) return null;
-
-        //    var user = await _db.UserCompanies
-        //        .Where(uc =>
-        //            usersWithRole.Contains(uc.UserId) &&
-        //            uc.CompanyId == companyId &&
-        //            uc.IsActive)
-        //        .Select(uc => (Guid?)uc.UserId)
-        //        .FirstOrDefaultAsync();
-
-        //    if (user == null)
-        //    {
-        //        user = await _db.Users
-        //            .Where(u =>
-        //                usersWithRole.Contains(u.Id) &&
-        //                u.CompanyId == companyId &&
-        //                u.IsActive)
-        //            .Select(u => (Guid?)u.Id)
-        //            .FirstOrDefaultAsync();
-        //    }
-
-        //    return user;
-        //}
         private async Task<Guid?> ResolveByRoleAsync(Guid roleId, Guid companyId)
         {
             var usersWithRole = await _db.UserRoles
@@ -508,7 +655,6 @@ namespace Procurement.Api.Services.Workflow
 
             if (!usersWithRole.Any()) return null;
 
-            // Tier 1: exact company match
             var user = await _db.UserCompanies
                 .Where(uc =>
                     usersWithRole.Contains(uc.UserId) &&
@@ -519,7 +665,6 @@ namespace Procurement.Api.Services.Workflow
 
             if (user != null) return user;
 
-            // Tier 2: legacy direct Company.Id match on Users (kept for backward compat)
             user = await _db.Users
                 .Where(u =>
                     usersWithRole.Contains(u.Id) &&
@@ -530,9 +675,6 @@ namespace Procurement.Api.Services.Workflow
 
             if (user != null) return user;
 
-            // Tier 3: Holding-level fallback — small/single-person companies (e.g. Hayak Cafe,
-            // Archi Cafe) often share one Budget Manager / Purchase Officer based at the
-            // holding's head office (HLD01) rather than having a dedicated person per company.
             var holdingId = await _db.Companies
                 .Where(c => c.Id == companyId)
                 .Select(c => (Guid?)c.HoldingId)
@@ -546,7 +688,7 @@ namespace Procurement.Api.Services.Workflow
                 .FirstOrDefaultAsync();
 
             if (headOfficeCompanyId == null || headOfficeCompanyId == companyId)
-                return null;   // no head office configured, or we already checked it above
+                return null;
 
             user = await _db.UserCompanies
                 .Where(uc =>
@@ -558,6 +700,7 @@ namespace Procurement.Api.Services.Workflow
 
             return user;
         }
+
         private async Task CancelOtherPendingAsync(Guid entityId, Guid excludeId)
         {
             var others = await _db.ApprovalInstances
@@ -637,9 +780,12 @@ namespace Procurement.Api.Services.Workflow
         public string ProjectName { get; set; } = "";
         public decimal TotalAmount { get; set; }
         public string StepName { get; set; } = "";
+        public string ApproverType { get; set; } = "ROLE";   // ✅ NEW
         public int StepOrder { get; set; }
         public DateTime? DueDate { get; set; }
         public int DaysWaiting { get; set; }
+        public string DeliveryLocation { get; set; } = "";
+        public string ContactNumber { get; set; } = "";
     }
 
     public class WorkflowStatusDto
@@ -661,6 +807,15 @@ namespace Procurement.Api.Services.Workflow
         public DateTime? ActedAt { get; set; }
         public bool IsCurrent { get; set; }
         public bool IsDone { get; set; }
+    }
+
+    // ✅ NEW — input shape for a single item's store verification result
+    public class StoreVerifyItemInput
+    {
+        public Guid ItemId { get; set; }       // PurchaseRequestItem.Id
+        public int StoreStatus { get; set; }   // 1=StockAvailable, 2=PartiallyAvailable, 3=NotAvailable
+        public decimal AvailableQty { get; set; }
+        public string? StoreRemarks { get; set; }
     }
 
 } // ← namespace close

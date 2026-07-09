@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
 import {
-  RefreshCw, Plus, Trash2, CheckCircle2, XCircle,
+  RefreshCw, Plus, Trash2, Pencil, Save, X, CheckCircle2, XCircle,
   Clock, Database, Building2, Link2, AlertTriangle,
   ChevronDown, ChevronUp, Activity
 } from 'lucide-react';
@@ -48,13 +48,36 @@ interface SyncResult {
   projectsProcessed: number;
   projectsSkipped: number;
 }
+interface SchedulerStatus {
+  enabled: boolean;
+  isRunning: boolean;
+  lastRunStartedAt: string | null;
+  lastRunCompletedAt: string | null;
+  lastRunSuccess: boolean | null;
+  lastRunSummary: string | null;
+  lastRunError: string | null;
+  nextRunAt: string | null;
+  consecutiveFailures: number;
+  totalRunsCompleted: number;
+  isFailing: boolean;
+}
 
-function fmtDate(iso: string) {
+function fmtDate(iso: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Qatar'
   });
+}
+
+function fmtRelative(iso: string | null) {
+  if (!iso) return '—';
+  const diffMs = new Date(iso).getTime() - Date.now();
+  const diffMin = Math.round(diffMs / 60000);
+  if (Math.abs(diffMin) < 1) return 'just now';
+  if (diffMin > 0) return `in ${diffMin} min`;
+  return `${Math.abs(diffMin)} min ago`;
 }
 
 function StatusDot({ status }: { status: number }) {
@@ -87,24 +110,75 @@ function StatusCard({ icon, label, value, sub }: {
   );
 }
 
+function SchedulerStatusCard({ s }: { s: SchedulerStatus }) {
+  const dotColor = s.isFailing ? 'bg-red-500' : s.enabled ? 'bg-emerald-500' : 'bg-gray-400';
+  const label = s.isFailing ? 'Failing' : s.enabled ? 'Active' : 'Disabled';
+  const labelColor = s.isFailing ? 'text-red-600' : s.enabled ? 'text-emerald-600' : 'text-gray-400';
+
+  return (
+    <div className={`rounded-2xl shadow-sm px-5 py-4 border ${
+      s.isFailing ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-white'
+    }`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 text-gray-400 text-xs">
+          <Activity size={14} />
+          <span>Auto-Sync Scheduler</span>
+        </div>
+        <span className={`flex items-center gap-1.5 text-xs font-medium ${labelColor}`}>
+          <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+          {label}
+        </span>
+      </div>
+      <p className="text-sm text-gray-700">
+        {s.isRunning
+          ? 'Sync running now…'
+          : s.lastRunCompletedAt
+            ? `Last run: ${fmtRelative(s.lastRunCompletedAt)} ${s.lastRunSuccess ? '✅' : '❌'}`
+            : 'No runs yet'}
+      </p>
+      <p className="text-xs text-gray-400 mt-0.5">
+        {s.nextRunAt && `Next run: ${fmtRelative(s.nextRunAt)}`}
+        {s.consecutiveFailures > 0 && ` · ${s.consecutiveFailures} consecutive failure${s.consecutiveFailures > 1 ? 's' : ''}`}
+      </p>
+      {s.isFailing && s.lastRunError && (
+        <p className="text-xs text-red-600 mt-1 truncate" title={s.lastRunError}>
+          {s.lastRunError}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function OracleMonitor() {
-  const [status,       setStatus]       = useState<SyncStatus | null>(null);
-  const [mappings,     setMappings]     = useState<Mapping[]>([]);
-  const [companies,    setCompanies]    = useState<Company[]>([]);
-  const [sources,      setSources]      = useState<string[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [syncing,      setSyncing]      = useState<string | null>(null);
-  const [syncResult,   setSyncResult]   = useState<Record<string, SyncResult> | null>(null);
-  const [error,        setError]        = useState<string | null>(null);
-  const [showAddForm,  setShowAddForm]  = useState(false);
-  const [logsExpanded, setLogsExpanded] = useState(false);
-  const [deactivating, setDeactivating] = useState<string | null>(null);
+  const [status,          setStatus]          = useState<SyncStatus | null>(null);
+  const [mappings,        setMappings]        = useState<Mapping[]>([]);
+  const [companies,       setCompanies]       = useState<Company[]>([]);
+  const [sources,         setSources]         = useState<string[]>([]);
+  const [loading,         setLoading]         = useState(true);
+  const [syncing,         setSyncing]         = useState<string | null>(null);
+  const [syncResult,      setSyncResult]      = useState<Record<string, SyncResult> | null>(null);
+  const [error,           setError]           = useState<string | null>(null);
+  const [showAddForm,     setShowAddForm]     = useState(false);
+  const [logsExpanded,    setLogsExpanded]    = useState(false);
+  const [deactivating,    setDeactivating]    = useState<string | null>(null);
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null);
 
   const [form, setForm] = useState({
     oracleSource: '', branchId: '', companyId: '', notes: '',
   });
   const [formError,  setFormError]  = useState<string | null>(null);
   const [formSaving, setFormSaving] = useState(false);
+
+  // ── Edit mapping ─────────────────────────────────────────────────────────
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm]   = useState({
+    companyId: '', effectiveFrom: '', effectiveTo: '', notes: '', isActive: true,
+  });
+  const [editError,  setEditError]  = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
+  // ── Historical mappings (collapsed by default) ──────────────────────────
+  const [showHistorical, setShowHistorical] = useState(false);
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -130,6 +204,19 @@ export default function OracleMonitor() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // ── Scheduler status polling (every 30s, independent of main loadAll) ─────
+  const loadSchedulerStatus = useCallback(() => {
+    api.get('/erp-sync/scheduler-status')
+      .then(r => setSchedulerStatus(r.data?.data ?? r.data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadSchedulerStatus();
+    const interval = setInterval(loadSchedulerStatus, 30000);
+    return () => clearInterval(interval);
+  }, [loadSchedulerStatus]);
+
   // ── Incremental Sync ──────────────────────────────────────────────────────
   async function runSync(source: string) {
     setSyncing(source);
@@ -139,6 +226,7 @@ export default function OracleMonitor() {
       const res = await api.post(`/erp-sync/run?source=${source}`);
       setSyncResult(res.data?.data ?? res.data);
       await loadAll();
+      loadSchedulerStatus();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? e?.message ?? 'Sync failed.');
     } finally {
@@ -162,6 +250,7 @@ export default function OracleMonitor() {
       const res = await api.post(`/erp-sync/run?source=${source}`);
       setSyncResult(res.data?.data ?? res.data);
       await loadAll();
+      loadSchedulerStatus();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? e?.message ?? 'Full sync failed.');
     } finally {
@@ -209,6 +298,49 @@ export default function OracleMonitor() {
     }
   }
 
+  // ── Edit Mapping ──────────────────────────────────────────────────────────
+  // Note: OracleSource / BranchId are NOT editable (matches backend rule —
+  // changing them would break sync-history identity). CompanyId, dates,
+  // notes, and active status can be changed here.
+  function startEdit(m: Mapping) {
+    setEditingId(m.id);
+    setEditError(null);
+    setEditForm({
+      companyId:     m.companyId,
+      effectiveFrom: m.effectiveFrom?.slice(0, 10) ?? '',
+      effectiveTo:   m.effectiveTo?.slice(0, 10) ?? '',
+      notes:         m.notes ?? '',
+      isActive:      m.isActive,
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function saveEdit(id: string) {
+    setEditError(null);
+    if (!editForm.companyId) { setEditError('Company is required.'); return; }
+    if (!editForm.effectiveFrom) { setEditError('Effective From is required.'); return; }
+    setEditSaving(true);
+    try {
+      await api.put(`/oracle-source-mappings/${id}`, {
+        companyId:     editForm.companyId,
+        effectiveFrom: editForm.effectiveFrom,
+        effectiveTo:   editForm.effectiveTo || null,
+        notes:         editForm.notes.trim() || null,
+        isActive:      editForm.isActive,
+      });
+      setEditingId(null);
+      await loadAll();
+    } catch (e: any) {
+      setEditError(e?.response?.data?.message ?? e?.message ?? 'Failed to update mapping.');
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const currentMappings  = mappings.filter(m => m.isCurrent);
   const historicMappings = mappings.filter(m => !m.isCurrent);
@@ -236,11 +368,25 @@ export default function OracleMonitor() {
             Bright ERP sync status, branch-to-company mappings, and manual sync controls.
           </p>
         </div>
-        <button onClick={loadAll}
+        <button onClick={() => { loadAll(); loadSchedulerStatus(); }}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border rounded-xl px-3 py-2 hover:bg-gray-50 transition">
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
+
+      {/* Failing scheduler banner (only shown when actively failing) */}
+      {schedulerStatus?.isFailing && (
+        <div className="bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm flex gap-2 items-start">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Auto-sync is failing</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              {schedulerStatus.consecutiveFailures} consecutive failures.
+              {schedulerStatus.lastRunError ? ` Last error: ${schedulerStatus.lastRunError}` : ''}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -295,12 +441,41 @@ export default function OracleMonitor() {
         </div>
       </section>
 
+      {/* Section 1b: Auto-Sync Scheduler Status */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          Background Scheduler
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {schedulerStatus ? (
+            <SchedulerStatusCard s={schedulerStatus} />
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-5 py-4 text-sm text-gray-400">
+              Loading scheduler status…
+            </div>
+          )}
+          <StatusCard
+            icon={<CheckCircle2 size={18} className="text-emerald-500" />}
+            label="Total Auto-Runs Completed"
+            value={schedulerStatus ? String(schedulerStatus.totalRunsCompleted) : '—'}
+            sub="since app started"
+          />
+          <StatusCard
+            icon={<Clock size={18} className="text-gray-400" />}
+            label="Next Auto-Run"
+            value={schedulerStatus?.nextRunAt ? fmtRelative(schedulerStatus.nextRunAt) : '—'}
+            sub={schedulerStatus?.nextRunAt ? fmtDate(schedulerStatus.nextRunAt) : 'Scheduler not reporting'}
+          />
+        </div>
+      </section>
+
       {/* Section 2: Sync Controls */}
       <section className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-gray-800">Run Sync Now</h2>
           <p className="text-xs text-gray-400 mt-0.5">
             Incremental sync pulls only new/updated records since the last watermark.
+            Auto-sync also runs this in the background every few minutes — manual runs are for on-demand/emergency use.
           </p>
         </div>
 
@@ -448,41 +623,154 @@ export default function OracleMonitor() {
                   </td>
                 </tr>
               )}
-              {currentMappings.map(m => (
-                <tr key={m.id} className="hover:bg-gray-50 transition">
-                  <td className="px-5 py-3 font-mono text-xs text-gray-600">{m.oracleSource}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-800 font-semibold">{m.branchId}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-gray-800">{m.companyName}</span>
-                    <span className="ml-1.5 text-xs text-gray-400">{m.companyCode}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(m.effectiveFrom)}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                      <CheckCircle2 size={11} /> Active
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{m.notes ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => deactivate(m.id, m.branchId, m.companyName)}
-                      disabled={deactivating === m.id}
-                      title="Deactivate mapping"
-                      className="text-gray-300 hover:text-red-500 transition disabled:opacity-50">
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {currentMappings.map(m => {
+                const isEditing = editingId === m.id;
+                return isEditing ? (
+                  <tr key={m.id} className="bg-blue-50">
+                    <td colSpan={7} className="px-5 py-4">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-start">
+                        <div className="text-xs text-gray-500">
+                          <span className="block font-medium text-gray-400 mb-1">Source / Branch (fixed)</span>
+                          <span className="font-mono">{m.oracleSource} · {m.branchId}</span>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">Company</label>
+                          <select
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            value={editForm.companyId}
+                            onChange={e => setEditForm(f => ({ ...f, companyId: e.target.value }))}>
+                            {companies.map(c => (
+                              <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">Effective From</label>
+                          <input type="date"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            value={editForm.effectiveFrom}
+                            onChange={e => setEditForm(f => ({ ...f, effectiveFrom: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">
+                            Effective To <span className="text-gray-300">(leave blank = current)</span>
+                          </label>
+                          <input type="date"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            value={editForm.effectiveTo}
+                            onChange={e => setEditForm(f => ({ ...f, effectiveTo: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">Notes</label>
+                          <input
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            value={editForm.notes}
+                            onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 mt-3 text-xs text-gray-600">
+                        <input type="checkbox"
+                          checked={editForm.isActive}
+                          onChange={e => setEditForm(f => ({ ...f, isActive: e.target.checked }))} />
+                        Active
+                      </label>
+                      {editError && <p className="text-red-600 text-xs mt-2">{editError}</p>}
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => saveEdit(m.id)}
+                          disabled={editSaving}
+                          className="flex items-center gap-1.5 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                          <Save size={12} /> {editSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-100 transition">
+                          <X size={12} /> Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={m.id} className="hover:bg-gray-50 transition">
+                    <td className="px-5 py-3 font-mono text-xs text-gray-600">{m.oracleSource}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-800 font-semibold">{m.branchId}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-gray-800">{m.companyName}</span>
+                      <span className="ml-1.5 text-xs text-gray-400">{m.companyCode}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(m.effectiveFrom)}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                        <CheckCircle2 size={11} /> Active
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{m.notes ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => startEdit(m)}
+                          title="Edit mapping"
+                          className="text-gray-300 hover:text-blue-500 transition">
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => deactivate(m.id, m.branchId, m.companyName)}
+                          disabled={deactivating === m.id}
+                          title="Deactivate mapping"
+                          className="text-gray-300 hover:text-red-500 transition disabled:opacity-50">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
+        {/* Historical Mappings — now expandable instead of just a count */}
         {historicMappings.length > 0 && (
-          <div className="border-t px-5 py-3 bg-gray-50">
-            <p className="text-xs text-gray-400">
-              {historicMappings.length} historical / closed mapping{historicMappings.length > 1 ? 's' : ''} not shown.
-            </p>
+          <div className="border-t bg-gray-50">
+            <button
+              onClick={() => setShowHistorical(v => !v)}
+              className="w-full flex items-center justify-between px-5 py-3 text-xs text-gray-500 hover:text-gray-800 transition">
+              <span>
+                {historicMappings.length} historical / closed mapping{historicMappings.length > 1 ? 's' : ''}
+              </span>
+              {showHistorical ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {showHistorical && (
+              <div className="overflow-x-auto border-t">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 text-gray-500 text-xs uppercase tracking-wide">
+                    <tr>
+                      <th className="px-5 py-2.5 text-left">Source</th>
+                      <th className="px-4 py-2.5 text-left">Branch ID</th>
+                      <th className="px-4 py-2.5 text-left">Company</th>
+                      <th className="px-4 py-2.5 text-left">Effective From</th>
+                      <th className="px-4 py-2.5 text-left">Effective To</th>
+                      <th className="px-4 py-2.5 text-left">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {historicMappings.map(m => (
+                      <tr key={m.id} className="text-gray-400">
+                        <td className="px-5 py-2.5 font-mono text-xs">{m.oracleSource}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{m.branchId}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-gray-500">{m.companyName}</span>
+                          <span className="ml-1.5 text-xs">{m.companyCode}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs">{fmtDate(m.effectiveFrom)}</td>
+                        <td className="px-4 py-2.5 text-xs">{fmtDate(m.effectiveTo)}</td>
+                        <td className="px-4 py-2.5 text-xs">{m.notes ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </section>

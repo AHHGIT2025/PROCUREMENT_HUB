@@ -17,17 +17,20 @@ namespace Procurement.Api.Controllers.Integration
         private readonly IErpConnector _hqConnector;
         private readonly IErpConnector _fmcgConnector;
         private readonly AppDbContext _db;
+        private readonly ErpSyncSchedulerStatus _schedulerStatus;
 
         public ErpSyncController(
             ErpSyncOrchestrator orchestrator,
             [FromKeyedServices("HQ")] IErpConnector hqConnector,
             [FromKeyedServices("FMCG")] IErpConnector fmcgConnector,
-            AppDbContext db)
+            AppDbContext db,
+            ErpSyncSchedulerStatus schedulerStatus)
         {
             _orchestrator = orchestrator;
             _hqConnector = hqConnector;
             _fmcgConnector = fmcgConnector;
             _db = db;
+            _schedulerStatus = schedulerStatus;
         }
 
         // POST api/erp-sync/run?source=HQ|FMCG|All
@@ -134,7 +137,20 @@ namespace Procurement.Api.Controllers.Integration
                 })
                 .ToListAsync();
 
+            // NOTE: DateTime -> UTC "Z" correction is now handled globally by
+            // UtcDateTimeJsonConverter (registered in Program.cs), so no
+            // per-field fixups are needed here anymore.
             return Ok(ApiResponse<object>.Ok(new { watermarks, recentLogs }));
+        }
+
+        // GET api/erp-sync/scheduler-status
+        // Powers the "Auto-sync: ON | Last run ... | Next run ..." status
+        // card on the Oracle Monitor page. Purely reads in-memory state
+        // from the background scheduler — no DB hit needed here.
+        [HttpGet("scheduler-status")]
+        public IActionResult SchedulerStatus()
+        {
+            return Ok(ApiResponse<object>.Ok(_schedulerStatus.ToDto()));
         }
     }
 }

@@ -29,9 +29,14 @@ interface SearchDropdownProps {
   searchFn: (item: any, query: string) => boolean;
   disabled?: boolean;
   required?: boolean;
+  onQueryChange?: (query: string) => void;
+  loading?: boolean;
 }
 
-function SearchDropdown({ items, value, onChange, placeholder, displayFn, searchFn, disabled, required }: SearchDropdownProps) {
+function SearchDropdown({
+  items, value, onChange, placeholder, displayFn, searchFn, disabled, required,
+  onQueryChange, loading,
+}: SearchDropdownProps) {
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState("");
   const inputRef              = useRef<HTMLInputElement>(null);
@@ -42,7 +47,6 @@ function SearchDropdown({ items, value, onChange, placeholder, displayFn, search
     ? items.filter(i => searchFn(i, query.trim().toLowerCase()))
     : items;
 
-  // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -76,7 +80,6 @@ function SearchDropdown({ items, value, onChange, placeholder, displayFn, search
 
   return (
     <div ref={wrapRef} className="relative">
-      {/* Display box */}
       <div
         onClick={openDropdown}
         className={`w-full border rounded-xl px-3 py-2 flex items-center justify-between cursor-pointer text-sm transition ${
@@ -98,21 +101,28 @@ function SearchDropdown({ items, value, onChange, placeholder, displayFn, search
         </div>
       </div>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
+          <div className="p-2 border-b border-gray-100 relative">
             <input
               ref={inputRef}
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => {
+                setQuery(e.target.value);
+                onQueryChange?.(e.target.value);
+              }}
               placeholder="Type to search..."
               className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
+            {loading && (
+              <Loader2 size={14} className="animate-spin text-blue-400 absolute right-4 top-1/2 -translate-y-1/2" />
+            )}
           </div>
           <div className="max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-gray-400 text-center">No results found</div>
+              <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                {loading ? "Searching…" : "No results found"}
+              </div>
             ) : (
               filtered.slice(0, 100).map(item => (
                 <div
@@ -133,12 +143,9 @@ function SearchDropdown({ items, value, onChange, placeholder, displayFn, search
               </div>
             )}
           </div>
-          
         </div>
-        
       )}
     </div>
-    
   );
 }
 
@@ -154,11 +161,12 @@ export default function CreateRequest() {
   const [projects,    setProjects]    = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [materials,   setMaterials]   = useState<any[]>([]);
+  const [materialSearching, setMaterialSearching] = useState(false);
   const [msg,         setMsg]         = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [requestNo,   setRequestNo]   = useState("AUTO");
   const [editIndex,   setEditIndex]   = useState<number | null>(null);
   const [uploading,   setUploading]   = useState(false);
-  const [submitting,  setSubmitting]  = useState(false);  // ← duplicate prevention
+  const [submitting,  setSubmitting]  = useState(false);
 
   const [currentItem, setCurrentItem] = useState<any>({
     materialId: "", materialCode: "", materialName: "", quantity: 1,
@@ -170,6 +178,7 @@ export default function CreateRequest() {
   const [form, setForm] = useState<any>({
     companyId: "", projectId: "", departmentId: "",
     requestedById: user.id, justification: "",
+    deliveryLocation: "", contactNumber: "",
     submit: true, items: [],
   });
 
@@ -179,7 +188,6 @@ export default function CreateRequest() {
       .then(r => {
         const list: any[] = r.data?.data ?? r.data ?? [];
         setCompanies(list);
-        // Auto-select: user's primary company first, else single company
         const primaryId = user.companyId;
         if (primaryId && list.some((c: any) => c.id === primaryId)) {
           handleCompanyChange(primaryId, list);
@@ -207,12 +215,14 @@ export default function CreateRequest() {
         ? pr.departmentId : "";
 
       setForm({
-        companyId:     pr.companyId,
-        projectId:     validProjectId,
-        departmentId:  validDeptId,
-        requestedById: user.id,
-        justification: pr.justification ?? "",
-        submit:        true,
+        companyId:        pr.companyId,
+        projectId:        validProjectId,
+        departmentId:      validDeptId,
+        requestedById:     user.id,
+        justification:     pr.justification ?? "",
+        deliveryLocation:  pr.deliveryLocation ?? "",
+        contactNumber:     pr.contactNumber ?? "",
+        submit:            true,
         items: (pr.items ?? []).map((i: any) => ({
           materialId:         i.materialId,
           materialCode:       i.materialCode,
@@ -262,12 +272,51 @@ export default function CreateRequest() {
       setDepartments(Array.isArray(deptList) ? deptList : []);
       setMaterials(Array.isArray(matList) ? matList : []);
 
-      return { projList, deptList }; // ✅ ഇത് മാത്രം add ചെയ്തു
+      return { projList, deptList };
     } catch (err) {
       console.error("Failed to load company data", err);
-      return { projList: [], deptList: [] }; // ✅ error-ലും return
+      return { projList: [], deptList: [] };
     }
   }
+
+  // ── Live material search (debounced backend query) ─────────────────────────
+  const materialSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleMaterialSearch(query: string) {
+    if (materialSearchTimeout.current) clearTimeout(materialSearchTimeout.current);
+
+    materialSearchTimeout.current = setTimeout(async () => {
+      if (!form.companyId) return;
+
+      if (!query.trim()) {
+        setMaterialSearching(true);
+        try {
+          const r = await api.get(`/materials`, {
+            params: { companyId: form.companyId, page: 1, pageSize: 500 }
+          });
+          const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
+          setMaterials(Array.isArray(list) ? list : []);
+        } finally {
+          setMaterialSearching(false);
+        }
+        return;
+      }
+
+      setMaterialSearching(true);
+      try {
+        const r = await api.get(`/materials`, {
+          params: { companyId: form.companyId, page: 1, pageSize: 100, search: query.trim() }
+        });
+        const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
+        setMaterials(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error("Material search failed", err);
+      } finally {
+        setMaterialSearching(false);
+      }
+    }, 350);
+  }
+
   // ── Project select — auto-fill department ─────────────────────────────────
   function onProjectSelect(projectId: string, _item: any) {
     const selected = projects.find(p => p.id === projectId);
@@ -360,35 +409,35 @@ export default function CreateRequest() {
     setForm((f: any) => ({ ...f, items: f.items.filter((_: any, i: number) => i !== index) }));
   }
 
-  // ── Total amount — always computed from current items ─────────────────────
   const totalAmount = form.items.reduce(
     (sum: number, i: any) => sum + Number(i.quantity || 0) * Number(i.estimatedUnitPrice || 0), 0
   );
 
-  // ── Toast helper ──────────────────────────────────────────────────────────
   function showMsg(text: string, type: "success" | "error") {
     setMsg({ text, type });
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (type === "success") setTimeout(() => setMsg(null), 4000);
   }
 
-  // ── Submit / Save Draft ───────────────────────────────────────────────────
   async function submitRequest(isSubmit: boolean) {
-    // Validation
     if (!form.companyId)         { showMsg("Please select a Company", "error");         return; }
     if (!form.projectId)         { showMsg("Please select a Project", "error");         return; }
+    if (!form.deliveryLocation?.trim()) { showMsg("Please enter Delivery Location", "error"); return; }
+    if (!form.contactNumber?.trim())    { showMsg("Please enter Contact Number", "error");    return; }
     if (form.items.length === 0) { showMsg("Please add at least one item", "error");    return; }
-    if (submitting)              return;  // ← prevent double click
+    if (submitting)              return;
 
     setSubmitting(true);
     try {
       const payload = {
-        companyId:     form.companyId,
-        projectId:     form.projectId,
-        departmentId:  form.departmentId || null,
-        requestedById: form.requestedById,
-        justification: form.justification,
-        submit:        isSubmit,
+        companyId:         form.companyId,
+        projectId:         form.projectId,
+        departmentId:      form.departmentId || null,
+        requestedById:     form.requestedById,
+        justification:     form.justification,
+        deliveryLocation:  form.deliveryLocation,
+        contactNumber:     form.contactNumber,
+        submit:            isSubmit,
         items: form.items.map((i: any) => ({
           materialId:         i.materialId,
           quantity:           Number(i.quantity),
@@ -402,7 +451,6 @@ export default function CreateRequest() {
       };
 
       if (isEditMode && editId) {
-        // Edit mode — update then optionally resubmit
         await api.put(`/purchase-requests/${editId}`, payload);
         if (isSubmit) {
           const res = await api.post(`/purchase-requests/${editId}/resubmit`);
@@ -411,7 +459,6 @@ export default function CreateRequest() {
           showMsg(`✅ Draft updated: ${requestNo}`, "success");
         }
       } else {
-        // Create mode
         const res = await api.post("/purchase-requests", payload);
         const num = res.data.requestNumber;
         setRequestNo(num);
@@ -423,7 +470,6 @@ export default function CreateRequest() {
         );
       }
 
-      // Redirect after short delay
       setTimeout(() => navigate("/my-requests"), 1800);
 
     } catch (err: any) {
@@ -433,12 +479,10 @@ export default function CreateRequest() {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ── Header ── */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           <div className="border-l-4 border-blue-600 pl-4">
             <h1 className="text-2xl font-bold text-gray-800">
@@ -450,7 +494,6 @@ export default function CreateRequest() {
           </div>
         </div>
 
-        {/* ── Toast ── */}
         {msg && (
           <div className={`px-5 py-4 rounded-xl border text-sm font-medium flex items-center gap-3 ${
             msg.type === "success"
@@ -462,7 +505,6 @@ export default function CreateRequest() {
           </div>
         )}
 
-        {/* ── Request Details ── */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 space-y-5">
           <div className="border-l-4 border-blue-600 pl-3">
             <h2 className="text-lg font-semibold text-gray-800">Request Details</h2>
@@ -470,14 +512,12 @@ export default function CreateRequest() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
 
-            {/* Request Number */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Request Number</label>
               <input disabled value={requestNo}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 bg-gray-100 text-sm text-gray-500" />
             </div>
 
-            {/* Company */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">
                 Company <span className="text-red-500">*</span>
@@ -495,7 +535,6 @@ export default function CreateRequest() {
               </select>
             </div>
 
-            {/* Project — Searchable */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">
                 Project <span className="text-red-500">*</span>
@@ -515,7 +554,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Department — auto-filled */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Department</label>
               <select
@@ -534,9 +572,32 @@ export default function CreateRequest() {
               )}
             </div>
 
+            <div>
+              <label className="block text-sm text-gray-500 mb-1.5 font-medium">
+                Delivery Location <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={form.deliveryLocation}
+                onChange={e => setForm((f: any) => ({ ...f, deliveryLocation: e.target.value }))}
+                placeholder="e.g. Main Store, Site A Warehouse"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 mb-1.5 font-medium">
+                Contact Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={form.contactNumber}
+                onChange={e => setForm((f: any) => ({ ...f, contactNumber: e.target.value }))}
+                placeholder="e.g. +974 5555 1234"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:outline-none"
+              />
+            </div>
+
           </div>
 
-          {/* Business Justification */}
           <div>
             <label className="block text-sm text-gray-500 mb-1.5 font-medium">Business Justification</label>
             <textarea
@@ -549,7 +610,6 @@ export default function CreateRequest() {
           </div>
         </div>
 
-        {/* ── Item Entry ── */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="border-l-4 border-blue-600 pl-3">
@@ -567,7 +627,6 @@ export default function CreateRequest() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-            {/* Material — Searchable */}
             <div className="lg:col-span-2">
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">
                 Material <span className="text-red-500">*</span>
@@ -583,10 +642,11 @@ export default function CreateRequest() {
                   m.name?.toLowerCase().includes(q) ||
                   (m.itemCode ?? m.materialCode ?? "").toLowerCase().includes(q)
                 }
+                onQueryChange={handleMaterialSearch}
+                loading={materialSearching}
               />
             </div>
 
-            {/* UOM */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">UOM</label>
               <input
@@ -597,7 +657,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Quantity */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">
                 Quantity <span className="text-red-500">*</span>
@@ -611,7 +670,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Unit Price */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Estimated Unit Price (QAR)</label>
               <input
@@ -624,7 +682,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Required Date */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Required Date</label>
               <input
@@ -635,7 +692,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Item Justification */}
             <div className="lg:col-span-2">
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Item Justification</label>
               <input
@@ -646,7 +702,6 @@ export default function CreateRequest() {
               />
             </div>
 
-            {/* Line Total preview */}
             <div>
               <label className="block text-sm text-gray-500 mb-1.5 font-medium">Line Total</label>
               <div className="w-full border border-gray-200 rounded-xl px-3 py-2 bg-blue-50 text-blue-700 font-semibold text-sm">
@@ -656,7 +711,6 @@ export default function CreateRequest() {
 
           </div>
 
-          {/* Attachment */}
           <div>
             <label className="block text-sm text-gray-500 mb-1.5 font-medium">Attachment (optional)</label>
             {!currentItem.attachmentUrl ? (
@@ -698,7 +752,6 @@ export default function CreateRequest() {
           </button>
         </div>
 
-        {/* ── Items Table ── */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
           <div className="border-l-4 border-blue-600 pl-3 mb-5 flex items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-800">Request Items</h2>
@@ -773,7 +826,6 @@ export default function CreateRequest() {
                 </table>
               </div>
 
-              {/* Grand Total */}
               <div className="flex justify-end mt-5">
                 <div className="bg-blue-50 border border-blue-200 px-6 py-3 rounded-xl">
                   <span className="text-sm text-blue-600 font-medium">Grand Total: </span>
@@ -786,7 +838,6 @@ export default function CreateRequest() {
           )}
         </div>
 
-        {/* ── Action Buttons ── */}
         <div className="flex gap-3 justify-end pb-8">
           <button
             type="button"
@@ -797,7 +848,6 @@ export default function CreateRequest() {
             Cancel
           </button>
 
-          {/* Save Draft — hide if already submitted */}
           {(!isEditMode || (isEditMode && form.items.length > 0)) && (
             <button
               type="button"
@@ -810,7 +860,6 @@ export default function CreateRequest() {
             </button>
           )}
 
-          {/* Submit */}
           <button
             type="button"
             onClick={() => submitRequest(true)}
@@ -828,699 +877,3 @@ export default function CreateRequest() {
     </div>
   );
 }
-
-
-
-// import { useEffect, useState } from "react";
-// import { useNavigate, useSearchParams } from "react-router-dom";
-// import api from "../../api/client";
-// import { Paperclip, FileText, X, Loader2 } from "lucide-react";
-
-// // ── Helpers for attachment display ─────────────────────────────────────────
-// const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
-
-// function getFileUrl(path?: string) {
-//   if (!path) return "";
-//   if (path.startsWith("http")) return path;
-//   return `${API_ORIGIN}${path}`;
-// }
-
-// const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-
-// function isImageFile(fileName?: string) {
-//   if (!fileName) return false;
-//   const lower = fileName.toLowerCase();
-//   const dot = lower.lastIndexOf(".");
-//   if (dot === -1) return false;
-//   return IMAGE_EXTENSIONS.includes(lower.slice(dot));
-// }
-
-// export default function CreateRequest() {
-
-//   const user = JSON.parse(localStorage.getItem("user") || "{}");
-//   const navigate = useNavigate();
-//   const [searchParams] = useSearchParams();
-//   const editId = searchParams.get("edit");
-//   const isEditMode = !!editId;
-
-//   const [companies, setCompanies]     = useState<any[]>([]);
-//   const [projects, setProjects]       = useState<any[]>([]);
-//   const [departments, setDepartments] = useState<any[]>([]);
-//   const [materials, setMaterials]     = useState<any[]>([]);
-//   const [msg, setMsg]                 = useState("");
-//   const [requestNo, setRequestNo]     = useState("AUTO");
-//   const [editIndex, setEditIndex]     = useState<number | null>(null);
-//   const [uploading, setUploading]     = useState(false);
-
-//   const [currentItem, setCurrentItem] = useState<any>({
-//     materialId: "", materialCode: "", quantity: 1,
-//     uom: "", requiredDate: new Date().toISOString().slice(0, 10),
-//     justification: "", estimatedUnitPrice: 0,
-//     attachmentUrl: "", attachmentFileName: "",
-//   });
-
-//   const [form, setForm] = useState<any>({
-//     companyId: "", projectId: "", departmentId: "",
-//     requestedById: user.id, justification: "",
-//     submit: true, items: [],
-//   });
-
-//   // ── Load companies ────────────────────────────────────────
-//   useEffect(() => {
-//     api.get(`/companies/user/${user.id}`)
-//       .then((r) => setCompanies(r.data));
-//   }, []);
-
-//   // ── Load edit data ────────────────────────────────────────
-//   useEffect(() => {
-//     if (!editId) return;
-//     api.get(`/purchase-requests/${editId}`).then((r) => {
-//       const pr = r.data;
-//       setRequestNo(pr.requestNumber);
-//       setForm({
-//         companyId:     pr.companyId,
-//         projectId:     pr.projectId,
-//         departmentId:  pr.departmentId,
-//         requestedById: user.id,
-//         justification: pr.justification,
-//         submit:        true,
-//         items: pr.items.map((i: any) => ({
-//           materialId:         i.materialId,
-//           materialCode:       i.materialCode,
-//           quantity:           i.quantity,
-//           uom:                i.uom,
-//           requiredDate:       i.requiredDate?.slice(0, 10) ||
-//                               new Date().toISOString().slice(0, 10),
-//           justification:      i.justification,
-//           estimatedUnitPrice: i.estimatedUnitPrice,
-//           attachmentUrl:      i.attachmentUrl ?? "",
-//           attachmentFileName: i.attachmentFileName ?? "",
-//         })),
-//       });
-//     });
-//   }, [editId]);
-
-//   // ── Load projects + materials when company changes ────────
-//   useEffect(() => {
-//     if (form.companyId) {
-//       api.get(`/projects/company/${form.companyId}`)
-//         .then((r) => setProjects(r.data));
-//       api.get(`/materials`, { 
-//   params: { companyId: form.companyId, page: 1, pageSize: 200 } 
-// })
-// .then((r) => {
-//   const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
-//   setMaterials(Array.isArray(list) ? list : []);
-// });
-//     } else {
-//       setProjects([]);
-//       setMaterials([]);
-//     }
-//   }, [form.companyId]);
-
-//   // ── Load departments when company changes ─────────────────
-//   useEffect(() => {
-//     if (form.companyId) {
-//       api.get(`/departments/by-company/${form.companyId}`)
-//         .then((r) => setDepartments(r.data));
-//     } else {
-//       setDepartments([]);
-//     }
-//   }, [form.companyId]);
-
-//   function setField(key: string, value: any) {
-//     setForm({ ...form, [key]: value });
-//   }
-
-//   function onProjectSelect(projectId: string) {
-//     const selected = projects.find((p) => p.id === projectId);
-//     setForm({
-//       ...form,
-//       projectId,
-//       departmentId: selected?.departmentId || "",
-//     });
-//   }
-
-//   function setCurrentItemField(key: string, value: any) {
-//     const updated = { ...currentItem, [key]: value };
-//     if (key === "materialId") {
-//       const selected = materials.find((m) => m.id === value);
-//       if (selected) {
-//         updated.materialCode = selected.materialCode;
-//         updated.uom          = selected.uom || "";
-//       }
-//     }
-//     setCurrentItem(updated);
-//   }
-
-//   // ── File upload for item attachment ────────────────────────
-//   // Sends companyId so the backend can store the file in a
-//   // company-scoped folder: App_Data/attachments/{companyId}/request-items/
-//   async function handleAttachmentChange(e: React.ChangeEvent<HTMLInputElement>) {
-//     const file = e.target.files?.[0];
-//     if (!file) return;
-
-//     if (!form.companyId) {
-//       alert("Please select a Company first before attaching a file.");
-//       e.target.value = "";
-//       return;
-//     }
-
-//     const formData = new FormData();
-//     formData.append("file", file);
-//     formData.append("companyId", form.companyId);
-
-//     try {
-//       setUploading(true);
-//       const res = await api.post("/attachments/upload", formData, {
-//         headers: { "Content-Type": "multipart/form-data" },
-//       });
-
-//       setCurrentItem((prev: any) => ({
-//         ...prev,
-//         attachmentUrl: res.data.fileUrl,
-//         attachmentFileName: res.data.fileName,
-//       }));
-//     } catch (err: any) {
-//       alert(err.response?.data?.message || "❌ Failed to upload attachment");
-//     } finally {
-//       setUploading(false);
-//       e.target.value = "";
-//     }
-//   }
-
-//   function removeAttachment() {
-//     setCurrentItem((prev: any) => ({
-//       ...prev,
-//       attachmentUrl: "",
-//       attachmentFileName: "",
-//     }));
-//   }
-
-//   function clearItemForm() {
-//     setCurrentItem({
-//       materialId: "", materialCode: "", quantity: 1,
-//       uom: "", requiredDate: new Date().toISOString().slice(0, 10),
-//       justification: "", estimatedUnitPrice: 0,
-//       attachmentUrl: "", attachmentFileName: "",
-//     });
-//     setEditIndex(null);
-//   }
-
-//   function addOrUpdateItem() {
-//     if (!currentItem.materialId) { alert("Select Material"); return; }
-//     if (editIndex !== null) {
-//       const updated = [...form.items];
-//       updated[editIndex] = currentItem;
-//       setForm({ ...form, items: updated });
-//     } else {
-//       setForm({ ...form, items: [...form.items, currentItem] });
-//     }
-//     clearItemForm();
-//   }
-
-//   function editItem(index: number) {
-//     setCurrentItem(form.items[index]);
-//     setEditIndex(index);
-//   }
-
-//   function deleteItem(index: number) {
-//     setForm({
-//       ...form,
-//       items: form.items.filter((_: any, i: number) => i !== index)
-//     });
-//   }
-
-//   const totalAmount = form.items.reduce(
-//     (sum: number, i: any) =>
-//       sum + Number(i.quantity || 0) * Number(i.estimatedUnitPrice || 0), 0
-//   );
-
-//   async function submitRequest(isSubmit: boolean) {
-//     try {
-//       if (!form.companyId)         { alert("Select Company");        return; }
-//       if (!form.projectId)         { alert("Select Project");        return; }
-//       //  if (!form.departmentId)      { alert("Select Department");     return; }
-//       if (form.items.length === 0) { alert("Add at least one item"); return; }
-
-//       const payload = {
-//         companyId:     form.companyId,
-//         projectId:     form.projectId,
-//          departmentId:  form.departmentId || null,  // ← "" → null
-//         requestedById: form.requestedById,
-//         justification: form.justification,
-//         submit:        isSubmit,
-//         items: form.items.map((i: any) => ({
-//           materialId:         i.materialId,
-//           quantity:           Number(i.quantity),
-//           uom:                i.uom,
-//           requiredDate:       i.requiredDate,
-//           justification:      i.justification,
-//           estimatedUnitPrice: Number(i.estimatedUnitPrice),
-//           attachmentUrl:      i.attachmentUrl || null,
-//           attachmentFileName: i.attachmentFileName || null,
-//         })),
-//       };
-
-//       if (isEditMode && editId) {
-//         // ✅ EDIT MODE — update then resubmit
-//         await api.put(`/purchase-requests/${editId}`, payload);
-//         if (isSubmit) {
-//           const res = await api.post(
-//             `/purchase-requests/${editId}/resubmit`
-//           );
-//           setMsg(
-//             `✅ Resubmitted: ${requestNo} — ${res.data.message || ""}`
-//           );
-//         } else {
-//           setMsg(`✅ Updated: ${requestNo}`);
-//         }
-//         setTimeout(() => navigate("/my-requests"), 2000);
-//       } else {
-//         // ✅ CREATE MODE — new request
-//         const res = await api.post("/purchase-requests", payload);
-//         setRequestNo(res.data.requestNumber);
-//         setMsg(isSubmit
-//           ? `✅ Submitted: ${res.data.requestNumber} — ${res.data.message || ""}`
-//           : `✅ Draft Saved: ${res.data.requestNumber}`
-//         );
-//       }
-
-//     } catch (err: any) {
-//       console.error(err);
-//       alert(err.response?.data?.message || "❌ Failed");
-//     }
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50 p-6">
-//       <div className="max-w-7xl mx-auto space-y-6">
-
-//         {/* HEADER */}
-//         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-//           <div className="border-l-4 border-blue-600 pl-4">
-//             <h1 className="text-3xl font-bold text-gray-800">
-//               {isEditMode
-//                 ? "Edit Purchase Request"
-//                 : "Create Purchase Request"}
-//             </h1>
-//             <p className="text-gray-500 mt-1">
-//               {isEditMode
-//                 ? "Correct and resubmit your returned request"
-//                 : "Procurement / Material Request"}
-//             </p>
-//           </div>
-//         </div>
-
-//         {/* SUCCESS */}
-//         {msg && (
-//           <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-xl">
-//             {msg}
-//           </div>
-//         )}
-
-//         {/* REQUEST DETAILS */}
-//         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 space-y-5">
-//           <div className="border-l-4 border-blue-600 pl-3">
-//             <h2 className="text-xl font-semibold text-gray-800">
-//               Request Details
-//             </h2>
-//           </div>
-
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-
-//             {/* REQUEST NO */}
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Request Number
-//               </label>
-//               <input disabled value={requestNo}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-gray-100" />
-//             </div>
-
-//             {/* COMPANY */}
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Company <span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 value={form.companyId}
-//                 onChange={(e) => setForm({
-//                   ...form,
-//                   companyId:    e.target.value,
-//                   projectId:    "",
-//                   departmentId: "",
-//                   items:        isEditMode ? form.items : []
-//                 })}
-//                 disabled={isEditMode}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:outline-none disabled:bg-gray-100"
-//               >
-//                 <option value="">Select Company</option>
-//                 {companies.map((c) => (
-//                   <option key={c.id} value={c.id}>
-//                     {c.code} - {c.name}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             {/* PROJECT */}
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Project <span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 value={form.projectId}
-//                 onChange={(e) => onProjectSelect(e.target.value)}
-//                 disabled={!form.companyId}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:outline-none disabled:bg-gray-100"
-//               >
-//                 <option value="">Select Project</option>
-//                 {projects.map((p) => (
-//                   <option key={p.id} value={p.id}>
-//                     {p.externalCode || p.code || "PRJ"} - {p.name}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             {/* DEPARTMENT */}
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Department <span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 disabled
-//                 value={
-//                   departments.find((d) => d.id === form.departmentId)?.name ||
-//                   (form.departmentId ? "Loading..." : "")
-//                 }
-//                 placeholder="Auto-filled from project"
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-gray-100"
-//               />
-//             </div>
-
-//           </div>
-
-//           {/* JUSTIFICATION */}
-//           <div>
-//             <label className="block text-sm text-gray-600 mb-1">
-//               Business Justification
-//             </label>
-//             <textarea rows={4} value={form.justification}
-//               onChange={(e) => setField("justification", e.target.value)}
-//               className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:outline-none"
-//             />
-//           </div>
-//         </div>
-
-//         {/* ITEM ENTRY */}
-//         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 space-y-5">
-//           <div className="flex justify-between items-center">
-//             <div className="border-l-4 border-blue-600 pl-3">
-//               <h2 className="text-xl font-semibold text-gray-800">
-//                 Item Entry
-//               </h2>
-//             </div>
-//             {editIndex !== null && (
-//               <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">
-//                 Editing Item #{editIndex + 1}
-//               </div>
-//             )}
-//           </div>
-
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Material <span className="text-red-500">*</span>
-//               </label>
-//               <select value={currentItem.materialId}
-//                 onChange={(e) => setCurrentItemField("materialId", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200"
-//               >
-//                 <option value="">Select Material</option>
-//                 {materials.map((m) => (
-//                   <option key={m.id} value={m.id}>
-//                     {m.materialCode} - {m.name}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Material Code
-//               </label>
-//               <input disabled value={currentItem.materialCode}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-gray-100" />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">UOM</label>
-//               <input disabled value={currentItem.uom}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-gray-100" />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Quantity <span className="text-red-500">*</span>
-//               </label>
-//               <input type="number" min="1" value={currentItem.quantity}
-//                 onChange={(e) => setCurrentItemField("quantity", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200" />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Required Date
-//               </label>
-//               <input type="date" value={currentItem.requiredDate}
-//                 onChange={(e) => setCurrentItemField("requiredDate", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200" />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm text-gray-600 mb-1">
-//                 Estimated Price
-//               </label>
-//               <input type="number" min="0" value={currentItem.estimatedUnitPrice}
-//                 onChange={(e) => setCurrentItemField("estimatedUnitPrice", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200" />
-//             </div>
-
-//           </div>
-
-//           <div>
-//             <label className="block text-sm text-gray-600 mb-1">
-//               Item Justification
-//             </label>
-//             <textarea rows={2} value={currentItem.justification}
-//               onChange={(e) => setCurrentItemField("justification", e.target.value)}
-//               className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200" />
-//           </div>
-
-//           {/* ATTACHMENT */}
-//           <div>
-//             <label className="block text-sm text-gray-600 mb-1">
-//               Attachment <span className="text-gray-400">(image / spec sheet)</span>
-//             </label>
-
-//             {!currentItem.attachmentUrl ? (
-//               <label className={`flex items-center gap-2 w-fit px-4 py-2.5 rounded-xl border border-dashed cursor-pointer transition text-sm font-medium
-//                 ${uploading
-//                   ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-wait'
-//                   : 'border-blue-300 bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
-//               >
-//                 {uploading ? (
-//                   <>
-//                     <Loader2 size={16} className="animate-spin" />
-//                     Uploading...
-//                   </>
-//                 ) : (
-//                   <>
-//                     <Paperclip size={16} />
-//                     Attach file
-//                   </>
-//                 )}
-//                 <input
-//                   type="file"
-//                   className="hidden"
-//                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
-//                   onChange={handleAttachmentChange}
-//                   disabled={uploading}
-//                 />
-//               </label>
-//             ) : (
-//               <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 w-fit">
-//                 {isImageFile(currentItem.attachmentFileName) ? (
-//                   <img
-//                     src={getFileUrl(currentItem.attachmentUrl)}
-//                     alt={currentItem.attachmentFileName}
-//                     className="w-10 h-10 object-cover rounded-lg border border-gray-200"
-//                   />
-//                 ) : (
-//                   <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-//                     <FileText size={18} />
-//                   </div>
-//                 )}
-//                 <span className="text-sm text-gray-700 max-w-[180px] truncate">
-//                   {currentItem.attachmentFileName}
-//                 </span>
-//                 <button
-//                   type="button"
-//                   onClick={removeAttachment}
-//                   className="text-gray-400 hover:text-red-500 transition flex-shrink-0"
-//                 >
-//                   <X size={16} />
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-
-//           <div className="flex gap-3">
-//             <button type="button" onClick={addOrUpdateItem}
-//               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl shadow-sm">
-//               {editIndex !== null ? "Update Item" : "Add Item"}
-//             </button>
-//             {editIndex !== null && (
-//               <button type="button" onClick={clearItemForm}
-//                 className="bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-xl">
-//                 Cancel Edit
-//               </button>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* ITEMS TABLE */}
-//         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
-//           <div className="border-l-4 border-blue-600 pl-3 mb-5">
-//             <h2 className="text-xl font-semibold text-gray-800">
-//               Request Items
-//               {form.items.length > 0 && (
-//                 <span className="ml-3 text-sm font-normal text-gray-500">
-//                   {form.items.length} item{form.items.length > 1 ? "s" : ""}
-//                 </span>
-//               )}
-//             </h2>
-//           </div>
-
-//           {form.items.length === 0 ? (
-//             <div className="text-center py-8 text-gray-400 border border-dashed border-gray-300 rounded-xl">
-//               No items added yet. Add items above.
-//             </div>
-//           ) : (
-//             <>
-//               <div className="overflow-auto rounded-xl border border-gray-200">
-//                 <table className="w-full">
-//                   <thead className="bg-gray-100">
-//                     <tr>
-//                       <th className="text-left px-4 py-3 border-b">#</th>
-//                       <th className="text-left px-4 py-3 border-b">Material</th>
-//                       <th className="text-left px-4 py-3 border-b">Qty</th>
-//                       <th className="text-left px-4 py-3 border-b">UOM</th>
-//                       <th className="text-left px-4 py-3 border-b">Unit Price</th>
-//                       <th className="text-left px-4 py-3 border-b">Total</th>
-//                       <th className="text-left px-4 py-3 border-b">Attachment</th>
-//                       <th className="text-left px-4 py-3 border-b">Action</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {form.items.map((item: any, index: number) => (
-//                       <tr key={index} className="hover:bg-gray-50 transition">
-//                         <td className="px-4 py-3 border-b text-gray-500">
-//                           {index + 1}
-//                         </td>
-//                         <td className="px-4 py-3 border-b font-medium">
-//                           {item.materialCode}
-//                         </td>
-//                         <td className="px-4 py-3 border-b">{item.quantity}</td>
-//                         <td className="px-4 py-3 border-b">{item.uom}</td>
-//                         <td className="px-4 py-3 border-b">
-//                           {Number(item.estimatedUnitPrice).toFixed(2)}
-//                         </td>
-//                         <td className="px-4 py-3 border-b font-semibold text-blue-700">
-//                           {(Number(item.quantity) *
-//                             Number(item.estimatedUnitPrice)).toFixed(2)}
-//                         </td>
-//                         <td className="px-4 py-3 border-b">
-//                           {item.attachmentUrl ? (
-//                             <a
-//                               href={getFileUrl(item.attachmentUrl)}
-//                               target="_blank"
-//                               rel="noopener noreferrer"
-//                               className="flex items-center gap-2 group"
-//                               title={item.attachmentFileName}
-//                             >
-//                               {isImageFile(item.attachmentFileName) ? (
-//                                 <img
-//                                   src={getFileUrl(item.attachmentUrl)}
-//                                   alt={item.attachmentFileName}
-//                                   className="w-9 h-9 object-cover rounded-lg border border-gray-200 group-hover:ring-2 group-hover:ring-blue-300 transition"
-//                                 />
-//                               ) : (
-//                                 <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition">
-//                                   <FileText size={16} />
-//                                 </div>
-//                               )}
-//                             </a>
-//                           ) : (
-//                             <span className="text-gray-300 text-sm">—</span>
-//                           )}
-//                         </td>
-//                         <td className="px-4 py-3 border-b">
-//                           <div className="flex gap-3">
-//                             <button type="button" onClick={() => editItem(index)}
-//                               className="text-blue-600 hover:text-blue-800 font-medium text-sm">
-//                               Edit
-//                             </button>
-//                             <button type="button" onClick={() => deleteItem(index)}
-//                               className="text-red-600 hover:text-red-800 font-medium text-sm">
-//                               Delete
-//                             </button>
-//                           </div>
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-
-//               <div className="flex justify-end mt-6">
-//                 <div className="bg-blue-50 border border-blue-200 px-5 py-3 rounded-xl text-lg font-semibold text-blue-700">
-//                   Grand Total : QAR {totalAmount.toFixed(2)}
-//                 </div>
-//               </div>
-//             </>
-//           )}
-//         </div>
-
-//         {/* ACTIONS */}
-//         <div className="flex gap-3 justify-end pb-6">
-//           <button
-//             type="button"
-//             onClick={() => navigate("/my-requests")}
-//             className="bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-medium"
-//           >
-//             Cancel
-//           </button>
-//           <button
-//             type="button"
-//             onClick={() => submitRequest(false)}
-//             className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-medium"
-//           >
-//             {isEditMode ? "Save Changes" : "Save Draft"}
-//           </button>
-//           <button
-//             type="button"
-//             onClick={() => submitRequest(true)}
-//             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-sm font-medium"
-//           >
-//             {isEditMode ? "💾 Save & Resubmit" : "Submit Request"}
-//           </button>
-//         </div>
-
-//       </div>
-//     </div>
-//   );
-// }

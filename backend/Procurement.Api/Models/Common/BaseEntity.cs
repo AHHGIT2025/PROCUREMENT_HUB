@@ -24,7 +24,10 @@ public enum RequestStatus
 
     OraclePosted = 8,
 
-    Deleted = 9
+    Deleted = 9,
+        // ✅ NEW — set only when Store Keeper completes verification and
+    // every item was fully available in store (no purchase needed at all)
+    FulfilledFromStock = 10
 }
 
 

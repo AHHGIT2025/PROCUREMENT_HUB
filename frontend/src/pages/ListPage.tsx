@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import { StatusBadge } from '../components/Ui';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronDown, ChevronRight, Mail, Building2, Briefcase,
   UserCog, CheckCircle2, XCircle, Search, X, Crown,
@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import MaterialEdit from '../components/MaterialEdit';
 
-const user = JSON.parse(localStorage.getItem("user") || "{}");
 const config: any = {
   materials: {
     title: 'Item Master',
@@ -28,7 +27,7 @@ const config: any = {
   },
   approvals: {
     title: 'Pending Approvals',
-    endpoint: `/approvals/pending/${user.id}`,
+    endpoint: '',
     cols: ['requestNumber', 'requesterName', 'companyName', 'stepName', 'totalAmount', 'daysWaiting'],
   },
   workflows: {
@@ -91,6 +90,18 @@ const APPROVAL_STATUS_STYLE: Record<string, string> = {
   PENDING:  'bg-amber-50 text-amber-700 border-amber-200',
 };
 
+// Maps Dashboard's ?filter= URL values to the actual status text stored
+// on Purchase Requests (e.g. "PendingApproval" -> "Pending Approval").
+// Adjust the right-hand values here if your backend uses different status text.
+const STATUS_FILTER_MAP: Record<string, string> = {
+  Draft: 'Draft',
+  PendingApproval: 'Pending Approval',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+  Returned: 'Returned',
+  OracleReady: 'Oracle Ready',
+};
+
 function getInitials(name?: string) {
   if (!name) return '?';
   const parts = name.trim().split(' ').filter(Boolean);
@@ -111,17 +122,35 @@ function fmtDate(iso?: string) {
 
 export default function ListPage({ type }: { type: string }) {
 
-  const c = config[type];
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const [searchParams] = useSearchParams();
+
+  const c = type === 'approvals'
+    ? { ...config[type], endpoint: `/approvals/pending/${user.id}` }
+    : config[type];
+
   const navigate = useNavigate();
 
-  // ── Generic list state ────────────────────────────────────────────────────
+  // ✅ NEW: pre-fill search from ?filter= URL param (e.g. from Dashboard cards)
   const [rows, setRows]                   = useState<any[]>([]);
-  const [search, setSearch]               = useState("");
+  const [search, setSearch]               = useState(() => {
+    if (type === 'requests') {
+      const urlFilter = searchParams.get('filter');
+      if (urlFilter) return STATUS_FILTER_MAP[urlFilter] ?? urlFilter;
+    }
+    return "";
+  });
   const [companyFilter, setCompanyFilter] = useState("");
   const [roleFilter, setRoleFilter]       = useState("");
   const [sourceFilter, setSourceFilter]   = useState("");
 
-  // ── Expandable rows ───────────────────────────────────────────────────────
+  // ── Requests-only: company + date filters ─────────────────────────────────
+  const [reqCompanyFilter, setReqCompanyFilter] = useState("");
+  const [reqCompanies, setReqCompanies]         = useState<any[]>([]);
+  const [dateFrom, setDateFrom]                 = useState("");
+  const [dateTo, setDateTo]                     = useState("");
+  const [quickDate, setQuickDate]               = useState("");
+
   const [expandedId, setExpandedId]           = useState<string | null>(null);
   const [accessMap, setAccessMap]             = useState<Record<string, any[]>>({});
   const [accessLoading, setAccessLoading]     = useState<string | null>(null);
@@ -130,7 +159,6 @@ export default function ListPage({ type }: { type: string }) {
   const [matDetailMap, setMatDetailMap]       = useState<Record<string, any>>({});
   const [matDetailLoading, setMatDetailLoading] = useState<string | null>(null);
 
-  // ── Materials-specific state ──────────────────────────────────────────────
   const [matCompanyId, setMatCompanyId]     = useState("");
   const [matPage, setMatPage]               = useState(1);
   const [matTotal, setMatTotal]             = useState(0);
@@ -139,7 +167,14 @@ export default function ListPage({ type }: { type: string }) {
   const [matCompanies, setMatCompanies]     = useState<any[]>([]);
   const [editMaterialId, setEditMaterialId] = useState<string | null>(null);
 
-  // ── Load data ─────────────────────────────────────────────────────────────
+  // ── Add Company (Organization page) ──────────────────────────────────────
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [companyForm, setCompanyForm] = useState({
+    code: '', name: '', currency: 'QAR', isOracleIntegrated: false,
+  });
+  const [companyFormError, setCompanyFormError] = useState<string | null>(null);
+  const [companyFormSaving, setCompanyFormSaving] = useState(false);
+
   useEffect(() => {
     if (type === "materials") {
       api.get("/companies").then(r => {
@@ -150,13 +185,19 @@ export default function ListPage({ type }: { type: string }) {
       setMatTotal(0);
       setMatCompanyId("");
       setMatPage(1);
-    } else {
-      api.get(c.endpoint).then(r => setRows(r.data));
+    } else if (c?.endpoint) {
+      api.get(c.endpoint).then(r => setRows(r.data?.data ?? r.data ?? []));
+    }
+    if (type === "requests") {
+      api.get("/companies").then(r => {
+        const list = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+        setReqCompanies(list);
+      });
     }
     setExpandedId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
-  // Materials: reload when company, page, or search changes
   useEffect(() => {
     if (type !== "materials" || !matCompanyId) return;
     setMatLoading(true);
@@ -185,7 +226,48 @@ export default function ListPage({ type }: { type: string }) {
       .finally(() => setMatLoading(false));
   }
 
-  // ── Routes ────────────────────────────────────────────────────────────────
+  function reloadOrganization() {
+    if (!c?.endpoint) return;
+    api.get(c.endpoint).then(r => setRows(r.data?.data ?? r.data ?? []));
+  }
+
+  // ── Add Company submit ────────────────────────────────────────────────────
+  async function saveCompany(e: React.FormEvent) {
+    e.preventDefault();
+    setCompanyFormError(null);
+
+    if (!companyForm.code.trim())     return setCompanyFormError('Company Code is required.');
+    if (!companyForm.name.trim())     return setCompanyFormError('Company Name is required.');
+    if (!companyForm.currency.trim()) return setCompanyFormError('Currency is required.');
+
+    const existingWithHolding = rows.find(r => (r.holdingId ?? r.HoldingId));
+    const holdingId = existingWithHolding?.holdingId ?? existingWithHolding?.HoldingId;
+
+    if (!holdingId) {
+      return setCompanyFormError(
+        'Could not determine HoldingId from existing companies. At least one company must already exist.'
+      );
+    }
+
+    setCompanyFormSaving(true);
+    try {
+      await api.post('/companies', {
+        code: companyForm.code.trim().toUpperCase(),
+        name: companyForm.name.trim(),
+        currency: companyForm.currency.trim().toUpperCase(),
+        isOracleIntegrated: companyForm.isOracleIntegrated,
+        holdingId,
+      });
+      setCompanyForm({ code: '', name: '', currency: 'QAR', isOracleIntegrated: false });
+      setShowAddCompany(false);
+      reloadOrganization();
+    } catch (e: any) {
+      setCompanyFormError(e?.response?.data?.message ?? e?.message ?? 'Failed to create company.');
+    } finally {
+      setCompanyFormSaving(false);
+    }
+  }
+
   const createRoutes: any = {
     users: "/users/create",
     materials: "/materials/create",
@@ -193,11 +275,41 @@ export default function ListPage({ type }: { type: string }) {
     requests: "/create-request"
   };
 
-  // ── Filter logic ──────────────────────────────────────────────────────────
+  const isOrganization = type === "organization" || type === "settings";
+
+  function applyQuickDate(key: string) {
+    if (quickDate === key) {
+      setQuickDate(""); setDateFrom(""); setDateTo("");
+      return;
+    }
+    const now = new Date();
+    const fmtD = (d: Date) => d.toISOString().slice(0, 10);
+    setQuickDate(key);
+    if (key === "today") {
+      setDateFrom(fmtD(now)); setDateTo(fmtD(now));
+    } else if (key === "week") {
+      const s = new Date(now); s.setDate(now.getDate() - 7);
+      setDateFrom(fmtD(s)); setDateTo(fmtD(now));
+    } else if (key === "month") {
+      const s = new Date(now); s.setDate(1);
+      setDateFrom(fmtD(s)); setDateTo(fmtD(now));
+    } else if (key === "3months") {
+      const s = new Date(now); s.setMonth(now.getMonth() - 3);
+      setDateFrom(fmtD(s)); setDateTo(fmtD(now));
+    }
+  }
+
+  function clearReqFilters() {
+    setSearch(""); setReqCompanyFilter(""); setDateFrom(""); setDateTo(""); setQuickDate("");
+  }
+
   const filteredRows = rows
     .filter(r => type !== "users" || !companyFilter || r.company === companyFilter)
     .filter(r => type !== "users" || !roleFilter || r.role === roleFilter)
     .filter(r => type !== "materials" || !sourceFilter || r.source === sourceFilter)
+    .filter(r => type !== "requests" || !reqCompanyFilter || r.company === reqCompanyFilter)
+    .filter(r => type !== "requests" || !dateFrom || new Date(r.createdAt) >= new Date(dateFrom))
+    .filter(r => type !== "requests" || !dateTo || new Date(r.createdAt) <= new Date(dateTo + "T23:59:59"))
     .filter(r =>
       type === "materials" ||
       !search ||
@@ -208,9 +320,8 @@ export default function ListPage({ type }: { type: string }) {
 
   const userCompanies = type === "users" ? [...new Set(rows.map(r => r.company))] : [];
   const userRoles     = type === "users" ? [...new Set(rows.map(r => r.role))]    : [];
-  const hasActiveFilters = !!(search || companyFilter || roleFilter || sourceFilter);
+  const hasActiveFilters = !!(search || companyFilter || roleFilter || sourceFilter || reqCompanyFilter || dateFrom || dateTo);
 
-  // ── Expand handlers ───────────────────────────────────────────────────────
   async function toggleExpandUser(rowId: string) {
     if (expandedId === rowId) { setExpandedId(null); return; }
     setExpandedId(rowId);
@@ -270,15 +381,19 @@ export default function ListPage({ type }: { type: string }) {
     if (isMaterials) toggleExpandMaterial(rowId);
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center border-b pb-2">
-        <div>
-          <h1 className="text-2xl font-semibold">{c.title}</h1>
-          <p className="text-gray-500 text-sm">Search, review, and manage records</p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 border rounded-xl px-3 py-2 hover:bg-gray-50 transition">
+            ← Back
+          </button>
+          <div>
+            <h1 className="text-2xl font-semibold">{c.title}</h1>
+            <p className="text-gray-500 text-sm">Search, review, and manage records</p>
+          </div>
         </div>
         {createRoutes[type] && (
           <button
@@ -288,9 +403,88 @@ export default function ListPage({ type }: { type: string }) {
             + New
           </button>
         )}
+        {isOrganization && (
+          <button
+            onClick={() => { setShowAddCompany(true); setCompanyFormError(null); }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition shadow-sm font-medium text-sm"
+          >
+            + Add Company
+          </button>
+        )}
       </div>
 
-      {/* SEARCH + FILTERS */}
+      {/* Add Company Modal */}
+      {showAddCompany && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="font-semibold text-gray-800">Add Company</h3>
+              <button onClick={() => setShowAddCompany(false)} className="text-gray-400 hover:text-gray-700 transition">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={saveCompany} className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Company Code</label>
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  placeholder="e.g. DIM01"
+                  value={companyForm.code}
+                  onChange={e => setCompanyForm(f => ({ ...f, code: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Company Name</label>
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  placeholder="e.g. Dimora"
+                  value={companyForm.name}
+                  onChange={e => setCompanyForm(f => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Currency</label>
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  placeholder="QAR"
+                  value={companyForm.currency}
+                  onChange={e => setCompanyForm(f => ({ ...f, currency: e.target.value }))}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={companyForm.isOracleIntegrated}
+                  onChange={e => setCompanyForm(f => ({ ...f, isOracleIntegrated: e.target.checked }))}
+                />
+                Oracle Integrated (this company syncs from Bright ERP)
+              </label>
+
+              {companyFormError && <p className="text-red-600 text-xs">{companyFormError}</p>}
+
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={companyFormSaving}
+                  className="bg-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50">
+                  {companyFormSaving ? 'Saving…' : 'Save Company'}
+                </button>
+                <button type="button"
+                  onClick={() => setShowAddCompany(false)}
+                  className="text-sm px-4 py-2 rounded-xl border hover:bg-gray-100 transition">
+                  Cancel
+                </button>
+              </div>
+
+              {companyForm.isOracleIntegrated && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  Note: after saving, go to <strong>Oracle Monitor → Branch → Company Mappings</strong> to map
+                  this company's Bright branch ID, then run a sync.
+                </p>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[220px] max-w-xs">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -317,6 +511,42 @@ export default function ListPage({ type }: { type: string }) {
               <option value="">All Roles</option>
               {userRoles.map((r, i) => <option key={i} value={r}>{r}</option>)}
             </select>
+          </>
+        )}
+
+        {type === "requests" && (
+          <>
+            <select className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition min-w-[200px]"
+              value={reqCompanyFilter} onChange={e => setReqCompanyFilter(e.target.value)}>
+              <option value="">All Companies</option>
+              {reqCompanies.map((c: any) => (
+                <option key={c.id ?? c.Id} value={c.name ?? c.Name}>{c.name ?? c.Name}</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { key: "today", label: "Today" },
+                { key: "week", label: "7 Days" },
+                { key: "month", label: "This Month" },
+                { key: "3months", label: "3 Months" },
+              ].map(q => (
+                <button key={q.key} onClick={() => applyQuickDate(q.key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    quickDate === q.key
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100"
+                  }`}>
+                  {q.label}
+                </button>
+              ))}
+              <input type="date" value={dateFrom} max={dateTo || undefined}
+                onChange={e => { setDateFrom(e.target.value); setQuickDate(""); }}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs" />
+              <span className="text-gray-400 text-xs">to</span>
+              <input type="date" value={dateTo} min={dateFrom || undefined}
+                onChange={e => { setDateTo(e.target.value); setQuickDate(""); }}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs" />
+            </div>
           </>
         )}
 
@@ -348,7 +578,7 @@ export default function ListPage({ type }: { type: string }) {
 
         {hasActiveFilters && (
           <button
-            onClick={() => { setSearch(""); setCompanyFilter(""); setRoleFilter(""); setSourceFilter(""); }}
+            onClick={() => { setSearch(""); setCompanyFilter(""); setRoleFilter(""); setSourceFilter(""); clearReqFilters(); }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition ml-auto"
           >
             <X size={14} /> Clear filters
@@ -356,7 +586,6 @@ export default function ListPage({ type }: { type: string }) {
         )}
       </div>
 
-      {/* Materials — no company selected */}
       {type === "materials" && !matCompanyId && !matLoading && (
         <div className="text-center py-16 text-gray-400">
           <Package size={36} className="mx-auto mb-3 text-gray-200" />
@@ -364,7 +593,6 @@ export default function ListPage({ type }: { type: string }) {
         </div>
       )}
 
-      {/* TABLE */}
       {(type !== "materials" || matCompanyId) && (
         <div className="bg-white rounded-xl shadow border overflow-hidden">
           <table className="w-full text-sm">
@@ -469,7 +697,6 @@ export default function ListPage({ type }: { type: string }) {
                         )}
                       </tr>
 
-                      {/* EXPANDED — MATERIALS */}
                       {isOpen && isMaterials && (
                         <tr key={`${rowId}-mat`} className="border-t border-b border-blue-100">
                           <td colSpan={totalCols} className="px-6 py-4 bg-gradient-to-br from-blue-50/30 via-white to-white">
@@ -531,7 +758,6 @@ export default function ListPage({ type }: { type: string }) {
                         </tr>
                       )}
 
-                      {/* EXPANDED — USERS */}
                       {isOpen && isUsers && (
                         <tr key={`${rowId}-user`} className="border-t border-b border-indigo-100">
                           <td colSpan={totalCols} className="px-6 py-6 bg-gradient-to-br from-indigo-50/50 via-white to-white">
@@ -624,7 +850,6 @@ export default function ListPage({ type }: { type: string }) {
                         </tr>
                       )}
 
-                      {/* EXPANDED — PURCHASE REQUESTS */}
                       {isOpen && isRequests && (
                         <tr key={`${rowId}-req`} className="border-t border-b border-blue-100">
                           <td colSpan={totalCols} className="px-6 py-6 bg-gradient-to-br from-blue-50/40 via-white to-white">
@@ -752,7 +977,6 @@ export default function ListPage({ type }: { type: string }) {
             </tbody>
           </table>
 
-          {/* Materials pagination */}
           {isMaterials && matTotalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50">
               <p className="text-xs text-gray-400">
@@ -769,7 +993,6 @@ export default function ListPage({ type }: { type: string }) {
         </div>
       )}
 
-      {/* Edit modal */}
       {editMaterialId && (
         <MaterialEdit
           itemId={editMaterialId}

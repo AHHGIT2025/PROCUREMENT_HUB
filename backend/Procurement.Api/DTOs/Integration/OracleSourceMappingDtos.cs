@@ -15,6 +15,7 @@
         public bool IsCurrent { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? EntityType { get; set; }
     }
 
     public class CreateOracleSourceMappingDto
@@ -24,6 +25,7 @@
         public Guid CompanyId { get; set; }
         public DateTime? EffectiveFrom { get; set; }
         public string? Notes { get; set; }
+        public string? EntityType { get; set; }
     }
 
     public class UpdateOracleSourceMappingDto

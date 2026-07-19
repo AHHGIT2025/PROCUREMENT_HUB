@@ -62,7 +62,15 @@ public abstract class BaseEntity
 }
 
 public class Holding : BaseEntity { public string Code { get; set; } = "AHH"; public string Name { get; set; } = "Al Hattab Holding"; public Guid? HeadOfficeCompanyId { get; set; } }
-public class Company : BaseEntity { public Guid HoldingId { get; set; } public string Code { get; set; } = ""; public string Name { get; set; } = ""; public bool IsOracleIntegrated { get; set; } public string Currency { get; set; } = "QAR"; }
+public class Company : BaseEntity
+{
+    public Guid HoldingId { get; set; }
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public bool IsOracleIntegrated { get; set; }
+    public string Currency { get; set; } = "QAR";
+    public string? LogoUrl { get; set; }   // ✅ NEW — set via POST /api/companies/{id}/logo
+}
 public class Department : BaseEntity { public Guid CompanyId { get; set; } public string Code { get; set; } = ""; public string Name { get; set; } = ""; }
 public class BusinessVertical : BaseEntity { public Guid HoldingId { get; set; } public string Code { get; set; } = ""; public string Name { get; set; } = ""; }
 public class Role : BaseEntity { public string Name { get; set; } = ""; public string Description { get; set; } = ""; }

@@ -4,7 +4,7 @@ import api from '../../api/client';
 import {
   RefreshCw, Plus, Trash2, Pencil, Save, X, CheckCircle2, XCircle,
   Clock, Database, Building2, Link2, AlertTriangle,
-  ChevronDown, ChevronUp, Activity
+  ChevronDown, ChevronUp, Activity, Users
 } from 'lucide-react';
 
 interface Watermark {
@@ -47,6 +47,11 @@ interface SyncResult {
   itemsSkipped: number;
   projectsProcessed: number;
   projectsSkipped: number;
+}
+interface SupplierSyncResult {
+  processed: number;
+  created: number;
+  updated: number;
 }
 interface SchedulerStatus {
   enabled: boolean;
@@ -157,6 +162,7 @@ export default function OracleMonitor() {
   const [loading,         setLoading]         = useState(true);
   const [syncing,         setSyncing]         = useState<string | null>(null);
   const [syncResult,      setSyncResult]      = useState<Record<string, SyncResult> | null>(null);
+  const [supplierSyncResult, setSupplierSyncResult] = useState<Record<string, SupplierSyncResult> | null>(null);
   const [error,           setError]           = useState<string | null>(null);
   const [showAddForm,     setShowAddForm]     = useState(false);
   const [logsExpanded,    setLogsExpanded]    = useState(false);
@@ -217,7 +223,7 @@ export default function OracleMonitor() {
     return () => clearInterval(interval);
   }, [loadSchedulerStatus]);
 
-  // ── Incremental Sync ──────────────────────────────────────────────────────
+  // ── Incremental Sync (Items + Projects) ────────────────────────────────────
   async function runSync(source: string) {
     setSyncing(source);
     setSyncResult(null);
@@ -229,6 +235,22 @@ export default function OracleMonitor() {
       loadSchedulerStatus();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? e?.message ?? 'Sync failed.');
+    } finally {
+      setSyncing(null);
+    }
+  }
+
+  // ── Supplier Sync (manual trigger — full pull, no watermark) ──────────────
+  async function runSupplierSync(source: string) {
+    setSyncing(`suppliers-${source}`);
+    setSupplierSyncResult(null);
+    setError(null);
+    try {
+      const res = await api.post(`/erp-sync/run-suppliers?source=${source}`);
+      setSupplierSyncResult(res.data?.data ?? res.data);
+      await loadAll();
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? e?.message ?? 'Supplier sync failed.');
     } finally {
       setSyncing(null);
     }
@@ -408,6 +430,19 @@ export default function OracleMonitor() {
         </div>
       )}
 
+      {/* Supplier Sync Result */}
+      {supplierSyncResult && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+          <p className="font-medium mb-1">✅ Supplier sync completed</p>
+          {Object.entries(supplierSyncResult).map(([src, r]) => (
+            <p key={src} className="text-xs text-blue-700">
+              <strong>{src}:</strong> {r.processed} suppliers processed
+              &nbsp;·&nbsp; {r.created} new &nbsp;·&nbsp; {r.updated} updated
+            </p>
+          ))}
+        </div>
+      )}
+
       {/* Section 1: Status Cards */}
       <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -481,7 +516,7 @@ export default function OracleMonitor() {
 
         {/* Incremental Sync */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Incremental Sync:</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Incremental Sync (Items + Projects):</p>
           <div className="flex flex-wrap gap-3">
             {(['HQ', 'FMCG', 'All'] as const).map(src => (
               <button key={src} onClick={() => runSync(src)} disabled={!!syncing}
@@ -492,6 +527,27 @@ export default function OracleMonitor() {
                 }`}>
                 <RefreshCw size={14} className={syncing === src ? 'animate-spin' : ''} />
                 {syncing === src ? `Syncing ${src}…` : `Run ${src}`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Supplier Sync */}
+        <div className="border-t pt-4">
+          <p className="text-xs font-medium text-gray-500 mb-1">Supplier Sync:</p>
+          <p className="text-xs text-gray-400 mb-2">
+            Full pull every time (Oracle Suppliers table has no incremental watermark). Also runs automatically every 15 min.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {(['HQ', 'FMCG', 'All'] as const).map(src => (
+              <button key={src} onClick={() => runSupplierSync(src)} disabled={!!syncing}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition ${
+                  syncing === `suppliers-${src}`
+                    ? 'bg-indigo-100 text-indigo-600 cursor-wait'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm disabled:opacity-50'
+                }`}>
+                <Users size={14} className={syncing === `suppliers-${src}` ? 'animate-pulse' : ''} />
+                {syncing === `suppliers-${src}` ? `Syncing Suppliers ${src}…` : `Sync Suppliers ${src}`}
               </button>
             ))}
           </div>

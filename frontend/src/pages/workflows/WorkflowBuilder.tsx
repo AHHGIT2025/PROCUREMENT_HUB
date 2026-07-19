@@ -26,6 +26,13 @@ export default function WorkflowBuilder() {
     priority:    0,
     isActive:    true,
     companyId:   null as string | null,
+    // ✅ NEW — "ANY" (default, existing behavior): workflow matches if ANY
+    // one of its ItemCategory conditions is present in the request.
+    // "ALL" (new): workflow matches ONLY if EVERY one of its ItemCategory
+    // conditions is present — this is what lets you build a "combo"
+    // workflow (e.g. Asset + IT) that only fires when a request genuinely
+    // contains items from ALL the listed categories together.
+    conditionMatchLogic: "ANY" as "ANY" | "ALL",
   });
 
   const [conditions, setConditions] = useState<any[]>([]);
@@ -85,6 +92,7 @@ export default function WorkflowBuilder() {
         priority:    wf.priority,
         isActive:    wf.isActive,
         companyId:   wf.companyId,
+        conditionMatchLogic: wf.conditionMatchLogic || "ANY", // ✅ NEW
       });
       setConditions(wf.conditions || []);
       setSteps(wf.steps || []);
@@ -259,6 +267,11 @@ export default function WorkflowBuilder() {
     );
   }
 
+  // ✅ NEW — how many ItemCategory conditions are configured. The
+  // ALL/ANY toggle only matters (and is only shown) when there are 2+,
+  // since a single category condition behaves identically either way.
+  const categoryConditionCount = conditions.filter(c => c.field === "ItemCategory").length;
+
   return (
     <div style={{ fontFamily: "Inter, sans-serif", background: "#F8FAFC", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
@@ -366,16 +379,19 @@ export default function WorkflowBuilder() {
                       style={{ ...inputStyle, resize: "vertical" as const }} />
                   </div>
 
-                  <div>
-                    <label style={labelStyle}>Priority</label>
-                    <select value={form.priority} onChange={e => setForm({ ...form, priority: Number(e.target.value) })} style={inputStyle}>
-                      <option value={0}>Low (0)</option>
-                      <option value={5}>Medium (5)</option>
-                      <option value={8}>High (8)</option>
-                      <option value={10}>Critical (10)</option>
-                    </select>
-                  </div>
-
+                 <div>
+  <label style={labelStyle}>Priority</label>
+  <input
+    type="number"
+    value={form.priority}
+    onChange={e => setForm({ ...form, priority: Number(e.target.value) })}
+    placeholder="e.g. 10"
+    style={inputStyle}
+  />
+  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
+    Higher number = higher priority. Common existing values: Global flows = 5, Company-specific single-category flows = 8–10. Set this combo workflow higher (e.g. 15) so it wins over both.
+  </div>
+</div>
                   <div>
                     <label style={labelStyle}>Entity Type</label>
                     <select value={form.entityType} onChange={e => setForm({ ...form, entityType: e.target.value })} style={inputStyle}>
@@ -472,6 +488,41 @@ export default function WorkflowBuilder() {
                 }}>+ New Condition</button>
               </div>
 
+              {/* ✅ NEW — ALL/ANY toggle. Only shown once there are 2+ Item
+                  Category conditions, since it has no effect with 0 or 1. */}
+              {categoryConditionCount >= 2 && (
+                <div style={{
+                  marginBottom: "16px", background: "#FFFBEB", border: "1px solid #FDE68A",
+                  borderRadius: "8px", padding: "16px 20px"
+                }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#92400E", marginBottom: "10px" }}>
+                    ⚡ {categoryConditionCount} Item Category conditions detected — how should they combine?
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button type="button" onClick={() => setForm({ ...form, conditionMatchLogic: "ANY" })} style={{
+                      padding: "8px 16px", borderRadius: "4px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                      background: form.conditionMatchLogic === "ANY" ? "#1a2b4b" : "white",
+                      color: form.conditionMatchLogic === "ANY" ? "white" : "#64748b",
+                      border: form.conditionMatchLogic === "ANY" ? "1px solid #1a2b4b" : "1px solid #E2E8F0",
+                      textAlign: "left"
+                    }}>
+                      Match ANY of these<br />
+                      <span style={{ fontWeight: 400, fontSize: "11px", opacity: 0.85 }}>Fires if the request has even one of these categories</span>
+                    </button>
+                    <button type="button" onClick={() => setForm({ ...form, conditionMatchLogic: "ALL" })} style={{
+                      padding: "8px 16px", borderRadius: "4px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                      background: form.conditionMatchLogic === "ALL" ? "#1a2b4b" : "white",
+                      color: form.conditionMatchLogic === "ALL" ? "white" : "#64748b",
+                      border: form.conditionMatchLogic === "ALL" ? "1px solid #1a2b4b" : "1px solid #E2E8F0",
+                      textAlign: "left"
+                    }}>
+                      Require ALL of these (Combo)<br />
+                      <span style={{ fontWeight: 400, fontSize: "11px", opacity: 0.85 }}>Fires only if the request has every one of these categories together</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {conditions.length === 0 ? (
                 <div style={{
                   background: "white", border: "2px dashed #E2E8F0", borderRadius: "8px",
@@ -491,7 +542,11 @@ export default function WorkflowBuilder() {
                           <span style={{
                             padding: "3px 12px", borderRadius: "999px", fontSize: "11px",
                             fontWeight: 700, background: "#eff4ff", color: "#1a2b4b", letterSpacing: "0.08em"
-                          }}>AND</span>
+                          }}>
+                            {cond.field === "ItemCategory" && conditions[i - 1]?.field === "ItemCategory"
+                              ? (form.conditionMatchLogic === "ALL" ? "AND" : "OR")
+                              : "AND"}
+                          </span>
                         </div>
                       )}
                       <div style={{
@@ -554,14 +609,20 @@ export default function WorkflowBuilder() {
                   </div>
                   <code style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "13px", color: "#e2e8f0", lineHeight: "1.6" }}>
                     IF<br />
-                    {conditions.map((c, i) => (
-                      <span key={i}>
-                        &nbsp;&nbsp;{c.field} {c.operator}{" "}
-                        <span style={{ color: "#F59E0B" }}>"{c.value || "?"}"</span>
-                        {i < conditions.length - 1 ? <><br />&nbsp;&nbsp;<span style={{ color: "#8293b8" }}>AND</span></> : ""}
-                        <br />
-                      </span>
-                    ))}
+                    {conditions.map((c, i) => {
+                      const prevIsSameCategoryGroup = i > 0 && c.field === "ItemCategory" && conditions[i - 1]?.field === "ItemCategory";
+                      const joiner = prevIsSameCategoryGroup
+                        ? (form.conditionMatchLogic === "ALL" ? "AND" : "OR")
+                        : "AND";
+                      return (
+                        <span key={i}>
+                          &nbsp;&nbsp;{c.field} {c.operator}{" "}
+                          <span style={{ color: "#F59E0B" }}>"{c.value || "?"}"</span>
+                          {i < conditions.length - 1 ? <><br />&nbsp;&nbsp;<span style={{ color: "#8293b8" }}>{joiner}</span></> : ""}
+                          <br />
+                        </span>
+                      );
+                    })}
                   </code>
                 </div>
               )}
@@ -738,6 +799,10 @@ export default function WorkflowBuilder() {
                     { label: "Scope",     value: form.companyId ? companies.find(c => c.id === form.companyId)?.name ?? "Specific Company" : "All Companies" },
                     { label: "Default",   value: form.isDefault ? "Yes" : "No" },
                     { label: "Status",    value: form.isActive ? "Active" : "Inactive" },
+                    // ✅ NEW — only show when it's actually meaningful (2+ category conditions)
+                    ...(categoryConditionCount >= 2
+                      ? [{ label: "Category Match Logic", value: form.conditionMatchLogic === "ALL" ? "ALL required (Combo)" : "ANY (first match wins)" }]
+                      : []),
                   ].map(item => (
                     <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
                       <span style={{ fontSize: "13px", color: "#64748b" }}>{item.label}</span>

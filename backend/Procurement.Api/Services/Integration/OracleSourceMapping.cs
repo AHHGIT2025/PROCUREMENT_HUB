@@ -11,5 +11,6 @@ namespace Procurement.Api.Services.Integration
         public DateTime EffectiveFrom { get; set; } = DateTime.UtcNow;
         public DateTime? EffectiveTo { get; set; }
         public string? Notes { get; set; }
+        public string? EntityType { get; set; }  // "Items" | "Suppliers" | null (= applies to all)
     }
 }

@@ -34,6 +34,7 @@ interface RequestDetail {
   totalAmount: number;
   createdAt: string;
   companyName: string;
+  companyLogoUrl?: string | null;   // ✅ NEW
   projectName: string;
   departmentName: string;
   requestedBy: string;
@@ -59,6 +60,15 @@ function fmtDate(d: string | null) {
 }
 function fmtQ(n: number) {
   return "QAR " + Number(n ?? 0).toLocaleString("en-QA", { minimumFractionDigits: 2 });
+}
+
+// ✅ NEW — same pattern used elsewhere (CreateRequest.tsx, ListPage.tsx) to
+// resolve a relative /api/attachments/file/... path into a full URL.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
+function getLogoUrl(path?: string | null) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_ORIGIN}${path}`;
 }
 
 export default function MRPrintReport() {
@@ -115,11 +125,21 @@ export default function MRPrintReport() {
 
         {/* Letterhead */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #1a2b4b", paddingBottom: "16px", marginBottom: "20px" }}>
-          <div>
-            <div style={{ fontFamily: "Hanken Grotesk", fontSize: "20px", fontWeight: 700, color: "#0b1c30" }}>
-              {data.companyName}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* ✅ NEW — company logo, only rendered if one has been uploaded */}
+            {data.companyLogoUrl && (
+              <img
+                src={getLogoUrl(data.companyLogoUrl)}
+                alt={`${data.companyName} logo`}
+                style={{ height: "90px", width: "auto", maxWidth: "220px", objectFit: "contain", flexShrink: 0 }}
+              />
+            )}
+            <div>
+              <div style={{ fontFamily: "Hanken Grotesk", fontSize: "20px", fontWeight: 700, color: "#0b1c30" }}>
+                {data.companyName}
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>Al Hattab Holding — Procurement Hub</div>
             </div>
-            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>Al Hattab Holding — Procurement Hub</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "11px", color: "#94a3b8", letterSpacing: "0.05em" }}>MATERIAL REQUEST</div>

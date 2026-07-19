@@ -1,4 +1,5 @@
 ﻿using Oracle.ManagedDataAccess.Client;
+using Procurement.Api.Models.Integration;
 using Procurement.Api.Services.Integration;
 
 namespace Procurement.Api.Services.Integration
@@ -100,6 +101,40 @@ namespace Procurement.Api.Services.Integration
             }
 
             return projects;
+        }
+     
+    public async Task<List<ErpSupplierDto>> FetchSuppliersAsync()
+        {
+            var suppliers = new List<ErpSupplierDto>();
+
+            using var conn = new OracleConnection(_connectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new OracleCommand(@"
+    SELECT Supplier_ID, User_Code, Primary_Name, Branch_ID,
+           Credit_Limit_Days, Payment_Type, Active
+    FROM Suppliers", conn);
+
+            cmd.CommandTimeout = 300;
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                suppliers.Add(new ErpSupplierDto
+                {
+                    SourceSupplierId = reader["Supplier_ID"]?.ToString()?.Trim() ?? "",
+                    UserCode = reader["User_Code"]?.ToString()?.Trim() ?? "",
+                    PrimaryName = reader["Primary_Name"]?.ToString()?.Trim() ?? "",
+                    BranchId = reader["Branch_ID"]?.ToString()?.Trim() ?? "",
+                    CreditLimitDays = reader["Credit_Limit_Days"] is DBNull
+                        ? null
+                        : Convert.ToInt32(reader["Credit_Limit_Days"]),
+                    PaymentType = reader["Payment_Type"]?.ToString()?.Trim(),
+                    IsActive = reader["Active"]?.ToString()?.Trim() == "1"
+                });
+            }
+
+            return suppliers;
         }
     }
 }

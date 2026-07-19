@@ -12,5 +12,6 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? EntityType { get; set; }  // "Items" | "Suppliers" | null (= applies to all)
     }
 }

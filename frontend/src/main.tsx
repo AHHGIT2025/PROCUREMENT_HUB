@@ -17,8 +17,6 @@ import MaterialCreate from './pages/materials/MaterialCreate';
 import ProjectCreate  from './pages/projects/ProjectCreate';
 import ApproverInbox  from './pages/approvals/ApproverInbox';
 import ProcurementQueue from './pages/procurement/ProcurementQueue';
-  
-
 import OracleMonitor from './pages/settings/OracleMonitor';
 import ItemCategoryFlowManager from './pages/settings/ItemCategoryFlowManager';
 import RolesManager from './pages/Roles/RolesManager';
@@ -28,8 +26,15 @@ import MRPrintReport from './pages/reports/MRPrintReport';
 import MenuPermissions from './pages/settings/ManuPermissions';
 import IndentTransfer from './pages/procurement/IndentTransfer';
 import ApprovalHistory from './pages/approvals/ApprovalHistory';
+import InternationalPOList from './pages/internationalPO/InternationalPOList';
+import InternationalPOCreate from './pages/internationalPO/InternationalPOCreate';
+import SuppliersManager from './pages/suppliers/SuppliersManager';
+import RfqList from './pages/rfq/RfqList';
+import RfqCreate from './pages/rfq/RfqCreate';
+import RfqDetail from './pages/rfq/RfqDetail';
+import InternationalPODetail from './pages/internationalPO/InternationalPODetail';
 // ...
-<Route path="/approval-history" element={<ApprovalHistory />} />
+   
 function ProtectedLayout() {
   if (!localStorage.getItem('token')) return <Navigate to="/login" replace />;
   return <AppLayout />;
@@ -61,6 +66,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/approval-history" element={<ApprovalHistory />} />
           <Route path="/procurement" element={<ProcurementQueue />} />
          <Route path="/procurement/indent-transfer" element={<IndentTransfer />} />
+         <Route path="/international-po" element={<InternationalPOList />} />
+<Route path="/international-po/create" element={<InternationalPOCreate />} />
+<Route path="/international-po/:id" element={<InternationalPODetail />} />
+<Route path="/suppliers" element={<SuppliersManager />} />
+<Route path="/rfq" element={<RfqList />} />
+<Route path="/rfq/create" element={<RfqCreate />} />
+<Route path="/rfq/:id" element={<RfqDetail />} />
+
+// ...
+<Route path="/approval-history" element={<ApprovalHistory />} />
           <Route path="/workflows"        element={<WorkflowList />} />
           <Route path="/workflows/create" element={<WorkflowBuilder />} />
           <Route path="/store-verification" element={<StoreKeeperWindow />} />

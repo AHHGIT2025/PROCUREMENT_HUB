@@ -73,7 +73,63 @@ namespace Procurement.Api.Controllers.Purchase_Requests
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return claim != null ? Guid.Parse(claim) : null;
         }
+        // ═══════════════════════════════════════════════════════════
+        // ✅ NEW — International PO approval endpoints.
+        // Parallel to the PR endpoints above — none of them are touched.
+        // ═══════════════════════════════════════════════════════════
 
+        // GET /api/approvals/pending-po/{userId}
+        [HttpGet("pending-po/{userId:guid}")]
+        public async Task<IActionResult> GetPendingPo(Guid userId)
+        {
+            var data = await _engine.GetPendingPoAsync(userId);
+            return Ok(new { success = true, data });
+        }
+
+        // POST /api/approvals/po/{instanceId}/approve
+        [HttpPost("po/{instanceId:guid}/approve")]
+        public async Task<IActionResult> ApprovePo(Guid instanceId, [FromBody] ActionDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            var result = await _engine.ProcessPoActionAsync(
+                instanceId, userId.Value, "APPROVE", dto.Comments);
+
+            return result.Success
+                ? Ok(new { success = true, message = result.Message, data = result.Data })
+                : BadRequest(new { success = false, message = result.Message });
+        }
+
+        // POST /api/approvals/po/{instanceId}/reject
+        [HttpPost("po/{instanceId:guid}/reject")]
+        public async Task<IActionResult> RejectPo(Guid instanceId, [FromBody] ActionDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            var result = await _engine.ProcessPoActionAsync(
+                instanceId, userId.Value, "REJECT", dto.Comments);
+
+            return result.Success
+                ? Ok(new { success = true, message = result.Message })
+                : BadRequest(new { success = false, message = result.Message });
+        }
+
+        // POST /api/approvals/po/{instanceId}/return
+        [HttpPost("po/{instanceId:guid}/return")]
+        public async Task<IActionResult> ReturnPo(Guid instanceId, [FromBody] ActionDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            var result = await _engine.ProcessPoActionAsync(
+                instanceId, userId.Value, "RETURN", dto.Comments);
+
+            return result.Success
+                ? Ok(new { success = true, message = result.Message })
+                : BadRequest(new { success = false, message = result.Message });
+        }
         [HttpPost("{instanceId:guid}/approve")]
         public async Task<IActionResult> Approve(Guid instanceId, [FromBody] ActionDto dto)
         {

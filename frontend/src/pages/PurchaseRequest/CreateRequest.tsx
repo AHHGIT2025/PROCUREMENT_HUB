@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api/client";
-import { Paperclip, FileText, X, Loader2, Search, CheckCircle2 } from "lucide-react";
+import { Paperclip, FileText, X, Loader2, Search, CheckCircle2, Tag } from "lucide-react";
 
 // ── Attachment helpers ────────────────────────────────────────────────────────
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
@@ -18,6 +18,27 @@ function isImageFile(fileName?: string) {
   if (!fileName) return false;
   return IMAGE_EXTS.includes(fileName.toLowerCase().slice(fileName.lastIndexOf(".")));
 }
+
+// ── Category tab color tokens (by ItemCategories.Code) — subtle chip style ──
+const CATEGORY_STYLES: Record<string, { text: string; border: string; bg: string }> = {
+  IT:         { text: "text-blue-700",   border: "border-blue-500",   bg: "bg-blue-50" },
+  ASSET:      { text: "text-purple-700", border: "border-purple-500", bg: "bg-purple-50" },
+  LOGISTICS:  { text: "text-amber-700",  border: "border-amber-500",  bg: "bg-amber-50" },
+  PROJECT:    { text: "text-teal-700",   border: "border-teal-500",   bg: "bg-teal-50" },
+  CIVIL:      { text: "text-orange-700", border: "border-orange-500", bg: "bg-orange-50" },
+  FMCG_FOOD:  { text: "text-green-700",  border: "border-green-500",  bg: "bg-green-50" },
+  FMCG_NFOOD: { text: "text-lime-700",   border: "border-lime-500",   bg: "bg-lime-50" },
+  SAFETY:     { text: "text-red-700",    border: "border-red-500",    bg: "bg-red-50" },
+  UNIFORM:    { text: "text-pink-700",   border: "border-pink-500",   bg: "bg-pink-50" },
+  GENERAL:    { text: "text-gray-700",   border: "border-gray-400",   bg: "bg-gray-50" },
+  DEFAULT:    { text: "text-slate-700",  border: "border-slate-400",  bg: "bg-slate-50" },
+};
+
+// Sentinel value for the "All Items" tab — bypasses category filter entirely,
+// also surfaces items with CategoryId = NULL (uncategorized) that would
+// otherwise never appear under any category tab.
+const ALL_ITEMS_TAB = "__ALL_ITEMS__";
+const ALL_ITEMS_STYLE = { text: "text-slate-700", border: "border-slate-500", bg: "bg-slate-100" };
 
 // ── Searchable Dropdown Component ────────────────────────────────────────────
 interface SearchDropdownProps {
@@ -168,6 +189,11 @@ export default function CreateRequest() {
   const [uploading,   setUploading]   = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
 
+  // ── Category tabs state ────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+
   const [currentItem, setCurrentItem] = useState<any>({
     materialId: "", materialCode: "", materialName: "", quantity: 1,
     uom: "", requiredDate: new Date().toISOString().slice(0, 10),
@@ -236,10 +262,27 @@ export default function CreateRequest() {
           attachmentFileName: i.attachmentFileName ?? "",
         })),
       });
+
+      // Preload edited items into the material list immediately so they
+      // render correctly while the full list is still loading in the background.
+      if (pr.items?.length) {
+        setMaterials((pr.items as any[]).map(i => ({
+          id: i.materialId,
+          materialCode: i.materialCode,
+          name: i.materialName,
+          uom: i.uom,
+        })));
+      }
+
+      // Auto-load the full material list + category tabs, same as create mode.
+      if (pr.companyId) {
+        setSelectedCategoryId(ALL_ITEMS_TAB);
+        loadMaterialsFor(pr.companyId, ALL_ITEMS_TAB);
+      }
     }).catch(console.error);
   }, [editId]);
 
-  // ── Company change handler — loads projects + departments + materials ──────
+  // ── Company change handler — loads projects + departments + categories + all items ──
   async function handleCompanyChange(companyId: string, companiesList?: any[]) {
     const list = companiesList ?? companies;
     setForm((f: any) => ({
@@ -252,25 +295,30 @@ export default function CreateRequest() {
     setProjects([]);
     setDepartments([]);
     setMaterials([]);
+    setCategories([]);
+    setSelectedCategoryId("");
     if (!companyId) return;
     await loadCompanyData(companyId);
+    // Auto-load full material list by default — category tabs remain
+    // available as an optional narrowing filter on top of this.
+    setSelectedCategoryId(ALL_ITEMS_TAB);
+    loadMaterialsFor(companyId, ALL_ITEMS_TAB);
   }
 
   async function loadCompanyData(companyId: string) {
     try {
-      const [projRes, deptRes, matRes] = await Promise.all([
+      const [projRes, deptRes] = await Promise.all([
         api.get(`/projects/company/${companyId}`),
         api.get(`/departments/by-company/${companyId}`),
-        api.get(`/materials`, { params: { companyId, page: 1, pageSize: 500 } }),
       ]);
 
       const projList = projRes.data?.data ?? projRes.data ?? [];
       const deptList = deptRes.data?.data ?? deptRes.data ?? [];
-      const matList  = matRes.data?.items ?? matRes.data?.data ?? matRes.data ?? [];
 
       setProjects(Array.isArray(projList) ? projList : []);
       setDepartments(Array.isArray(deptList) ? deptList : []);
-      setMaterials(Array.isArray(matList) ? matList : []);
+
+      loadCategoriesForCompany(companyId);
 
       return { projList, deptList };
     } catch (err) {
@@ -279,34 +327,66 @@ export default function CreateRequest() {
     }
   }
 
-  // ── Live material search (debounced backend query) ─────────────────────────
+  // ── Category tabs — load which categories have items for this company ─────
+  async function loadCategoriesForCompany(companyId: string) {
+    setCategoriesLoading(true);
+    try {
+      const r = await api.get(`/materials/categories-for-company/${companyId}`);
+      const list = r.data?.data ?? r.data ?? [];
+      setCategories(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error("Failed to load categories", err);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }
+
+  // ── Shared loader — fetches materials for a company, optionally scoped to a category ──
+  // categoryId === ALL_ITEMS_TAB means no category filter (full company list).
+  async function loadMaterialsFor(companyId: string, categoryId: string) {
+    setMaterialSearching(true);
+    try {
+      const params: any = { companyId, page: 1, pageSize: 500 };
+      if (categoryId !== ALL_ITEMS_TAB) params.categoryId = categoryId;
+      const r = await api.get(`/materials`, { params });
+      const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
+      setMaterials(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error("Failed to load materials", err);
+      setMaterials([]);
+    } finally {
+      setMaterialSearching(false);
+    }
+  }
+
+  // ── Tab click — narrows the already-loaded list to a category, or "All Items" resets it ──
+  function selectCategory(categoryId: string) {
+    setSelectedCategoryId(categoryId);
+    clearItemForm();
+    if (!form.companyId) return;
+    loadMaterialsFor(form.companyId, categoryId);
+  }
+
+  // ── Live material search (debounced backend query, scoped to active tab) ───
   const materialSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleMaterialSearch(query: string) {
     if (materialSearchTimeout.current) clearTimeout(materialSearchTimeout.current);
 
     materialSearchTimeout.current = setTimeout(async () => {
-      if (!form.companyId) return;
-
-      if (!query.trim()) {
-        setMaterialSearching(true);
-        try {
-          const r = await api.get(`/materials`, {
-            params: { companyId: form.companyId, page: 1, pageSize: 500 }
-          });
-          const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
-          setMaterials(Array.isArray(list) ? list : []);
-        } finally {
-          setMaterialSearching(false);
-        }
-        return;
-      }
+      if (!form.companyId || !selectedCategoryId) return;
 
       setMaterialSearching(true);
       try {
-        const r = await api.get(`/materials`, {
-          params: { companyId: form.companyId, page: 1, pageSize: 100, search: query.trim() }
-        });
+        const params: any = {
+          companyId: form.companyId,
+          page: 1,
+          pageSize: query.trim() ? 100 : 500,
+          search: query.trim() || undefined,
+        };
+        if (selectedCategoryId !== ALL_ITEMS_TAB) params.categoryId = selectedCategoryId;
+        const r = await api.get(`/materials`, { params });
         const list = r.data?.items ?? r.data?.data ?? r.data ?? [];
         setMaterials(Array.isArray(list) ? list : []);
       } catch (err) {
@@ -400,7 +480,15 @@ export default function CreateRequest() {
   }
 
   function editItem(index: number) {
-    setCurrentItem(form.items[index]);
+    const item = form.items[index];
+    // Make sure the material being edited is selectable in the dropdown even
+    // if a different category tab is currently active.
+    setMaterials(prev =>
+      prev.some(m => m.id === item.materialId)
+        ? prev
+        : [{ id: item.materialId, materialCode: item.materialCode, name: item.materialName, uom: item.uom }, ...prev]
+    );
+    setCurrentItem(item);
     setEditIndex(index);
     window.scrollTo({ top: 400, behavior: "smooth" });
   }
@@ -625,6 +713,51 @@ export default function CreateRequest() {
             )}
           </div>
 
+          {/* ── Category Tabs — always colored, optional narrowing filter ── */}
+          {form.companyId && (
+            <div>
+              <label className="flex items-center gap-1.5 text-sm text-gray-500 mb-2 font-medium">
+                <Tag size={14} /> Item Category <span className="text-gray-400 font-normal">(optional filter)</span>
+              </label>
+              {categoriesLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Loader2 size={14} className="animate-spin" /> Loading categories…
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => selectCategory(ALL_ITEMS_TAB)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium border-b-2 transition ${ALL_ITEMS_STYLE.bg} ${ALL_ITEMS_STYLE.text} ${
+                      selectedCategoryId === ALL_ITEMS_TAB
+                        ? ALL_ITEMS_STYLE.border
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    All Items
+                  </button>
+                  {categories.map((cat: any) => {
+                    const catId = cat.id ?? cat.Id;
+                    const isActive = selectedCategoryId === catId;
+                    const style = CATEGORY_STYLES[cat.code ?? cat.Code] ?? CATEGORY_STYLES.DEFAULT;
+                    return (
+                      <button
+                        key={catId}
+                        type="button"
+                        onClick={() => selectCategory(catId)}
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium border-b-2 transition ${style.bg} ${style.text} ${
+                          isActive ? style.border : "border-transparent opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        {cat.name ?? cat.Name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
             <div className="lg:col-span-2">
@@ -635,7 +768,11 @@ export default function CreateRequest() {
                 items={materials}
                 value={currentItem.materialId}
                 onChange={(id, item) => setCurrentItemField("materialId", id)}
-                placeholder={form.companyId ? "Search by code or name..." : "Select company first"}
+                placeholder={
+                  !form.companyId ? "Select company first"
+                  : materialSearching && materials.length === 0 ? "Loading items…"
+                  : "Search by code or name..."
+                }
                 disabled={!form.companyId}
                 displayFn={m => `${m.itemCode ?? m.materialCode ?? ""} — ${m.name}`}
                 searchFn={(m, q) =>

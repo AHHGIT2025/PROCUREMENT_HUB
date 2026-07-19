@@ -18,19 +18,22 @@ namespace Procurement.Api.Controllers.Integration
         private readonly IErpConnector _fmcgConnector;
         private readonly AppDbContext _db;
         private readonly ErpSyncSchedulerStatus _schedulerStatus;
+        private readonly SupplierSyncService _supplierSyncService;
 
         public ErpSyncController(
             ErpSyncOrchestrator orchestrator,
             [FromKeyedServices("HQ")] IErpConnector hqConnector,
             [FromKeyedServices("FMCG")] IErpConnector fmcgConnector,
             AppDbContext db,
-            ErpSyncSchedulerStatus schedulerStatus)
+            ErpSyncSchedulerStatus schedulerStatus,
+            SupplierSyncService supplierSyncService)
         {
             _orchestrator = orchestrator;
             _hqConnector = hqConnector;
             _fmcgConnector = fmcgConnector;
             _db = db;
             _schedulerStatus = schedulerStatus;
+            _supplierSyncService = supplierSyncService;
         }
 
         // POST api/erp-sync/run?source=HQ|FMCG|All
@@ -73,9 +76,36 @@ namespace Procurement.Api.Controllers.Integration
             }
         }
 
+        // POST api/erp-sync/run-suppliers?source=HQ|FMCG|All
+        [HttpPost("run-suppliers")]
+        public async Task<IActionResult> RunSuppliers([FromQuery] string source = "All")
+        {
+            var normalized = source.Trim().ToUpperInvariant();
+
+            if (normalized != "HQ" && normalized != "FMCG" && normalized != "ALL")
+                return BadRequest(ApiResponse<object>.Fail(
+                    $"Unknown source '{source}'. Use 'HQ', 'FMCG', or 'All'."));
+
+            var results = new Dictionary<string, SupplierSyncResult>();
+
+            try
+            {
+                if (normalized == "HQ" || normalized == "ALL")
+                    results["HQ"] = await _supplierSyncService.SyncAsync(_hqConnector, "ORACLE_HQ");
+
+                if (normalized == "FMCG" || normalized == "ALL")
+                    results["FMCG"] = await _supplierSyncService.SyncAsync(_fmcgConnector, "ORACLE_FMCG");
+
+                return Ok(ApiResponse<Dictionary<string, SupplierSyncResult>>.Ok(results, "Supplier sync completed."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail($"Supplier sync failed: {ex.Message}"));
+            }
+        }
+
         // POST api/erp-sync/reset-watermark?source=HQ|FMCG|All
         // Resets watermark to 1900 so next sync pulls ALL records from Oracle
-        // POST api/erp-sync/reset-watermark?source=HQ|FMCG|All
         [HttpPost("reset-watermark")]
         public async Task<IActionResult> ResetWatermark([FromQuery] string source = "HQ")
         {

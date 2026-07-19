@@ -94,6 +94,7 @@ namespace Procurement.Api.Services.Integration
 
                 using var scope = _rootProvider.CreateScope();
                 var orchestrator = scope.ServiceProvider.GetRequiredService<ErpSyncOrchestrator>();
+                var supplierSyncService = scope.ServiceProvider.GetRequiredService<SupplierSyncService>();
                 var hqConnector = scope.ServiceProvider.GetRequiredKeyedService<IErpConnector>("HQ");
                 var fmcgConnector = scope.ServiceProvider.GetRequiredKeyedService<IErpConnector>("FMCG");
 
@@ -115,6 +116,15 @@ namespace Procurement.Api.Services.Integration
                         summaries.Add(
                             $"{connector.ConnectorName}: Items {result.ItemsProcessed} processed/{result.ItemsSkipped} skipped, " +
                             $"Projects {result.ProjectsProcessed} processed/{result.ProjectsSkipped} skipped");
+
+                        // ✅ NEW — Supplier sync, same connector, same tick.
+                        // No watermark (Oracle Suppliers table has no UPDATED_DATE column),
+                        // so this does a full pull + upsert every 15 minutes.
+                        var supplierSourceType = connector.ConnectorName.Contains("FMCG") ? "ORACLE_FMCG" : "ORACLE_HQ";
+                        var supplierResult = await supplierSyncService.SyncAsync(connector, supplierSourceType);
+                        summaries.Add(
+                            $"{connector.ConnectorName}: Suppliers {supplierResult.Processed} processed " +
+                            $"({supplierResult.Created} new, {supplierResult.Updated} updated)");
                     }
                     catch (Exception connEx)
                     {

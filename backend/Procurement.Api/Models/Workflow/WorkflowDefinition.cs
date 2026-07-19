@@ -21,7 +21,7 @@ namespace Procurement.Api.Models
         public bool IsDefault { get; set; } = false;
         public int Priority { get; set; } = 0;
         public int Version { get; set; } = 1;
-
+        public string ConditionMatchLogic { get; set; } = "ANY";
         public Company? Company { get; set; }
         public ICollection<WorkflowStep> Steps { get; set; } = new List<WorkflowStep>();
         public ICollection<WorkflowCondition> Conditions { get; set; } = new List<WorkflowCondition>();

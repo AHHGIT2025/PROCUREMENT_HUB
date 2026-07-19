@@ -10,7 +10,7 @@
 
     //    public Guid RequestedById { get; set; }
 
-    //    public string Justification { get; set; } = "";
+    //    public string Justification { get; set; } = "";Company.cs
 
     //    public List<CreatePurchaseRequestItemDto> Items { get; set; }
     //        = new();

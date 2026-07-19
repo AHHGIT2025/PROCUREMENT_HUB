@@ -4,7 +4,7 @@ using Procurement.Api.Models.Categories;
 using Procurement.Api.Models.PurchaseRequests;
 using Procurement.Api.Models.System;
 using Procurement.Api.Models.Menu;
-
+using Procurement.Api.Models.InternationalPO;
 using Procurement.Api.Services.Integration;
 using System.Reflection.Emit;
  
@@ -13,7 +13,7 @@ namespace Procurement.Api.Data;
 
 public class AppDbContext : DbContext
 {
-
+  
     public DbSet<OracleSourceMapping> OracleSourceMappings => Set<OracleSourceMapping>();
     public DbSet<ErpSyncWatermark> ErpSyncWatermarks => Set<ErpSyncWatermark>();
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
@@ -28,13 +28,25 @@ public class AppDbContext : DbContext
     {
         get; set;
     }
+   
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<DeliveryLocation> DeliveryLocations => Set<DeliveryLocation>();
+    public DbSet<InternationalPurchaseOrder> InternationalPurchaseOrders => Set<InternationalPurchaseOrder>();
+    public DbSet<InternationalPOItem> InternationalPOItems => Set<InternationalPOItem>();
+    public DbSet<InternationalPOItemQuote> InternationalPOItemQuotes => Set<InternationalPOItemQuote>();
+    public DbSet<SupplierDocument> SupplierDocuments => Set<SupplierDocument>();
     public DbSet<ItemSubGroup> ItemSubGroups { get; set; }
 
     public DbSet<Unit> Units { get; set; }
     public DbSet<ItemGroup> ItemGroups { get; set; }
-
+    public DbSet<Procurement.Api.Models.Rfq.Rfq> Rfqs => Set<Procurement.Api.Models.Rfq.Rfq>();
+    public DbSet<Procurement.Api.Models.Rfq.RfqItem> RfqItems => Set<Procurement.Api.Models.Rfq.RfqItem>();
+    public DbSet<Procurement.Api.Models.Rfq.RfqSupplier> RfqSuppliers => Set<Procurement.Api.Models.Rfq.RfqSupplier>();
+    public DbSet<Procurement.Api.Models.Rfq.RfqQuotation> RfqQuotations => Set<Procurement.Api.Models.Rfq.RfqQuotation>();
+    public DbSet<Procurement.Api.Models.Rfq.RfqQuotationItem> RfqQuotationItems => Set<Procurement.Api.Models.Rfq.RfqQuotationItem>();
     //public DbSet<MaterialRequest> MaterialRequests { get; set; }
     //public DbSet<MaterialRequestItem> MaterialRequestItems { get; set; }
+    public DbSet<Procurement.Api.Models.Rfq.RfqAttachment> RfqAttachments => Set<Procurement.Api.Models.Rfq.RfqAttachment>();
 
     public DbSet<Holding> Holdings => Set<Holding>();
     public DbSet<Company> Companies => Set<Company>();
@@ -81,7 +93,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Material>().HasIndex(x => x.MaterialCode).IsUnique();
         modelBuilder.Entity<PurchaseRequest>().HasIndex(x => x.RequestNumber).IsUnique();
         modelBuilder.Ignore<CreateUserDto>();
-
+      
         modelBuilder.Entity<ItemUnit>()
             .HasOne(iu => iu.Item)
             .WithMany(i => i.ItemUnits)

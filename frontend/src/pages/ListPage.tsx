@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import { StatusBadge } from '../components/Ui';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronDown, ChevronRight, Mail, Building2, Briefcase,
   UserCog, CheckCircle2, XCircle, Search, X, Crown,
-  Package, FileText, Clock, Pencil,
+  Package, FileText, Clock, Pencil, ImageIcon, Loader2,
 } from "lucide-react";
 import MaterialEdit from '../components/MaterialEdit';
 
@@ -90,9 +90,6 @@ const APPROVAL_STATUS_STYLE: Record<string, string> = {
   PENDING:  'bg-amber-50 text-amber-700 border-amber-200',
 };
 
-// Maps Dashboard's ?filter= URL values to the actual status text stored
-// on Purchase Requests (e.g. "PendingApproval" -> "Pending Approval").
-// Adjust the right-hand values here if your backend uses different status text.
 const STATUS_FILTER_MAP: Record<string, string> = {
   Draft: 'Draft',
   PendingApproval: 'Pending Approval',
@@ -120,6 +117,13 @@ function fmtDate(iso?: string) {
   });
 }
 
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
+function getLogoUrl(path?: string) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_ORIGIN}${path}`;
+}
+
 export default function ListPage({ type }: { type: string }) {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -131,7 +135,6 @@ export default function ListPage({ type }: { type: string }) {
 
   const navigate = useNavigate();
 
-  // ✅ NEW: pre-fill search from ?filter= URL param (e.g. from Dashboard cards)
   const [rows, setRows]                   = useState<any[]>([]);
   const [search, setSearch]               = useState(() => {
     if (type === 'requests') {
@@ -144,7 +147,6 @@ export default function ListPage({ type }: { type: string }) {
   const [roleFilter, setRoleFilter]       = useState("");
   const [sourceFilter, setSourceFilter]   = useState("");
 
-  // ── Requests-only: company + date filters ─────────────────────────────────
   const [reqCompanyFilter, setReqCompanyFilter] = useState("");
   const [reqCompanies, setReqCompanies]         = useState<any[]>([]);
   const [dateFrom, setDateFrom]                 = useState("");
@@ -167,13 +169,15 @@ export default function ListPage({ type }: { type: string }) {
   const [matCompanies, setMatCompanies]     = useState<any[]>([]);
   const [editMaterialId, setEditMaterialId] = useState<string | null>(null);
 
-  // ── Add Company (Organization page) ──────────────────────────────────────
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [companyForm, setCompanyForm] = useState({
     code: '', name: '', currency: 'QAR', isOracleIntegrated: false,
   });
   const [companyFormError, setCompanyFormError] = useState<string | null>(null);
   const [companyFormSaving, setCompanyFormSaving] = useState(false);
+
+  const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null);
+  const logoFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (type === "materials") {
@@ -231,7 +235,31 @@ export default function ListPage({ type }: { type: string }) {
     api.get(c.endpoint).then(r => setRows(r.data?.data ?? r.data ?? []));
   }
 
-  // ── Add Company submit ────────────────────────────────────────────────────
+  function triggerLogoUpload(companyId: string) {
+    logoFileInputRefs.current[companyId]?.click();
+  }
+
+  async function handleLogoFileChange(companyId: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setUploadingLogoId(companyId);
+      await api.post(`/companies/${companyId}/logo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      reloadOrganization();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Failed to upload logo. Please try again.");
+    } finally {
+      setUploadingLogoId(null);
+      e.target.value = "";
+    }
+  }
+
   async function saveCompany(e: React.FormEvent) {
     e.preventDefault();
     setCompanyFormError(null);
@@ -413,7 +441,6 @@ export default function ListPage({ type }: { type: string }) {
         )}
       </div>
 
-      {/* Add Company Modal */}
       {showAddCompany && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -478,6 +505,12 @@ export default function ListPage({ type }: { type: string }) {
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                   Note: after saving, go to <strong>Oracle Monitor → Branch → Company Mappings</strong> to map
                   this company's Bright branch ID, then run a sync.
+                </p>
+              )}
+
+              {isOrganization && (
+                <p className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                  Logo upload is available on the company row after saving.
                 </p>
               )}
             </form>
@@ -599,6 +632,7 @@ export default function ListPage({ type }: { type: string }) {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 {isExpandable && <th className="px-3 py-3 w-8"></th>}
+                {isOrganization && <th className="px-4 py-3 text-left w-20">Logo</th>}
                 {c.cols.map((x: string) => (
                   <th key={x} className="px-4 py-3 text-left">
                     {x.replace(/([A-Z])/g, " $1")}
@@ -614,7 +648,7 @@ export default function ListPage({ type }: { type: string }) {
               {filteredRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={c.cols.length + (isUsers ? 3 : isExpandable ? 1 : 0) + (isMaterials ? 1 : 0)}
+                    colSpan={c.cols.length + (isUsers ? 3 : isExpandable ? 1 : 0) + (isMaterials ? 1 : 0) + (isOrganization ? 1 : 0)}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     {isMaterials && matLoading ? "Loading items…" : "No data found"}
@@ -629,7 +663,10 @@ export default function ListPage({ type }: { type: string }) {
                   const matDetail  = matDetailMap[rowId];
                   const totalCols  = c.cols.length
                     + (isUsers ? 3 : isExpandable ? 1 : 0)
-                    + (isMaterials ? 1 : 0);
+                    + (isMaterials ? 1 : 0)
+                    + (isOrganization ? 1 : 0);
+
+                  const logoUrl = r.logoUrl ?? r.LogoUrl;
 
                   return (
                     <>
@@ -641,6 +678,32 @@ export default function ListPage({ type }: { type: string }) {
                         {isExpandable && (
                           <td className="px-3 py-3 text-gray-400">
                             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </td>
+                        )}
+
+                        {isOrganization && (
+                          <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                            <input
+                              ref={el => { logoFileInputRefs.current[rowId] = el; }}
+                              type="file"
+                              accept=".jpg,.jpeg,.png,.webp"
+                              className="hidden"
+                              onChange={e => handleLogoFileChange(rowId, e)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => triggerLogoUpload(rowId)}
+                              title={logoUrl ? "Click to replace logo" : "Click to upload logo"}
+                              className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden hover:border-blue-400 transition relative"
+                            >
+                              {uploadingLogoId === rowId ? (
+                                <Loader2 size={16} className="animate-spin text-blue-500" />
+                              ) : logoUrl ? (
+                                <img src={getLogoUrl(logoUrl)} alt={r.name ?? r.Name ?? "Logo"} className="w-full h-full object-contain" />
+                              ) : (
+                                <ImageIcon size={16} className="text-gray-300" />
+                              )}
+                            </button>
                           </td>
                         )}
 
@@ -933,7 +996,17 @@ export default function ListPage({ type }: { type: string }) {
                                       <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
                                         <FileText size={14} />
                                       </div>
-                                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Approval History</p>
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Approval History</p>
+                                        {detail.workflowName ? (
+                                          <p className="text-xs text-purple-600 font-medium truncate">
+                                            Flow: {detail.workflowName}
+                                            {detail.totalWorkflowSteps ? ` · Step ${detail.approvals?.length ?? 0} of ${detail.totalWorkflowSteps}` : ""}
+                                          </p>
+                                        ) : (
+                                          <p className="text-xs text-red-500 font-medium">⚠️ No workflow matched this request</p>
+                                        )}
+                                      </div>
                                     </div>
                                     {detail.approvals?.length > 0 ? (
                                       <div className="space-y-2.5">

@@ -10,7 +10,8 @@ using Procurement.Api.Services.Integration;
 using Procurement.Api.Services.Storage;
 using Procurement.Api.Services.Workflow;
 using System.Text;
-
+using Procurement.Api.Models;
+using Procurement.Api.Services.Integration;
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -36,6 +37,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<RequestNumberGeneratorService>();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.CustomSchemaIds(type => type.FullName);
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -45,7 +47,7 @@ builder.Services.AddSwaggerGen(options =>
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "Enter 'Bearer {your_token}'"
     });
-
+    //builder.Services.AddScoped<SupplierSyncService>();
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
@@ -95,7 +97,7 @@ builder.Services.Configure<ErpSyncSchedulerOptions>(
 builder.Services.AddSingleton<ErpSyncSchedulerStatus>();
 builder.Services.AddHostedService<ErpSyncSchedulerService>();
 // ─────────────────────────────────────────────────────────────────
-
+builder.Services.AddScoped<SupplierSyncService>();   // ← NEW LINE
 //builder.Services.AddCors(o => o.AddPolicy("Frontend", p => p.WithOrigins("http://localhost:5173", "https://localhost:5173").AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddCors(o => o.AddPolicy("Frontend", p => p
     .WithOrigins(

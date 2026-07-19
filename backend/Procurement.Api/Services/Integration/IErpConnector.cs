@@ -1,4 +1,6 @@
-﻿namespace Procurement.Api.Services.Integration
+﻿using Procurement.Api.Models.Integration;
+
+namespace Procurement.Api.Services.Integration
 {
     public class ErpItemDto
     {
@@ -32,6 +34,7 @@
         string ConnectorName { get; }   // e.g. "BrightOracle-HQ", "BrightOracle-FMCG"
 
         Task<List<ErpItemDto>> FetchItemsSinceAsync(DateTime watermark);
+        Task<List<ErpSupplierDto>> FetchSuppliersAsync();
         Task<List<ErpProjectDto>> FetchProjectsSinceAsync(DateTime watermark);
     }
 }

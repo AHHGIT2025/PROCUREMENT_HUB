@@ -1,10 +1,12 @@
-  import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
 import { Printer } from "lucide-react";
 
 export default function ApproverInbox() {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const navigate = useNavigate();
   const roles: string[] = user.roles || [];
 
   const isAdmin    = roles.some(r => ["System Admin", "Holding Admin", "Company Admin"].includes(r));
@@ -34,23 +36,25 @@ export default function ApproverInbox() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
-    try {
-      setLoading(true);
-      if (isApprover || isAdmin) {
-        const r = await api.get(`/approvals/pending/${user.id}`);
-        setPendingList(r.data.data || r.data || []);
-      }
-      if (isAdmin) {
-        const r = await api.get("/purchase-requests");
-        setAllRequests(r.data || []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+async function loadData() {
+  try {
+    setLoading(true);
+    // Always attempt — backend safely returns [] if nothing is assigned to this user.
+    // Gating this by role name was wrong: DEPARTMENT_MANAGER routing uses
+    // Users.ManagerId and doesn't require any specific Role.
+    const r = await api.get(`/approvals/pending/${user.id}`);
+    setPendingList(r.data.data || r.data || []);
+
+    if (isAdmin) {
+      const allR = await api.get("/purchase-requests");
+      setAllRequests(allR.data || []);
     }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
   }
+}
 
   async function openAction(instance: any, type: "APPROVE" | "REJECT" | "RETURN") {
     setSelectedInstance(instance);
@@ -276,7 +280,7 @@ export default function ApproverInbox() {
                             {item.daysWaiting === 0 ? "⚡ Today" : `⏱ ${item.daysWaiting}d`}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5">
+                        {/* <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5">
                             <button onClick={() => viewStatus(item.prId)}
                               className="px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-200">
@@ -300,7 +304,41 @@ export default function ApproverInbox() {
                               ✕ Reject
                             </button>
                           </div>
-                        </td>
+                        </td> */}
+                        <td className="px-4 py-3.5">
+  <div className="flex items-center gap-1.5">
+    <button onClick={() => viewStatus(item.prId)}
+      className="px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-200">
+      👁 View
+    </button>
+    <button onClick={(e) => printRequest(item.prId, e)}
+      title="Print MR"
+      className="px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition border border-transparent hover:border-gray-200 flex items-center gap-1">
+      <Printer size={12} /> Print
+    </button>
+    {item.approverType === "STORE_VERIFICATION" ? (
+      <button onClick={() => navigate("/store-verification")}
+        className="px-2.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+        📦 Verify Stock
+      </button>
+    ) : (
+      <>
+        <button onClick={() => openAction(item, "APPROVE")}
+          className="px-2.5 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+          ✓ Approve
+        </button>
+        <button onClick={() => openAction(item, "RETURN")}
+          className="px-2.5 py-1.5 text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition">
+          ↩ Return
+        </button>
+        <button onClick={() => openAction(item, "REJECT")}
+          className="px-2.5 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+          ✕ Reject
+        </button>
+      </>
+    )}
+  </div>
+</td>
                       </tr>
                     ))}
                   </tbody>
@@ -460,7 +498,24 @@ export default function ApproverInbox() {
                               <div className="font-medium text-gray-800">{item.materialCode}</div>
                               <div className="text-xs text-gray-400">{item.materialName}</div>
                             </td>
-                            <td className="px-4 py-2.5 text-center text-gray-700">{item.quantity}</td>
+                           <td className="px-4 py-2.5 text-center text-gray-700">
+  <div>{item.quantity}</div>
+  {item.storeStatus === 1 && (
+    <div className="text-[11px] text-green-600 font-medium mt-0.5">
+      ✓ Fully in stock
+    </div>
+  )}
+  {item.storeStatus === 2 && (
+    <div className="text-[11px] text-orange-600 font-medium mt-0.5">
+      {item.availableQty} available, {item.purchaseQty} to purchase
+    </div>
+  )}
+  {item.storeStatus === 3 && (
+    <div className="text-[11px] text-red-600 font-medium mt-0.5">
+      0 in stock, {item.purchaseQty} to purchase
+    </div>
+  )}
+</td>
                             <td className="px-4 py-2.5 text-center text-gray-500 text-xs">{item.uom}</td>
                             <td className="px-4 py-2.5 text-right text-gray-700">{Number(item.estimatedUnitPrice).toFixed(2)}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-blue-700">

@@ -2,7 +2,7 @@
 using Procurement.Api.Data;
 using Procurement.Api.Models;
 using Procurement.Api.Models.PurchaseRequests;
-
+using Procurement.Api.Models.InternationalPO;
 namespace Procurement.Api.Services.Workflow
 {
     public interface IApprovalEngineService
@@ -16,6 +16,12 @@ namespace Procurement.Api.Services.Workflow
         // Does not touch StartWorkflowAsync / ProcessActionAsync at all.
         Task<EngineResult> ProcessStoreVerificationAsync(
             Guid instanceId, Guid userId, List<StoreVerifyItemInput> items);
+        // ✅ NEW — dedicated path for International PO approvals.
+        // Parallel to StartWorkflowAsync/ProcessActionAsync — does not touch
+        // the existing Purchase Request approval logic at all.
+        Task<EngineResult> StartPoWorkflowAsync(Guid poId);
+        Task<EngineResult> ProcessPoActionAsync(Guid instanceId, Guid userId, string action, string? comments);
+        Task<List<PendingApprovalDto>> GetPendingPoAsync(Guid userId);
     }
 
     public class ApprovalEngineService : IApprovalEngineService
@@ -273,7 +279,358 @@ namespace Procurement.Api.Services.Workflow
                 nextStep = nextStep.Name
             });
         }
+        // ═══════════════════════════════════════════════════════════
+        // ✅ NEW — International PO Approval methods.
+        // Parallel to StartWorkflowAsync/ProcessActionAsync/GetPendingAsync
+        // above — none of those methods are touched by this addition.
+        // ═══════════════════════════════════════════════════════════
 
+        public async Task<EngineResult> StartPoWorkflowAsync(Guid poId)
+        {
+            var po = await _db.InternationalPurchaseOrders.FirstOrDefaultAsync(p => p.Id == poId);
+            if (po == null) return Fail("International PO not found.");
+
+            var workflow = await ResolveWorkflowForPOAsync(po.CompanyId, po.TotalAmount);
+            if (workflow == null)
+                return Fail("No PO approval workflow configured. Please contact IT admin.");
+
+            var steps = await _db.WorkflowSteps
+                .Where(s => s.WorkflowDefinitionId == workflow.Id && s.IsActive)
+                .OrderBy(s => s.StepOrder)
+                .ToListAsync();
+
+            if (!steps.Any())
+                return Fail("Workflow has no steps. Please contact IT admin.");
+
+            var firstStep = steps.First();
+            var assignedTo = await ResolveApproverAsync(firstStep, po.CompanyId, po.RequestedById);
+            if (assignedTo == null)
+                return Fail($"Cannot find approver for: {firstStep.Name}. Check user roles.");
+
+            _db.ApprovalInstances.Add(new ApprovalInstance
+            {
+                Id = Guid.NewGuid(),
+                EntityId = poId,
+                EntityType = "PO",
+                WorkflowDefinitionId = workflow.Id,
+                WorkflowStepId = firstStep.Id,
+                AssignedToId = assignedTo.Value,
+                StepOrder = firstStep.StepOrder,
+                Status = "PENDING",
+                DueDate = firstStep.TimeoutHours.HasValue
+                    ? DateTime.UtcNow.AddHours(firstStep.TimeoutHours.Value)
+                    : null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            po.Status = "PendingApproval";
+            po.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            var approverName = await _db.Users
+                .Where(u => u.Id == assignedTo.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync();
+
+            return Ok($"Submitted. Pending approval from {approverName}.", new
+            {
+                workflowName = workflow.Name,
+                firstApprover = approverName,
+                totalSteps = steps.Select(s => s.StepOrder).Distinct().Count()
+            });
+        }
+
+        public async Task<EngineResult> ProcessPoActionAsync(
+            Guid instanceId, Guid userId, string action, string? comments)
+        {
+            var instance = await _db.ApprovalInstances
+                .Include(i => i.WorkflowDefinition)
+                    .ThenInclude(w => w!.Steps)
+                .FirstOrDefaultAsync(i => i.Id == instanceId);
+
+            if (instance == null) return Fail("Approval instance not found.");
+            if (instance.Status != "PENDING") return Fail("This step is no longer pending.");
+            if (instance.EntityType != "PO") return Fail("This approval is not a PO approval.");
+
+            if (instance.AssignedToId != userId)
+            {
+                var stepRoleId = await _db.WorkflowSteps
+                    .Where(s => s.Id == instance.WorkflowStepId)
+                    .Select(s => s.RoleId)
+                    .FirstOrDefaultAsync();
+
+                if (stepRoleId.HasValue)
+                {
+                    var hasRole = await _db.UserRoles
+                        .AnyAsync(ur => ur.UserId == userId && ur.RoleId == stepRoleId.Value);
+                    if (!hasRole)
+                        return Fail("You are not authorised to act on this request.");
+                }
+                else return Fail("You are not authorised to act on this request.");
+            }
+
+            _db.ApprovalActions.Add(new ApprovalAction
+            {
+                Id = Guid.NewGuid(),
+                ApprovalInstanceId = instanceId,
+                ActionBy = userId,
+                ActionType = action.ToUpper(),
+                Comments = comments,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            if (action.ToUpper() == "REJECT")
+            {
+                instance.Status = "REJECTED";
+                instance.CompletedAt = DateTime.UtcNow;
+                instance.UpdatedAt = DateTime.UtcNow;
+                await CancelOtherPendingAsync(instance.EntityId, instanceId);
+                await UpdatePoStatusAsync(instance.EntityId, "Rejected");
+                await SendPoNotificationAsync(
+                    instance.EntityId,
+                    "❌ International PO Rejected",
+                    $"Your International PO has been rejected at step '{GetStepName(instance)}'. Reason: {comments ?? "No comments"}.");
+                await _db.SaveChangesAsync();
+                return Ok("PO rejected.");
+            }
+
+            if (action.ToUpper() == "RETURN")
+            {
+                instance.Status = "RETURNED";
+                instance.CompletedAt = DateTime.UtcNow;
+                instance.UpdatedAt = DateTime.UtcNow;
+                await CancelOtherPendingAsync(instance.EntityId, instanceId);
+                await UpdatePoStatusAsync(instance.EntityId, "Returned");
+                await SendPoNotificationAsync(
+                    instance.EntityId,
+                    "↩ International PO Returned for Correction",
+                    $"Your International PO has been returned at step '{GetStepName(instance)}'. Comments: {comments ?? "No comments"}.");
+                await _db.SaveChangesAsync();
+                return Ok("PO returned to requester.");
+            }
+
+            // APPROVE
+            instance.Status = "APPROVED";
+            instance.CompletedAt = DateTime.UtcNow;
+            instance.UpdatedAt = DateTime.UtcNow;
+
+            var allSteps = instance.WorkflowDefinition!.Steps
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StepOrder)
+                .ToList();
+
+            var nextStepOrder = allSteps
+                .Where(s => s.StepOrder > instance.StepOrder)
+                .Select(s => s.StepOrder)
+                .DefaultIfEmpty(0)
+                .Min();
+
+            if (nextStepOrder == 0)
+            {
+                await UpdatePoStatusAsync(instance.EntityId, "Approved");
+                await SendPoNotificationAsync(
+                    instance.EntityId,
+                    "✅ International PO Fully Approved",
+                    "Your International PO has been approved by all approvers.");
+                await _db.SaveChangesAsync();
+                return Ok("PO fully approved! ✅", new { completed = true });
+            }
+
+            var nextStep = allSteps.First(s => s.StepOrder == nextStepOrder);
+            var po = await _db.InternationalPurchaseOrders.FindAsync(instance.EntityId);
+            var nextUser = await ResolveApproverAsync(nextStep, po!.CompanyId, po.RequestedById);
+
+            if (nextUser == null)
+            {
+                await _db.SaveChangesAsync();
+                return Fail($"Cannot find approver for next step: {nextStep.Name}");
+            }
+
+            _db.ApprovalInstances.Add(new ApprovalInstance
+            {
+                Id = Guid.NewGuid(),
+                EntityId = instance.EntityId,
+                EntityType = "PO",
+                WorkflowDefinitionId = instance.WorkflowDefinitionId,
+                WorkflowStepId = nextStep.Id,
+                AssignedToId = nextUser.Value,
+                StepOrder = nextStep.StepOrder,
+                Status = "PENDING",
+                DueDate = nextStep.TimeoutHours.HasValue
+                    ? DateTime.UtcNow.AddHours(nextStep.TimeoutHours.Value)
+                    : null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            var nextApproverName = await _db.Users
+                .Where(u => u.Id == nextUser.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync();
+
+            return Ok($"Approved. Forwarded to {nextApproverName}.", new
+            {
+                nextApprover = nextApproverName,
+                nextStep = nextStep.Name
+            });
+        }
+
+        public async Task<List<PendingApprovalDto>> GetPendingPoAsync(Guid userId)
+        {
+            var instances = await _db.ApprovalInstances
+                .Where(i => i.AssignedToId == userId
+                         && i.Status == "PENDING"
+                         && i.EntityType == "PO"
+                         && i.IsActive)
+                .OrderBy(i => i.DueDate ?? DateTime.MaxValue)
+                .ToListAsync();
+
+            var result = new List<PendingApprovalDto>();
+
+            foreach (var inst in instances)
+            {
+                var po = await _db.InternationalPurchaseOrders
+                    .Where(p => p.Id == inst.EntityId)
+                    .Select(p => new
+                    {
+                        p.PoNo,
+                        p.TotalAmount,
+                        p.CreatedAt,
+                        RequesterName = _db.Users
+                            .Where(u => u.Id == p.RequestedById)
+                            .Select(u => u.FullName).FirstOrDefault(),
+                        CompanyName = _db.Companies
+                            .Where(c => c.Id == p.CompanyId)
+                            .Select(c => c.Name).FirstOrDefault(),
+                        SupplierName = _db.Suppliers
+                            .Where(s => s.Id == p.SupplierId)
+                            .Select(s => s.Name).FirstOrDefault() ?? "-"
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (po == null) continue;
+
+                var stepInfo = await _db.WorkflowSteps
+                    .Where(s => s.Id == inst.WorkflowStepId)
+                    .Select(s => new { s.Name, s.ApproverType })
+                    .FirstOrDefaultAsync();
+
+                result.Add(new PendingApprovalDto
+                {
+                    InstanceId = inst.Id,
+                    PrId = inst.EntityId,
+                    RequestNumber = po.PoNo ?? "(unnumbered)",
+                    RequesterName = po.RequesterName ?? "-",
+                    CompanyName = po.CompanyName ?? "-",
+                    ProjectName = po.SupplierName,   // reused field — shows Supplier name for PO rows
+                    TotalAmount = po.TotalAmount,
+                    DeliveryLocation = "",
+                    ContactNumber = "",
+                    StepName = stepInfo?.Name ?? "Approval",
+                    ApproverType = stepInfo?.ApproverType ?? "ROLE",
+                    StepOrder = inst.StepOrder,
+                    DueDate = inst.DueDate,
+                    DaysWaiting = (int)(DateTime.UtcNow - inst.CreatedAt).TotalDays
+                });
+            }
+
+            return result;
+        }
+
+        // ── RESOLVE WORKFLOW FOR PO ──────────────────────────
+        // Mirrors ResolveWorkflowAsync's structure, but matches on "Amount"
+        // conditions instead of ItemCategory. A workflow with NO Amount
+        // conditions at all is treated as an unconditional catch-all match
+        // — this is what makes the amount threshold OPTIONAL, not mandatory,
+        // exactly as requested.
+        private async Task<WorkflowDefinition?> ResolveWorkflowForPOAsync(Guid companyId, decimal amount)
+        {
+            var allWorkflows = await _db.WorkflowDefinitions
+                .Include(w => w.Conditions)
+                .Include(w => w.Steps.Where(s => s.IsActive))
+                .Where(w => w.IsActive && w.EntityType == "PO" &&
+                            (w.CompanyId == null || w.CompanyId == companyId))
+                .ToListAsync();
+
+            foreach (var workflow in allWorkflows.OrderByDescending(w => w.Priority))
+            {
+                if (MatchesAmountConditions(workflow, amount))
+                {
+                    var companySpecific = allWorkflows
+                        .Where(w => w.CompanyId == companyId)
+                        .OrderByDescending(w => w.Priority)
+                        .FirstOrDefault(w => MatchesAmountConditions(w, amount));
+
+                    return companySpecific ?? workflow;
+                }
+            }
+
+            return allWorkflows
+                .Where(w => w.IsDefault)
+                .OrderByDescending(w => w.CompanyId == companyId)
+                .ThenByDescending(w => w.Priority)
+                .FirstOrDefault();
+        }
+
+        private static bool MatchesAmountConditions(WorkflowDefinition workflow, decimal amount)
+        {
+            var amountConditions = workflow.Conditions
+                .Where(c => c.Field == "Amount")
+                .ToList();
+
+            // No Amount condition on this workflow = matches every amount
+            // (this is the "optional threshold" behavior requested).
+            if (!amountConditions.Any()) return true;
+
+            bool EvaluateOne(WorkflowCondition c)
+            {
+                if (!decimal.TryParse(c.Value, out var threshold)) return false;
+                return c.Operator.ToUpper() switch
+                {
+                    "GREATERTHAN" => amount > threshold,
+                    "GREATERTHANOREQUAL" => amount >= threshold,
+                    "LESSTHAN" => amount < threshold,
+                    "LESSTHANOREQUAL" => amount <= threshold,
+                    "EQUALS" => amount == threshold,
+                    _ => false
+                };
+            }
+
+            return workflow.ConditionMatchLogic == "ALL"
+                ? amountConditions.All(EvaluateOne)
+                : amountConditions.Any(EvaluateOne);
+        }
+
+        private async Task UpdatePoStatusAsync(Guid poId, string status)
+        {
+            var po = await _db.InternationalPurchaseOrders.FindAsync(poId);
+            if (po != null) { po.Status = status; po.UpdatedAt = DateTime.UtcNow; }
+        }
+
+        private async Task SendPoNotificationAsync(Guid poId, string title, string message)
+        {
+            var requestedById = await _db.InternationalPurchaseOrders
+                .Where(p => p.Id == poId)
+                .Select(p => p.RequestedById)
+                .FirstOrDefaultAsync();
+
+            if (requestedById == Guid.Empty) return;
+
+            _db.Notifications.Add(new Procurement.Api.Models.Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = requestedById,
+                Title = title,
+                Message = message,
+                IsRead = false,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
         // ✅ NEW — separate entry point for Store Verification steps.
         // Completely independent from ProcessActionAsync above — that method
         // is untouched. Called only when the pending step's ApproverType is
@@ -560,6 +917,21 @@ namespace Procurement.Api.Services.Workflow
             };
         }
 
+        // ── RESOLVE WORKFLOW ─────────────────────────────────
+        // ✅ CHANGED: category matching now respects ConditionMatchLogic.
+        // - "ANY" (default, existing behavior): workflow matches if ANY one of
+        //   its ItemCategory conditions is present in the request. Unchanged
+        //   for every workflow that existed before this change (they all
+        //   default to "ANY").
+        // - "ALL" (new): workflow matches ONLY if EVERY one of its
+        //   ItemCategory conditions is present in the request. This is what
+        //   lets you build a "combo" workflow (e.g. Asset + IT) that only
+        //   fires when a request genuinely contains items from ALL the
+        //   listed categories together — not just any one of them.
+        //
+        // Nothing else in this method changed: company-specific override
+        // logic, the ItemGroup fallback loop, and the default-workflow
+        // fallback all behave exactly as before.
         private async Task<WorkflowDefinition?> ResolveWorkflowAsync(
          Guid companyId, List<string> categoryCodes, List<string> groupNames)
         {
@@ -574,20 +946,14 @@ namespace Procurement.Api.Services.Workflow
             {
                 foreach (var workflow in allWorkflows.OrderByDescending(w => w.Priority))
                 {
-                    var match = workflow.Conditions.Any(c =>
-                        c.Field == "ItemCategory" &&
-                        c.Operator == "EQUALS" &&
-                        categoryCodes.Contains(c.Value.ToUpper()));
+                    var match = MatchesCategoryConditions(workflow, categoryCodes);
 
                     if (match)
                     {
                         var companySpecific = allWorkflows
                             .Where(w => w.CompanyId == companyId)
                             .OrderByDescending(w => w.Priority)
-                            .FirstOrDefault(w => w.Conditions.Any(c =>
-                                c.Field == "ItemCategory" &&
-                                c.Operator == "EQUALS" &&
-                                categoryCodes.Contains(c.Value.ToUpper())));
+                            .FirstOrDefault(w => MatchesCategoryConditions(w, categoryCodes));
 
                         return companySpecific ?? workflow;
                     }
@@ -613,6 +979,22 @@ namespace Procurement.Api.Services.Workflow
                 .OrderByDescending(w => w.CompanyId == companyId)
                 .ThenByDescending(w => w.Priority)
                 .FirstOrDefault();
+        }
+
+        // ✅ NEW — small helper extracted from the inline match logic above,
+        // so both the "find any match" loop and the "find company-specific
+        // override" lookup use the exact same ALL/ANY rule.
+        private static bool MatchesCategoryConditions(WorkflowDefinition workflow, List<string> categoryCodes)
+        {
+            var categoryConditions = workflow.Conditions
+                .Where(c => c.Field == "ItemCategory" && c.Operator == "EQUALS")
+                .ToList();
+
+            if (!categoryConditions.Any()) return false;
+
+            return workflow.ConditionMatchLogic == "ALL"
+                ? categoryConditions.All(c => categoryCodes.Contains(c.Value.ToUpper()))
+                : categoryConditions.Any(c => categoryCodes.Contains(c.Value.ToUpper()));
         }
 
         private async Task<Guid?> ResolveApproverAsync(

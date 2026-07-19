@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 
 const ASSIGN_STATUS: Record<string, string> = {
@@ -20,13 +21,16 @@ function Badge({ text, cls }: { text: string; cls: string }) {
 }
 
 export default function ProcurementQueue() {
+  const navigate = useNavigate();
 
   const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
   const userRoles: string[] = user.roles ?? [];
 
-  // ✅ FIXED: Purchase Manager added
+  // ✅ FIXED: "Purchase Officer" removed from this list — that's the
+  // assignee role (should only see their own assigned tasks), not a
+  // manager role. Only these roles see the full team queue.
   const isManager = userRoles.some(r =>
-    ['System Admin', 'Manager', 'Purchase Officer', 'Purchase Manager'].includes(r)
+    ['System Admin', 'Manager', 'Purchase Manager'].includes(r)
   );
 
   const [rows, setRows]               = useState<any[]>([]);
@@ -88,6 +92,10 @@ export default function ProcurementQueue() {
     setPoModal(true);
   }
 
+  function openConvertToPo(row: any) {
+    navigate(`/international-po/create?prId=${row.id}`);
+  }
+
   async function saveAssign() {
     if (!assignTo) { setMsg('Please select a team member.'); return; }
     try {
@@ -130,7 +138,9 @@ export default function ProcurementQueue() {
     }
   }
 
-  // ✅ Manager sees ALL rows, team member sees only assigned to them
+  // ✅ Manager sees ALL rows. Non-managers see ONLY the rows assigned to
+  // them — they don't need visibility into the whole team's queue, only
+  // their own tasks.
   const visibleRows = isManager
     ? rows
     : rows.filter(r => r.assignedToId === user.id);
@@ -305,13 +315,21 @@ export default function ProcurementQueue() {
 
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-nowrap">
-                          {/* MANAGER (Purchase Manager / System Admin / Manager) — Assign + PO Update */}
+                          {/* MANAGER (Purchase Manager / System Admin / Manager) —
+                              Assign + PO Update (legacy manual) + Convert to PO (new) */}
                           {isManager && (
                             <>
                               <button onClick={() => openAssign(row)}
                                 className="text-xs px-2.5 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition shadow-sm whitespace-nowrap">
                                 {row.assignedToName ? 'Reassign' : 'Assign'}
                               </button>
+                              {row.canUpdatePO && (
+                                <button
+                                  onClick={() => openConvertToPo(row)}
+                                  className="text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition shadow-sm whitespace-nowrap">
+                                  Convert to PO
+                                </button>
+                              )}
                               <button onClick={() => openPO(row)}
                                 className="text-xs px-2.5 py-1 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition shadow-sm whitespace-nowrap">
                                 PO Update
@@ -319,7 +337,10 @@ export default function ProcurementQueue() {
                             </>
                           )}
 
-                          {/* TEAM MEMBER (Purchase Officer) — Status update + PO Update */}
+                          {/* TEAM MEMBER (Purchase Officer) — status update +
+                              Convert to PO only. No Assign button (that's the
+                              manager's job) and no manual PO Update either —
+                              our new PO system replaces the manual number entry. */}
                           {!isManager && (
                             <>
                               {row.assignmentStatus && row.assignmentStatus !== 'UNASSIGNED' && (
@@ -332,9 +353,10 @@ export default function ProcurementQueue() {
                                 </select>
                               )}
                               {row.canUpdatePO && (
-                                <button onClick={() => openPO(row)}
-                                  className="text-xs px-2.5 py-1 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition shadow-sm whitespace-nowrap">
-                                  PO Update
+                                <button
+                                  onClick={() => openConvertToPo(row)}
+                                  className="text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition shadow-sm whitespace-nowrap">
+                                  Convert to PO
                                 </button>
                               )}
                             </>
@@ -389,7 +411,7 @@ export default function ProcurementQueue() {
         </div>
       )}
 
-      {/* PO UPDATE MODAL */}
+      {/* PO UPDATE MODAL (manager only, legacy manual number entry) */}
       {poModal && selected && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">

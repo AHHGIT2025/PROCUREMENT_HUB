@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Procurement.Api.Common;
 using Procurement.Api.Data;
 using Procurement.Api.Models;
+using Procurement.Api.Models.InternationalPO;
 using Procurement.Api.Models.Menu;
 
 using System.Security.Claims;
@@ -61,7 +62,7 @@ namespace Procurement.Api.Controllers
                 "dashboard", "purchase-requests", "create-request", "my-requests",
                 "approvals", "materials", "projects", "indent-transfer","procurement", "upload-center",
                 "category-flow", "oracle-monitor", "item-categories","approval-history",
-                "workflows", "users", "organization", "audit-logs"
+                "workflows", "users", "organization", "audit-logs","international-po","suppliers","rfq"
             };
 
             return Ok(ApiResponse<object>.Ok(new

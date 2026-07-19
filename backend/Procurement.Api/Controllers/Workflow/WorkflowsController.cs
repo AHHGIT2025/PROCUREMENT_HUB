@@ -33,6 +33,7 @@ namespace Procurement.Api.Controllers.Workflow
                     priority = w.Priority,
                     isActive = w.IsActive,
                     companyId = w.CompanyId,
+                    conditionMatchLogic = w.ConditionMatchLogic,   // ✅ NEW
                     conditions = w.Conditions.Select(c => new { c.Field, c.Operator, c.Value }),
                     steps = w.Steps.OrderBy(s => s.StepOrder)
                                     .Select(s => new { s.StepOrder, s.Name, s.RoleName, s.ApproverType })
@@ -67,6 +68,7 @@ namespace Procurement.Api.Controllers.Workflow
                     priority = wf.Priority,
                     isActive = wf.IsActive,
                     companyId = wf.CompanyId,
+                    conditionMatchLogic = wf.ConditionMatchLogic,   // ✅ NEW
                     conditions = wf.Conditions.Select(c => new
                     {
                         id = c.Id,
@@ -105,6 +107,7 @@ namespace Procurement.Api.Controllers.Workflow
                 Priority = dto.Priority,
                 CompanyId = dto.CompanyId,
                 IsActive = dto.IsActive,
+                ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY",   // ✅ NEW
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -164,6 +167,7 @@ namespace Procurement.Api.Controllers.Workflow
             wf.Priority = dto.Priority;
             wf.IsActive = dto.IsActive;
             wf.CompanyId = dto.CompanyId;
+            wf.ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY";   // ✅ NEW
             wf.UpdatedAt = DateTime.UtcNow;
 
             var oldConds = _db.WorkflowConditions.Where(c => c.WorkflowDefinitionId == id);
@@ -185,7 +189,7 @@ namespace Procurement.Api.Controllers.Workflow
                 });
             }
 
-            
+
             var oldSteps = _db.WorkflowSteps.Where(s => s.WorkflowDefinitionId == id);
             _db.WorkflowSteps.RemoveRange(oldSteps);
 
@@ -237,6 +241,7 @@ namespace Procurement.Api.Controllers.Workflow
         public int Priority { get; set; }
         public bool IsActive { get; set; } = true;
         public Guid? CompanyId { get; set; }
+        public string? ConditionMatchLogic { get; set; }   // ✅ NEW — "ANY" or "ALL"
         public List<ConditionDto>? Conditions { get; set; }
         public List<StepDto>? Steps { get; set; }
     }

@@ -916,6 +916,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     // for this request. Helps admin debug "stuck" requests when
                     // many company/category flows are configured — shows exactly
                     // which flow this request took instead of having to guess.
+
                     workflowName = _db.ApprovalInstances
                         .Where(ai => ai.EntityId == x.Id)
                         .OrderBy(ai => ai.StepOrder)
@@ -923,6 +924,15 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                               ai => ai.WorkflowDefinitionId,
                               wd => wd.Id,
                               (ai, wd) => wd.Name)
+                        .FirstOrDefault(),
+
+                    workflowCode = _db.ApprovalInstances
+                        .Where(ai => ai.EntityId == x.Id)
+                        .OrderBy(ai => ai.StepOrder)
+                        .Join(_db.WorkflowDefinitions,
+                              ai => ai.WorkflowDefinitionId,
+                              wd => wd.Id,
+                              (ai, wd) => wd.Code)
                         .FirstOrDefault(),
 
                     totalWorkflowSteps = _db.ApprovalInstances

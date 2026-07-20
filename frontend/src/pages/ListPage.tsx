@@ -998,14 +998,19 @@ export default function ListPage({ type }: { type: string }) {
                                       </div>
                                       <div className="min-w-0">
                                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Approval History</p>
-                                        {detail.workflowName ? (
-                                          <p className="text-xs text-purple-600 font-medium truncate">
-                                            Flow: {detail.workflowName}
-                                            {detail.totalWorkflowSteps ? ` · Step ${detail.approvals?.length ?? 0} of ${detail.totalWorkflowSteps}` : ""}
-                                          </p>
-                                        ) : (
-                                          <p className="text-xs text-red-500 font-medium">⚠️ No workflow matched this request</p>
-                                        )}
+                                       {detail.workflowName ? (
+  <p className="text-xs text-purple-600 font-medium truncate">
+    Flow: {detail.workflowName}
+    {detail.workflowCode && (
+      <span className="text-gray-400 font-normal"> ({detail.workflowCode})</span>
+    )}
+    <br />
+    {detail.totalWorkflowSteps ? ` · Step ${detail.approvals?.length ?? 0} of ${detail.totalWorkflowSteps}` : ""}
+  </p>
+) : (
+  <p className="text-xs text-red-500 font-medium">⚠️ No workflow matched this request</p>
+)}
+
                                       </div>
                                     </div>
                                     {detail.approvals?.length > 0 ? (

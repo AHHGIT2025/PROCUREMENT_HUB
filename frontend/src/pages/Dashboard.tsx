@@ -22,10 +22,15 @@ const STATUS_STYLE: Record<string, string> = {
 
 const PROCUREMENT_ROLES = ['Purchase Officer', 'Procurement Officer', 'Purchase Manager'];
 
+// ✅ FIXED: Company GM, Vice Chairman added — these are the PO approval
+// chain roles (Procurement Manager → Company GM → CEO → Vice Chairman).
+// Without this, users with only these roles fell through to
+// RequesterDashboard and never saw their pending approvals.
 const APPROVER_ROLES = [
   'Manager', 'IT Manager', 'Budget Manager', 'Asset Manager',
   'Finance Approver', 'Purchase Officer', 'CEO', 'Approver',
-  'Department Manager', 'Procurement Officer', 'Purchase Manager', 'SW-DM-Design', 'SW-DM-EX', 'SW-DM-FUR'
+  'Department Manager', 'Procurement Officer', 'Purchase Manager', 'SW-DM-Design', 'SW-DM-EX', 'SW-DM-FUR',
+  'Company GM', 'Vice Chairman'
 ];
 
 function isAdminRole(roles: string[])       { return roles.includes('System Admin'); }

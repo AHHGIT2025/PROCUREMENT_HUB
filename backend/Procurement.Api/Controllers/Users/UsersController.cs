@@ -8,7 +8,7 @@ namespace Procurement.Api.Controllers.Users
 {
     [ApiController]
     [Route("api/users")]
-  
+
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -20,7 +20,7 @@ namespace Procurement.Api.Controllers.Users
 
 
 
-      
+
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
@@ -209,6 +209,9 @@ namespace Procurement.Api.Controllers.Users
 
 
 
+        // ✅ FIXED — was missing [Authorize], meaning any logged-in user could
+        // edit anyone else's account. Now admin-only, matching CreateUser.
+        [Authorize(Roles = "System Admin")]
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto dto)
         {
@@ -223,6 +226,14 @@ namespace Procurement.Api.Controllers.Users
             user.ManagerId = dto.ManagerId;
             user.SubManagerId = dto.SubManagerId;
             user.UpdatedAt = DateTime.UtcNow;
+
+            // ✅ NEW — optional password reset. Only touched if the admin
+            // actually typed a new value on the edit form; leaving it blank
+            // keeps the existing password untouched.
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+            {
+                user.PasswordHash = dto.Password;
+            }
 
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == dto.RoleName);
             if (role != null)
@@ -244,7 +255,8 @@ namespace Procurement.Api.Controllers.Users
             return Ok(new { success = true, message = "✅ Updated successfully" });
         }
 
-        // ✅ 5. ACTIVATE / DEACTIVATE (NOT DELETE ✅)
+        // ✅ FIXED — was missing [Authorize], admin-only now.
+        [Authorize(Roles = "System Admin")]
         [HttpPut("{id:guid}/status")]
         public async Task<IActionResult> ToggleStatus(Guid id)
         {
@@ -262,7 +274,8 @@ namespace Procurement.Api.Controllers.Users
         }
 
 
-        // ✅ 5. DELETE USER
+        // ✅ FIXED — was missing [Authorize], admin-only now.
+        [Authorize(Roles = "System Admin")]
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {

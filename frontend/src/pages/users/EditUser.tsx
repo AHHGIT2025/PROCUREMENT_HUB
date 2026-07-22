@@ -17,6 +17,7 @@ export default function EditUser() {
     managerId:            "",
     subManagerId:         "",
     additionalCompanyIds: [] as string[],
+    password:             "", // ✅ NEW — optional, blank = leave unchanged
   });
 
   const [companies,   setCompanies]   = useState<any[]>([]);
@@ -31,6 +32,7 @@ export default function EditUser() {
   const [subReportSearch,   setSubReportSearch]   = useState("");
   const [showReportDropdown,setShowReportDropdown]= useState(false);
   const [showSubDropdown,   setShowSubDropdown]   = useState(false);
+  const [showPassword,      setShowPassword]      = useState(false); // ✅ NEW
 
   // ── Load base data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function EditUser() {
           managerId:            u.managerId            ?? "",
           subManagerId:         u.subManagerId         ?? "",
           additionalCompanyIds: u.additionalCompanyIds ?? [],
+          password:             "", // ✅ NEW — always starts blank; typing a value here is what triggers a reset
         });
         // Pre-fill manager search
         if (u.managerName) setReportSearch(u.managerName);
@@ -126,6 +129,10 @@ export default function EditUser() {
         departmentId: form.departmentId  || null,
         managerId:    form.managerId     || null,
         subManagerId: form.subManagerId  || null,
+        // ✅ NEW — only send password if the admin actually typed something;
+        // blank means "leave the existing password unchanged" (backend
+        // already treats blank/whitespace as no-op, this is just explicit).
+        password: form.password.trim() || null,
       });
       showToast("✅ User updated successfully", "success");
       setTimeout(() => navigate("/users"), 1500);
@@ -211,9 +218,26 @@ export default function EditUser() {
             </div>
 
             <div>
-              <label style={labelStyle}>Email <span style={{ color: "#E11D48" }}>*</span></label>
+              <label style={labelStyle}>Email (Login Username) <span style={{ color: "#E11D48" }}>*</span></label>
               <input name="email" type="email" value={form.email} required
                 onChange={handleChange} style={inputStyle} placeholder="email@company.com" />
+            </div>
+
+            {/* ✅ NEW — optional password reset, admin-only page so this is safe here */}
+            <div>
+              <label style={labelStyle}>New Password <span style={{ color: "#94a3b8", fontWeight: 400 }}>(leave blank to keep current)</span></label>
+              <div style={{ position: "relative" }}>
+                <input name="password" type={showPassword ? "text" : "password"} value={form.password}
+                  onChange={handleChange} style={{ ...inputStyle, paddingRight: "70px" }}
+                  placeholder="Enter new password to reset" autoComplete="new-password" />
+                <button type="button" onClick={() => setShowPassword(v => !v)}
+                  style={{
+                    position: "absolute", right: "8px", top: "50%", transform: "translateY(calc(-50% + 3px))",
+                    background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: "12px", fontWeight: 500
+                  }}>
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
 
             <div>

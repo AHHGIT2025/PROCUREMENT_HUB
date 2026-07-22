@@ -33,7 +33,12 @@ namespace Procurement.Api.Controllers.Workflow
                     priority = w.Priority,
                     isActive = w.IsActive,
                     companyId = w.CompanyId,
-                    conditionMatchLogic = w.ConditionMatchLogic,   // ✅ NEW
+                    scopeType = w.ScopeType,
+                    companyIds = _db.WorkflowDefinitionCompanies
+                        .Where(wc => wc.WorkflowDefinitionId == w.Id)
+                        .Select(wc => wc.CompanyId)
+                        .ToList(),
+                    conditionMatchLogic = w.ConditionMatchLogic,
                     conditions = w.Conditions.Select(c => new { c.Field, c.Operator, c.Value }),
                     steps = w.Steps.OrderBy(s => s.StepOrder)
                                     .Select(s => new { s.StepOrder, s.Name, s.RoleName, s.ApproverType })
@@ -54,6 +59,11 @@ namespace Procurement.Api.Controllers.Workflow
 
             if (wf == null) return NotFound();
 
+            var companyIds = await _db.WorkflowDefinitionCompanies
+                .Where(wc => wc.WorkflowDefinitionId == wf.Id)
+                .Select(wc => wc.CompanyId)
+                .ToListAsync();
+
             return Ok(new
             {
                 success = true,
@@ -68,7 +78,9 @@ namespace Procurement.Api.Controllers.Workflow
                     priority = wf.Priority,
                     isActive = wf.IsActive,
                     companyId = wf.CompanyId,
-                    conditionMatchLogic = wf.ConditionMatchLogic,   // ✅ NEW
+                    scopeType = wf.ScopeType,
+                    companyIds = companyIds,
+                    conditionMatchLogic = wf.ConditionMatchLogic,
                     conditions = wf.Conditions.Select(c => new
                     {
                         id = c.Id,
@@ -93,6 +105,7 @@ namespace Procurement.Api.Controllers.Workflow
             });
         }
 
+
         // POST /api/workflows
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] WorkflowUpsertDto dto)
@@ -107,12 +120,13 @@ namespace Procurement.Api.Controllers.Workflow
                 Priority = dto.Priority,
                 CompanyId = dto.CompanyId,
                 IsActive = dto.IsActive,
-                ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY",   // ✅ NEW
+                ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY",
+                ScopeType = dto.ScopeType,   // ✅ NEW
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             _db.WorkflowDefinitions.Add(wf);
-
+            await _db.SaveChangesAsync();
             foreach (var c in dto.Conditions ?? new())
             {
                 _db.WorkflowConditions.Add(new WorkflowCondition
@@ -127,6 +141,22 @@ namespace Procurement.Api.Controllers.Workflow
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
+            }
+
+            // ✅ NEW — "Multiple Companies" scope: link this workflow to
+            // each selected company via the junction table.
+            if (dto.ScopeType == "Multiple" && dto.CompanyIds != null)
+            {
+                foreach (var companyId in dto.CompanyIds.Distinct())
+                {
+                    _db.WorkflowDefinitionCompanies.Add(new WorkflowDefinitionCompany
+                    {
+                        Id = Guid.NewGuid(),
+                        WorkflowDefinitionId = wf.Id,
+                        CompanyId = companyId,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
             }
 
             int order = 1;
@@ -153,7 +183,6 @@ namespace Procurement.Api.Controllers.Workflow
             await _db.SaveChangesAsync();
             return Ok(new { success = true, message = "Workflow created.", id = wf.Id });
         }
-
         // PUT /api/workflows/{id}
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] WorkflowUpsertDto dto)
@@ -167,7 +196,8 @@ namespace Procurement.Api.Controllers.Workflow
             wf.Priority = dto.Priority;
             wf.IsActive = dto.IsActive;
             wf.CompanyId = dto.CompanyId;
-            wf.ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY";   // ✅ NEW
+            wf.ConditionMatchLogic = dto.ConditionMatchLogic ?? "ANY";
+            wf.ScopeType = dto.ScopeType;   // ✅ NEW
             wf.UpdatedAt = DateTime.UtcNow;
 
             var oldConds = _db.WorkflowConditions.Where(c => c.WorkflowDefinitionId == id);
@@ -189,10 +219,28 @@ namespace Procurement.Api.Controllers.Workflow
                 });
             }
 
+            // ✅ NEW — "Multiple Companies" scope: clear old links, re-add
+            // from the submitted list. Same pattern as Conditions/Steps above.
+            var oldCompanyLinks = _db.WorkflowDefinitionCompanies.Where(wc => wc.WorkflowDefinitionId == id);
+            _db.WorkflowDefinitionCompanies.RemoveRange(oldCompanyLinks);
+
+            if (dto.ScopeType == "Multiple" && dto.CompanyIds != null)
+            {
+                foreach (var companyId in dto.CompanyIds.Distinct())
+                {
+                    _db.WorkflowDefinitionCompanies.Add(new WorkflowDefinitionCompany
+                    {
+                        Id = Guid.NewGuid(),
+                        WorkflowDefinitionId = id,
+                        CompanyId = companyId,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
 
             var oldSteps = _db.WorkflowSteps.Where(s => s.WorkflowDefinitionId == id);
             _db.WorkflowSteps.RemoveRange(oldSteps);
-
+            
             int order = 1;
             foreach (var s in dto.Steps ?? new())
             {
@@ -213,7 +261,7 @@ namespace Procurement.Api.Controllers.Workflow
                     UpdatedAt = DateTime.UtcNow
                 });
             }
-
+           
             await _db.SaveChangesAsync();
             return Ok(new { success = true, message = "Workflow updated." });
         }
@@ -244,6 +292,8 @@ namespace Procurement.Api.Controllers.Workflow
         public string? ConditionMatchLogic { get; set; }   // ✅ NEW — "ANY" or "ALL"
         public List<ConditionDto>? Conditions { get; set; }
         public List<StepDto>? Steps { get; set; }
+        public string? ScopeType { get; set; }        // "Global" | "Single" | "Multiple"
+        public List<Guid>? CompanyIds { get; set; }    // used only when ScopeType == "Multiple"
     }
 
     public class ConditionDto

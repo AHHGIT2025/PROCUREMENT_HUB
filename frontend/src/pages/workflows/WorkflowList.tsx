@@ -44,9 +44,25 @@ export default function WorkflowList() {
     return c ? `${c.code} — ${c.name}` : "Specific Company";
   }
 
+  // ✅ NEW — label + icon for the Scope column, handles Multiple Companies
+  function scopeDisplay(wf: any) {
+    if (wf.scopeType === "Multiple" && wf.companyIds?.length > 0) {
+      const codes = wf.companyIds
+        .map((cid: string) => companies.find((c: any) => c.id === cid)?.code)
+        .filter(Boolean);
+      return { icon: "🏘️", text: `${codes.length} Companies (${codes.join(", ")})`, bg: "#EFF6FF", color: "#1D4ED8" };
+    }
+    if (wf.companyId) {
+      return { icon: "🏢", text: companyLabel(wf.companyId), bg: "#FFFBEB", color: "#92400E" };
+    }
+    return { icon: "🌐", text: "All Companies", bg: "#eff4ff", color: "#1a2b4b" };
+  }
+
   const filtered = workflows
     .filter(w => filter !== "ACTIVE" || w.isActive)
-    .filter(w => !companyFilter || (companyFilter === "GLOBAL" ? !w.companyId : w.companyId === companyFilter))
+    .filter(w => !companyFilter || (companyFilter === "GLOBAL"
+      ? (!w.companyId && w.scopeType !== "Multiple")
+      : (w.companyId === companyFilter || (w.scopeType === "Multiple" && w.companyIds?.includes(companyFilter)))))
     .filter(w =>
       !search ||
       w.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -192,15 +208,20 @@ export default function WorkflowList() {
                     )}
                   </td>
                   <td style={{ padding: "14px 16px" }}>
-                    <span style={{
-                      background: wf.companyId ? "#FFFBEB" : "#eff4ff",
-                      color: wf.companyId ? "#92400E" : "#1a2b4b",
-                      fontSize: "11px", fontWeight: 600,
-                      padding: "3px 10px", borderRadius: "999px", letterSpacing: "0.03em",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {wf.companyId ? "🏢" : "🌐"} {companyLabel(wf.companyId)}
-                    </span>
+                    {(() => {
+                      const s = scopeDisplay(wf);
+                      return (
+                        <span style={{
+                          background: s.bg,
+                          color: s.color,
+                          fontSize: "11px", fontWeight: 600,
+                          padding: "3px 10px", borderRadius: "999px", letterSpacing: "0.03em",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {s.icon} {s.text}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: "13px", color: "#44474e" }}>
                     {wf.conditions?.length > 0

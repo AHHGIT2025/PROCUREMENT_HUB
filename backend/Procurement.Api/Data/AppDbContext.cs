@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<ItemGroupCategoryMap> ItemGroupCategoryMaps => Set<ItemGroupCategoryMap>();
     public DbSet<Item> Items { get; set; }  
     public DbSet<ItemCompany> ItemCompanies { get; set; }
+    public DbSet<WorkflowDefinitionCompany> WorkflowDefinitionCompanies => Set<WorkflowDefinitionCompany>();
     public DbSet<ItemUnit> ItemUnits
     {
         get; set;

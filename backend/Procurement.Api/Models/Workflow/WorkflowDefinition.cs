@@ -22,11 +22,18 @@ namespace Procurement.Api.Models
         public int Priority { get; set; } = 0;
         public int Version { get; set; } = 1;
         public string ConditionMatchLogic { get; set; } = "ANY";
+        public string? ScopeType { get; set; }   // "Global" | "Single" | "Multiple" | null
         public Company? Company { get; set; }
         public ICollection<WorkflowStep> Steps { get; set; } = new List<WorkflowStep>();
         public ICollection<WorkflowCondition> Conditions { get; set; } = new List<WorkflowCondition>();
     }
-
+    public class WorkflowDefinitionCompany
+    {
+        public Guid Id { get; set; }
+        public Guid WorkflowDefinitionId { get; set; }
+        public Guid CompanyId { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
     [Table("WorkflowSteps")]
     public class WorkflowStep : BaseEntity
     {

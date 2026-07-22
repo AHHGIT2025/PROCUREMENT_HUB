@@ -933,13 +933,21 @@ namespace Procurement.Api.Services.Workflow
         // logic, the ItemGroup fallback loop, and the default-workflow
         // fallback all behave exactly as before.
         private async Task<WorkflowDefinition?> ResolveWorkflowAsync(
-         Guid companyId, List<string> categoryCodes, List<string> groupNames)
+           Guid companyId, List<string> categoryCodes, List<string> groupNames)
         {
+            // ✅ NEW — pick up workflows scoped to "Multiple Companies"
+            // that include this specific company.
+            var multiCompanyWorkflowIds = await _db.WorkflowDefinitionCompanies
+                .Where(wc => wc.CompanyId == companyId)
+                .Select(wc => wc.WorkflowDefinitionId)
+                .ToListAsync();
+
             var allWorkflows = await _db.WorkflowDefinitions
                 .Include(w => w.Conditions)
                 .Include(w => w.Steps.Where(s => s.IsActive))
                 .Where(w => w.IsActive && w.EntityType == "PURCHASE_REQUEST" &&
-                            (w.CompanyId == null || w.CompanyId == companyId))
+                            (w.CompanyId == null || w.CompanyId == companyId ||
+                             multiCompanyWorkflowIds.Contains(w.Id)))
                 .ToListAsync();
 
             if (categoryCodes.Any())
@@ -951,7 +959,7 @@ namespace Procurement.Api.Services.Workflow
                     if (match)
                     {
                         var companySpecific = allWorkflows
-                            .Where(w => w.CompanyId == companyId)
+                            .Where(w => w.CompanyId == companyId || multiCompanyWorkflowIds.Contains(w.Id))
                             .OrderByDescending(w => w.Priority)
                             .FirstOrDefault(w => MatchesCategoryConditions(w, categoryCodes));
 
@@ -976,7 +984,7 @@ namespace Procurement.Api.Services.Workflow
 
             return allWorkflows
                 .Where(w => w.IsDefault)
-                .OrderByDescending(w => w.CompanyId == companyId)
+                .OrderByDescending(w => w.CompanyId == companyId || multiCompanyWorkflowIds.Contains(w.Id))
                 .ThenByDescending(w => w.Priority)
                 .FirstOrDefault();
         }

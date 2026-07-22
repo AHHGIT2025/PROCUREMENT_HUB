@@ -26,6 +26,9 @@ export default function WorkflowBuilder() {
     priority:    0,
     isActive:    true,
     companyId:   null as string | null,
+    // ✅ NEW — Multiple Companies scope support
+    scopeType:   "Global" as string,
+    companyIds:  [] as string[],
     // ✅ NEW — "ANY" (default, existing behavior): workflow matches if ANY
     // one of its ItemCategory conditions is present in the request.
     // "ALL" (new): workflow matches ONLY if EVERY one of its ItemCategory
@@ -92,6 +95,8 @@ export default function WorkflowBuilder() {
         priority:    wf.priority,
         isActive:    wf.isActive,
         companyId:   wf.companyId,
+        scopeType:   wf.scopeType || (wf.companyId ? "Single" : "Global"), // ✅ NEW
+        companyIds:  wf.companyIds || [], // ✅ NEW
         conditionMatchLogic: wf.conditionMatchLogic || "ANY", // ✅ NEW
       });
       setConditions(wf.conditions || []);
@@ -402,20 +407,26 @@ export default function WorkflowBuilder() {
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>Company Scope</label>
                     <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
-                      <button type="button" onClick={() => setForm({ ...form, companyId: null })} style={{
+                      <button type="button" onClick={() => setForm({ ...form, companyId: null, scopeType: "Global", companyIds: [] })} style={{
                         padding: "8px 16px", borderRadius: "4px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
-                        background: !form.companyId ? "#1a2b4b" : "white",
-                        color: !form.companyId ? "white" : "#64748b",
-                        border: !form.companyId ? "1px solid #1a2b4b" : "1px solid #E2E8F0"
+                        background: form.scopeType === "Global" ? "#1a2b4b" : "white",
+                        color: form.scopeType === "Global" ? "white" : "#64748b",
+                        border: form.scopeType === "Global" ? "1px solid #1a2b4b" : "1px solid #E2E8F0"
                       }}>🌐 All Companies</button>
-                      <button type="button" onClick={() => setForm({ ...form, companyId: companies[0]?.id || "" })} style={{
+                      <button type="button" onClick={() => setForm({ ...form, companyId: companies[0]?.id || "", scopeType: "Single", companyIds: [] })} style={{
                         padding: "8px 16px", borderRadius: "4px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
-                        background: form.companyId ? "#1a2b4b" : "white",
-                        color: form.companyId ? "white" : "#64748b",
-                        border: form.companyId ? "1px solid #1a2b4b" : "1px solid #E2E8F0"
+                        background: form.scopeType === "Single" ? "#1a2b4b" : "white",
+                        color: form.scopeType === "Single" ? "white" : "#64748b",
+                        border: form.scopeType === "Single" ? "1px solid #1a2b4b" : "1px solid #E2E8F0"
                       }}>🏢 Specific Company</button>
+                      <button type="button" onClick={() => setForm({ ...form, companyId: null, scopeType: "Multiple" })} style={{
+                        padding: "8px 16px", borderRadius: "4px", fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                        background: form.scopeType === "Multiple" ? "#1a2b4b" : "white",
+                        color: form.scopeType === "Multiple" ? "white" : "#64748b",
+                        border: form.scopeType === "Multiple" ? "1px solid #1a2b4b" : "1px solid #E2E8F0"
+                      }}>🏘️ Multiple Companies</button>
                     </div>
-                    {form.companyId !== null && (
+                    {form.scopeType === "Single" && (
                       <select value={form.companyId || ""} onChange={e => setForm({ ...form, companyId: e.target.value || null })}
                         style={{ ...inputStyle, marginTop: "8px" }}>
                         <option value="">Select Company</option>
@@ -424,8 +435,42 @@ export default function WorkflowBuilder() {
                         ))}
                       </select>
                     )}
+                    {form.scopeType === "Multiple" && (
+                      <div style={{
+                        marginTop: "8px", maxHeight: "220px", overflowY: "auto",
+                        border: "1px solid #E2E8F0", borderRadius: "6px", padding: "10px"
+                      }}>
+                        {companies.map((c: any) => {
+                          const selected = (form.companyIds || []).includes(c.id);
+                          return (
+                            <label key={c.id} style={{
+                              display: "flex", alignItems: "center", gap: "8px",
+                              padding: "6px 4px", fontSize: "13px", cursor: "pointer"
+                            }}>
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => {
+                                  const current: string[] = form.companyIds || [];
+                                  const next = selected
+                                    ? current.filter((cid: string) => cid !== c.id)
+                                    : [...current, c.id];
+                                  setForm({ ...form, companyIds: next });
+                                }}
+                              />
+                              {c.code} - {c.name}
+                            </label>
+                          );
+                        })}
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
+                          {(form.companyIds || []).length} company(ies) selected
+                        </div>
+                      </div>
+                    )}
                     <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                      {!form.companyId ? "This workflow applies to all companies" : "This workflow applies only to the selected company"}
+                      {form.scopeType === "Multiple"
+                        ? "This workflow applies only to the selected companies above"
+                        : (form.scopeType === "Global" ? "This workflow applies to all companies" : "This workflow applies only to the selected company")}
                     </div>
                   </div>
 
@@ -796,7 +841,9 @@ export default function WorkflowBuilder() {
                     { label: "Rule Name", value: form.name || "—" },
                     { label: "Rule Code", value: form.code || "—", mono: true },
                     { label: "Priority",  value: form.priority },
-                    { label: "Scope",     value: form.companyId ? companies.find(c => c.id === form.companyId)?.name ?? "Specific Company" : "All Companies" },
+                    { label: "Scope",     value: form.scopeType === "Multiple"
+                        ? `${(form.companyIds || []).length} companies: ` + (form.companyIds || []).map((cid: string) => companies.find((c: any) => c.id === cid)?.code).filter(Boolean).join(", ")
+                        : (form.companyId ? companies.find(c => c.id === form.companyId)?.name ?? "Specific Company" : "All Companies") },
                     { label: "Default",   value: form.isDefault ? "Yes" : "No" },
                     { label: "Status",    value: form.isActive ? "Active" : "Inactive" },
                     // ✅ NEW — only show when it's actually meaningful (2+ category conditions)

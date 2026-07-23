@@ -44,18 +44,25 @@ export default function WorkflowList() {
     return c ? `${c.code} — ${c.name}` : "Specific Company";
   }
 
-  // ✅ NEW — label + icon for the Scope column, handles Multiple Companies
   function scopeDisplay(wf: any) {
     if (wf.scopeType === "Multiple" && wf.companyIds?.length > 0) {
-      const codes = wf.companyIds
+      const codes: string[] = wf.companyIds
         .map((cid: string) => companies.find((c: any) => c.id === cid)?.code)
         .filter(Boolean);
-      return { icon: "🏘️", text: `${codes.length} Companies (${codes.join(", ")})`, bg: "#EFF6FF", color: "#1D4ED8" };
+      const shown = codes.slice(0, 2).join(", ");
+      const extra = codes.length > 2 ? ` +${codes.length - 2} more` : "";
+      return {
+        icon: "🏘️",
+        text: `${codes.length} Companies (${shown}${extra})`,
+        full: codes.join(", "),
+        bg: "#EFF6FF", color: "#1D4ED8"
+      };
     }
     if (wf.companyId) {
-      return { icon: "🏢", text: companyLabel(wf.companyId), bg: "#FFFBEB", color: "#92400E" };
+      const label = companyLabel(wf.companyId);
+      return { icon: "🏢", text: label, full: label, bg: "#FFFBEB", color: "#92400E" };
     }
-    return { icon: "🌐", text: "All Companies", bg: "#eff4ff", color: "#1a2b4b" };
+    return { icon: "🌐", text: "All Companies", full: "All Companies", bg: "#eff4ff", color: "#1a2b4b" };
   }
 
   const filtered = workflows
@@ -177,7 +184,17 @@ export default function WorkflowList() {
             </div>
           </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "19%" }} />
+              <col style={{ width: "19%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "12%" }} />
+            </colgroup>
             <thead>
               <tr style={{ background: "#F1F5F9" }}>
                 {["Rule Name", "Scope", "Condition", "Approval Route", "Priority", "Status", "Actions"].map(h => (
@@ -193,8 +210,8 @@ export default function WorkflowList() {
             <tbody>
               {filtered.map((wf) => (
                 <tr key={wf.id} style={{ borderBottom: "1px solid #E2E8F0" }}>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ fontWeight: 600, color: "#0b1c30", fontSize: "14px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                    <div style={{ fontWeight: 600, color: "#0b1c30", fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {wf.name || <span style={{ color: "#DC2626", fontStyle: "italic" }}>(Unnamed rule)</span>}
                     </div>
                     <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
@@ -202,90 +219,106 @@ export default function WorkflowList() {
                       {wf.isDefault ? " · Default fallback rule" : ""}
                     </div>
                     {wf.description && (
-                      <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "3px", maxWidth: "260px" }}>
+                      <div style={{
+                        fontSize: "12px", color: "#94a3b8", marginTop: "3px",
+                        overflow: "hidden", textOverflow: "ellipsis",
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical"
+                      }}>
                         {wf.description}
                       </div>
                     )}
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                     {(() => {
                       const s = scopeDisplay(wf);
                       return (
-                        <span style={{
+                        <span title={s.full} style={{
+                          display: "inline-block",
+                          maxWidth: "100%",
                           background: s.bg,
                           color: s.color,
                           fontSize: "11px", fontWeight: 600,
                           padding: "3px 10px", borderRadius: "999px", letterSpacing: "0.03em",
-                          whiteSpace: "nowrap"
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          boxSizing: "border-box", cursor: "default"
                         }}>
                           {s.icon} {s.text}
                         </span>
                       );
                     })()}
                   </td>
-                  <td style={{ padding: "14px 16px", fontSize: "13px", color: "#44474e" }}>
+                  <td style={{
+                    padding: "14px 16px", fontSize: "13px", color: "#44474e", verticalAlign: "top",
+                    overflow: "hidden", textOverflow: "ellipsis",
+                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical"
+                  }} title={wf.conditions?.length > 0 ? wf.conditions.map((c: any) => `${c.field} = ${c.value}`).join(" AND ") : ""}>
                     {wf.conditions?.length > 0
                       ? wf.conditions.map((c: any) => `${c.field} = ${c.value}`).join(" AND ")
                       : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No conditions (fallback)</span>
                     }
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                       {(wf.steps ?? []).slice(0, 4).map((_: any, i: number) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#1a2b4b" }} />
+                          <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#1a2b4b", flexShrink: 0 }} />
                           {i < Math.min(wf.steps.length, 4) - 1 && (
-                            <div style={{ width: "16px", height: "1px", background: "#E2E8F0" }} />
+                            <div style={{ width: "12px", height: "1px", background: "#E2E8F0" }} />
                           )}
                         </div>
                       ))}
-                      <span style={{ fontSize: "12px", color: "#64748b", marginLeft: "4px" }}>
+                      <span style={{ fontSize: "11px", color: "#64748b", marginLeft: "2px", whiteSpace: "nowrap" }}>
                         {wf.steps?.length || 0} step{(wf.steps?.length || 0) !== 1 ? "s" : ""}
                       </span>
                     </div>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                     <span style={{
-                      fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em",
+                      fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap",
                       color: wf.priority >= 10 ? "#E11D48" : wf.priority >= 5 ? "#F59E0B" : "#10B981"
                     }}>
                       {wf.priority >= 10 ? "CRITICAL" : wf.priority >= 8 ? "HIGH" : wf.priority >= 5 ? "MEDIUM" : "LOW"} ({wf.priority})
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                     <span style={{
                       padding: "4px 12px", borderRadius: "999px", fontSize: "11px", fontWeight: 600,
-                      letterSpacing: "0.05em",
+                      letterSpacing: "0.05em", whiteSpace: "nowrap",
                       background: wf.isActive ? "#ECFDF5" : "#F1F5F9",
                       color: wf.isActive ? "#10B981" : "#64748b"
                     }}>
                       {wf.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                  <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                    <div style={{ display: "flex", gap: "6px" }}>
                       <button
                         onClick={() => navigate(`/workflows/${wf.id}/edit`)}
+                        title="Edit workflow"
                         style={{
-                          padding: "6px 14px", borderRadius: "4px", fontSize: "12px",
-                          fontWeight: 500, cursor: "pointer",
-                          background: "white", border: "1px solid #E2E8F0", color: "#0b1c30"
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          width: "30px", height: "30px", borderRadius: "6px", fontSize: "14px",
+                          cursor: "pointer", flexShrink: 0,
+                          background: "white", border: "1px solid #E2E8F0", color: "#1a2b4b"
                         }}
-                      >Edit</button>
+                      >✏️</button>
                       <button
                         onClick={() => deleteWorkflow(wf.id, wf.name)}
+                        title="Delete workflow"
                         style={{
-                          padding: "6px 14px", borderRadius: "4px", fontSize: "12px",
-                          fontWeight: 500, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          width: "30px", height: "30px", borderRadius: "6px", fontSize: "14px",
+                          cursor: "pointer", flexShrink: 0,
                           background: "white", border: "1px solid #ffdad6", color: "#E11D48"
                         }}
-                      >Delete</button>
+                      >🗑️</button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

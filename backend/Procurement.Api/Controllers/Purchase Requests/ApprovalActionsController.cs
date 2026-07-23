@@ -1,18 +1,19 @@
-﻿using global::Procurement.Api.Common;
+using global::Procurement.Api.Common;
 using global::Procurement.Api.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop.Infrastructure;
 using Procurement.Api.Common;
 using Procurement.Api.Data;
 
 
 namespace Procurement.Api.Controllers.Purchase_Requests
 { 
-        // ── "My Approval History" ────────────────────────────────────────
+        // -- "My Approval History" ----------------------------------------
         // Shows every action a user has personally taken (Approve / Reject /
         // Return / Store Verified) across all requests, regardless of role.
-        // Solves: "did I approve this yesterday or not" — searchable, company
+        // Solves: "did I approve this yesterday or not" � searchable, company
         // filterable, with store-verification item detail where relevant.
         [Authorize]
         [ApiController]
@@ -63,7 +64,7 @@ namespace Procurement.Api.Controllers.Purchase_Requests
                     .ToListAsync();
 
                 // Pre-fetch store-verification item details in one shot (avoids
-                // N+1 queries) — keyed by PurchaseRequestId for lookup below.
+                // N+1 queries) � keyed by PurchaseRequestId for lookup below.
                 var requestIdsWithVerification = requests.Select(r => r.Id).ToList();
                 var verifiedItemsRaw = await _db.PurchaseRequestItems
                     .Where(i => requestIdsWithVerification.Contains(i.PurchaseRequestId)
@@ -73,7 +74,7 @@ namespace Procurement.Api.Controllers.Purchase_Requests
                 var materialIds = verifiedItemsRaw.Select(i => i.MaterialId).Distinct().ToList();
                 // NOTE: PurchaseRequestItem.MaterialId resolves against the Items
                 // table elsewhere in this codebase (see PurchaseRequestsController
-                // .GetUserRequests) — matching that pattern here for consistency.
+                // .GetUserRequests) � matching that pattern here for consistency.
                 // If your schema actually uses a separate Materials table for
                 // this FK, swap _db.Items for _db.Materials below.
                 var materials = await _db.Items

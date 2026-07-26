@@ -3,3 +3,4 @@
 **/obj/
 **/.vs/
 **/App_Data/attachments/
+appsettings.Production.json

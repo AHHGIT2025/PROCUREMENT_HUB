@@ -23,6 +23,7 @@ namespace Procurement.Api.Controllers.Workflow
                 .Include(w => w.Steps)
                 .Where(w => w.IsActive || !w.IsActive)
                 .OrderByDescending(w => w.Priority)
+                .ThenBy(w => w.Code)
                 .Select(w => new
                 {
                     id = w.Id,

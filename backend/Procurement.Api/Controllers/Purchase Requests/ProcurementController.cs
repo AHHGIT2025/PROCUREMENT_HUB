@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Procurement.Api.Data;
@@ -24,8 +23,9 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
         // ── GET: All approved PRs for procurement team ────────
         // GET /api/procurement/queue
-      
+
         [HttpGet("queue")]
+        
         public async Task<IActionResult> GetQueue()
         {
             var userId = CurrentUserId();
@@ -49,12 +49,12 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     totalAmount = x.TotalAmount,
                     createdAt = x.CreatedAt,
                     justification = x.Justification,
-
+                    companyId = x.CompanyId,
                     companyName = _db.Companies
                         .Where(c => c.Id == x.CompanyId)
                         .Select(c => c.Name)
                         .FirstOrDefault() ?? "-",
-
+                    projectId = x.ProjectId,
                     requesterName = _db.Users
                         .Where(u => u.Id == x.RequestedById)
                         .Select(u => u.FullName)
@@ -77,9 +77,61 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     poRemarks = x.PoRemarks,
                     poUpdatedAt = x.PoUpdatedAt,
 
-                    canUpdatePO = x.Status == RequestStatus.Approved ||
-                                  x.Status == RequestStatus.OracleReady ||
-                                  x.Status == RequestStatus.OraclePosted,
+                    // ── canUpdatePO now also checks whether this MR still has
+                    // any unconverted quantity left. Previously this was based
+                    // on PR status alone, so "Convert to PO" kept showing even
+                    // after every item had already been fully pulled into POs.
+                    //
+                    // ── FIXED: added po.SupersededByPoId == null — without
+                    // this, a superseded PO's qty was still being counted as
+                    // "allocated" (double-counted alongside its replacement
+                    // revision), pushing the allocated sum past the original
+                    // qty and wrongly making the MR look fully converted even
+                    // when real remaining quantity existed.
+                    canUpdatePO = (x.Status == RequestStatus.Approved ||
+                                   x.Status == RequestStatus.OracleReady ||
+                                   x.Status == RequestStatus.OraclePosted)
+                                  &&
+                                  _db.PurchaseRequestItems
+                                      .Where(pi => pi.PurchaseRequestId == x.Id)
+                                      .Any(pi =>
+                                          pi.Quantity - (
+                                              _db.InternationalPOItems
+                                                  .Where(poi => poi.SourcePurchaseRequestItemId == pi.Id
+                                                              && poi.IsActive
+                                                              && _db.InternationalPurchaseOrders
+                                                                    .Any(po => po.Id == poi.InternationalPoId
+                                                                             && po.IsActive
+                                                                             && po.Status != "Cancelled"
+                                                                             && po.SupersededByPoId == null))
+                                                  .Sum(poi => (decimal?)poi.Qty) ?? 0
+                                          ) > 0),
+
+                    // ── lets the frontend show a "Fully Converted" badge
+                    // instead of silently hiding the button, so it's clear
+                    // why there's no Convert to PO action here.
+                    //
+                    // ── FIXED: same po.SupersededByPoId == null exclusion.
+                    isFullyConverted = (x.Status == RequestStatus.Approved ||
+                                        x.Status == RequestStatus.OracleReady ||
+                                        x.Status == RequestStatus.OraclePosted)
+                                       &&
+                                       _db.PurchaseRequestItems.Any(pi => pi.PurchaseRequestId == x.Id)
+                                       &&
+                                       !_db.PurchaseRequestItems
+                                           .Where(pi => pi.PurchaseRequestId == x.Id)
+                                           .Any(pi =>
+                                               pi.Quantity - (
+                                                   _db.InternationalPOItems
+                                                       .Where(poi => poi.SourcePurchaseRequestItemId == pi.Id
+                                                                   && poi.IsActive
+                                                                   && _db.InternationalPurchaseOrders
+                                                                         .Any(po => po.Id == poi.InternationalPoId
+                                                                                  && po.IsActive
+                                                                                  && po.Status != "Cancelled"
+                                                                                  && po.SupersededByPoId == null))
+                                                       .Sum(poi => (decimal?)poi.Qty) ?? 0
+                                               ) > 0),
 
                     poUpdatedByName = x.PoUpdatedById != null
                         ? _db.Users.Where(u => u.Id == x.PoUpdatedById)
@@ -90,6 +142,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { success = true, data = list });
         }
+
         [HttpGet("team-members")]
         public async Task<IActionResult> GetTeamMembers()
         {
@@ -117,153 +170,6 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { success = true, data = members });
         }
-        //public async Task<IActionResult> GetQueue()
-        //{
-        //    var userId = CurrentUserId();
-        //    if (userId == null) return Unauthorized();
-
-        //    var currentUser = await _db.Users.FindAsync(userId);
-        //    if (currentUser == null) return Unauthorized();
-
-        //    var userRoles = await _db.UserRoles
-        //        .Where(ur => ur.UserId == userId)
-        //        .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
-        //        .ToListAsync();
-
-        //    bool isPurchaseManager = userRoles.Any(r =>
-        //        r == "Purchase Officer" || r == "Procurement Officer" || r == "Manager");
-
-        //    // Purchase Officer role IDs
-        //    //var procRoleIds = await _db.Roles
-        //    //    .Where(r => r.Name == "Purchase Officer" || r.Name == "Procurement Officer")
-        //    //    .Select(r => r.Id)
-        //    //    .ToListAsync();
-        //    var procRoleIds = await _db.Roles
-        //        .Where(r => r.Name == "Purchase Officer" ||
-        //                    r.Name == "Procurement Officer" ||
-        //                    r.Name == "Manager")  // ← Manager add
-        //        .Select(r => r.Id)
-        //        .ToListAsync();
-
-        //    // Purchase Officer users in same company
-        //    var procUserIds = await _db.UserRoles
-        //        .Where(ur => procRoleIds.Contains(ur.RoleId))
-        //        .Join(_db.Users.Where(u => u.CompanyId == currentUser.CompanyId || u.IsActive),
-        //              ur => ur.UserId, u => u.Id, (ur, u) => u.Id)
-        //        .ToListAsync();
-
-        //    // PRs where approval instance assigned to procurement users
-        //    var procPrIds = await _db.ApprovalInstances
-        //        .Where(i => i.IsActive && procUserIds.Contains(i.AssignedToId))
-        //        .Select(i => i.EntityId)
-        //        .Distinct()
-        //        .ToListAsync();
-
-        //    // Company filter — only their accessible companies
-        //    var accessibleCompanyIds = await _db.Users
-        //        .Where(u => u.Id == userId)
-        //        .Select(u => u.CompanyId)
-        //        .ToListAsync();
-
-        //    var list = await _db.PurchaseRequests
-        //        .Where(x => x.IsActive &&
-        //                    x.Status != RequestStatus.Deleted &&
-        //                    procPrIds.Contains(x.Id) &&
-        //                    accessibleCompanyIds.Contains(x.CompanyId))
-        //        .OrderByDescending(x => x.CreatedAt)
-        //        .Select(x => new
-        //        {
-        //            id = x.Id,
-        //            requestNumber = x.RequestNumber,
-        //            status = x.Status == RequestStatus.Draft ? "Draft"
-        //                          : x.Status == RequestStatus.Submitted ? "Submitted"
-        //                          : x.Status == RequestStatus.PendingApproval ? "Pending Approval"
-        //                          : x.Status == RequestStatus.Approved ? "Approved"
-        //                          : x.Status == RequestStatus.Rejected ? "Rejected"
-        //                          : x.Status == RequestStatus.Returned ? "Returned"
-        //                          : x.Status == RequestStatus.OracleReady ? "Oracle Ready"
-        //                          : x.Status == RequestStatus.OraclePosted ? "PO Issued"
-        //                          : "Unknown",
-        //            totalAmount = x.TotalAmount,
-        //            createdAt = x.CreatedAt,
-        //            justification = x.Justification,
-
-        //            companyName = _db.Companies
-        //                .Where(c => c.Id == x.CompanyId)
-        //                .Select(c => c.Name)
-        //                .FirstOrDefault() ?? "-",
-
-        //            requesterName = _db.Users
-        //                .Where(u => u.Id == x.RequestedById)
-        //                .Select(u => u.FullName)
-        //                .FirstOrDefault() ?? "-",
-
-        //            approvalInstanceId = _db.ApprovalInstances
-        //                .Where(i => i.EntityId == x.Id &&
-        //                            i.Status == "PENDING" &&
-        //                            i.IsActive &&
-        //                            procUserIds.Contains(i.AssignedToId))
-        //                .Select(i => (Guid?)i.Id)
-        //                .FirstOrDefault(),
-
-        //            assignmentStatus = x.AssignmentStatus,
-        //            assignmentNote = x.AssignmentNote,
-        //            assignedAt = x.AssignedAt,
-
-        //            assignedToName = x.AssignedToId != null
-        //                ? _db.Users.Where(u => u.Id == x.AssignedToId)
-        //                           .Select(u => u.FullName).FirstOrDefault()
-        //                : null,
-
-        //            poNumber = x.PoNumber,
-        //            poStatus = x.PoStatus,
-        //            poRemarks = x.PoRemarks,
-        //            poUpdatedAt = x.PoUpdatedAt,
-
-        //            canUpdatePO = x.Status == RequestStatus.Approved ||
-        //                          x.Status == RequestStatus.OracleReady ||
-        //                          x.Status == RequestStatus.OraclePosted,
-
-        //            poUpdatedByName = x.PoUpdatedById != null
-        //                ? _db.Users.Where(u => u.Id == x.PoUpdatedById)
-        //                           .Select(u => u.FullName).FirstOrDefault()
-        //                : null,
-        //        })
-        //        .ToListAsync();
-
-        //    return Ok(new { success = true, data = list });
-        //}
-        //[HttpGet("team-members")]
-        //public async Task<IActionResult> GetTeamMembers()
-        //{
-        //    var procRoleIds = await _db.Roles
-        //        .Where(r => r.Name == "Purchase Officer" ||
-        //                    r.Name == "Procurement Officer" ||
-        //                    r.Name == "Manager" ||
-        //                    r.Name == "System Admin")
-        //        .Select(r => r.Id)
-        //        .ToListAsync();
-
-
-        //    var members = await _db.Users
-        //        .Where(u => u.IsActive &&
-        //                    !_db.UserRoles.Any(ur =>
-        //                        ur.UserId == u.Id &&
-        //                        procRoleIds.Contains(ur.RoleId)))
-        //        .Select(u => new
-        //        {
-        //            id = u.Id,
-        //            fullName = u.FullName,
-        //            email = u.Email,
-        //            role = _db.UserRoles
-        //                .Where(ur => ur.UserId == u.Id)
-        //                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
-        //                .FirstOrDefault() ?? "Staff"
-        //        })
-        //        .ToListAsync();
-
-        //    return Ok(new { success = true, data = members });
-        //}
 
         // ── POST: Assign PR to team member ────────────────────
         // POST /api/procurement/{id}/assign

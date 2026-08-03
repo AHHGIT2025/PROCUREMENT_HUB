@@ -102,8 +102,8 @@ namespace Procurement.Api.Services.Integration
 
             return projects;
         }
-     
-    public async Task<List<ErpSupplierDto>> FetchSuppliersAsync()
+
+        public async Task<List<ErpSupplierDto>> FetchSuppliersAsync()
         {
             var suppliers = new List<ErpSupplierDto>();
 
@@ -112,7 +112,8 @@ namespace Procurement.Api.Services.Integration
 
             using var cmd = new OracleCommand(@"
     SELECT Supplier_ID, User_Code, Primary_Name, Branch_ID,
-           Credit_Limit_Days, Payment_Type, Active
+           Credit_Limit_Days, Payment_Type, Active,
+           Tel_No1, Mobile, Address_P, Address_S, Country, Email
     FROM Suppliers", conn);
 
             cmd.CommandTimeout = 300;
@@ -130,7 +131,13 @@ namespace Procurement.Api.Services.Integration
                         ? null
                         : Convert.ToInt32(reader["Credit_Limit_Days"]),
                     PaymentType = reader["Payment_Type"]?.ToString()?.Trim(),
-                    IsActive = reader["Active"]?.ToString()?.Trim() == "1"
+                    IsActive = reader["Active"]?.ToString()?.Trim() == "1",
+                    TelNo1 = reader["Tel_No1"]?.ToString()?.Trim(),
+                    Mobile = reader["Mobile"]?.ToString()?.Trim(),
+                    AddressP = reader["Address_P"]?.ToString()?.Trim(),
+                    AddressS = reader["Address_S"]?.ToString()?.Trim(),
+                    Country = reader["Country"]?.ToString()?.Trim(),
+                    Email = reader["Email"]?.ToString()?.Trim()
                 });
             }
 

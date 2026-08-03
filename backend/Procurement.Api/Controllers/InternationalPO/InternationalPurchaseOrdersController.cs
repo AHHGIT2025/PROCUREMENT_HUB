@@ -28,7 +28,7 @@ namespace Procurement.Api.Controllers.InternationalPO
 
         // ── GET /api/international-po — list view ──────────────────────
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] Guid? companyId, [FromQuery] string? status)
+        public async Task<IActionResult> GetAll([FromQuery] Guid? companyId, [FromQuery] string? status, [FromQuery] Guid? linkedPurchaseRequestId)
         {
             var query = _db.InternationalPurchaseOrders.Where(p => p.IsActive);
 
@@ -38,27 +38,39 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(p => p.Status == status);
 
+            // ── NEW: lets Procurement Queue's "View PO" popup fetch every
+            // PO created from a specific MR, to show their statuses.
+            if (linkedPurchaseRequestId.HasValue)
+                query = query.Where(p => p.LinkedPurchaseRequestId == linkedPurchaseRequestId.Value);
+
             var data = await query
-                .Join(_db.Companies, p => p.CompanyId, c => c.Id, (p, c) => new { p, CompanyName = c.Name })
-                .Join(_db.Suppliers, x => x.p.SupplierId, s => s.Id, (x, s) => new InternationalPoListItemDto
-                {
-                    Id = x.p.Id,
-                    PoNo = x.p.PoNo,
-                    CompanyName = x.CompanyName,
-                    SupplierName = s.Name,
-                    Currency = x.p.Currency,
-                    TotalAmount = x.p.TotalAmount,
-                    Status = x.p.Status,
-                    BrightPoNumber = x.p.BrightPoNumber,
-                    PoDate = x.p.PoDate,
-                    CreatedAt = x.p.CreatedAt
-                })
-                .OrderByDescending(p => p.CreatedAt)
-                .ToListAsync();
+               .Join(_db.Companies, p => p.CompanyId, c => c.Id, (p, c) => new { p, CompanyName = c.Name })
+               .Join(_db.Suppliers, x => x.p.SupplierId, s => s.Id, (x, s) => new InternationalPoListItemDto
+               {
+                   Id = x.p.Id,
+                   PoNo = x.p.PoNo,
+                   CompanyName = x.CompanyName,
+                   SupplierName = s.Name,
+                   Currency = x.p.Currency,
+                   TotalAmount = x.p.TotalAmount,
+                   Status = x.p.Status,
+                   BrightPoNumber = x.p.BrightPoNumber,
+                   PoDate = x.p.PoDate,
+                   CreatedAt = x.p.CreatedAt,
+                   IsInternational = x.p.IsInternational,
+                   MrReferenceNumber = x.p.MrReferenceNumber,
+                   LinkedRequestNumber = x.p.LinkedPurchaseRequestId.HasValue
+                       ? _db.PurchaseRequests.Where(pr => pr.Id == x.p.LinkedPurchaseRequestId.Value)
+                             .Select(pr => pr.RequestNumber).FirstOrDefault()
+                       : null,
+                   RevisionNumber = x.p.RevisionNumber,
+                   RootPoNo = x.p.RootPoNo
+               })
+               .OrderByDescending(p => p.CreatedAt)
+               .ToListAsync();
 
             return Ok(ApiResponse<List<InternationalPoListItemDto>>.Ok(data));
         }
-
         // ── GET /api/international-po/{id} — full detail (edit screen / print) ──
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -85,6 +97,14 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (dto.RequestedById == Guid.Empty)
                 return BadRequest(ApiResponse<object>.Fail("Requested By is required."));
 
+            // ── NEW: reject zero/negative quantity items outright — a PO
+            // line with no quantity is meaningless and shouldn't reach the DB.
+            if (dto.Items == null || dto.Items.Count == 0)
+                return BadRequest(ApiResponse<object>.Fail("At least one item is required."));
+
+            if (dto.Items.Any(i => i.Qty <= 0))
+                return BadRequest(ApiResponse<object>.Fail("All items must have a quantity greater than zero."));
+
             var company = await _db.Companies.FindAsync(dto.CompanyId);
             if (company == null)
                 return BadRequest(ApiResponse<object>.Fail("Invalid company."));
@@ -93,6 +113,57 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (supplier == null)
                 return BadRequest(ApiResponse<object>.Fail("Invalid supplier."));
 
+            // ── validate MR-sourced line items against remaining qty ──
+            // Prevents two officers from over-allocating the same MR item
+            // across multiple POs (Local/International/other draft POs).
+            var sourceItemIds = dto.Items
+                .Where(i => i.SourcePurchaseRequestItemId.HasValue)
+                .Select(i => i.SourcePurchaseRequestItemId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (sourceItemIds.Count > 0)
+            {
+                var prItems = await _db.PurchaseRequestItems
+                    .Where(pi => sourceItemIds.Contains(pi.Id))
+                    .ToDictionaryAsync(pi => pi.Id, pi => pi.Quantity);
+
+                var alreadyAllocated = await _db.InternationalPOItems
+                    .Where(poi => poi.SourcePurchaseRequestItemId.HasValue
+                                && sourceItemIds.Contains(poi.SourcePurchaseRequestItemId.Value)
+                                && poi.IsActive)
+                    .Join(_db.InternationalPurchaseOrders.Where(p => p.Status != InternationalPoStatus.Cancelled && p.IsActive && p.SupersededByPoId == null),
+                        poi => poi.InternationalPoId,
+                        p => p.Id,
+                        (poi, p) => poi)
+                    .GroupBy(poi => poi.SourcePurchaseRequestItemId!.Value)
+                    .Select(g => new { ItemId = g.Key, Allocated = g.Sum(x => x.Qty) })
+                    .ToDictionaryAsync(x => x.ItemId, x => x.Allocated);
+
+                // sum requested qty per source item WITHIN this same submission too
+                // (in case the same MR line was accidentally added twice in one PO)
+                var requestedInThisSubmission = dto.Items
+                    .Where(i => i.SourcePurchaseRequestItemId.HasValue)
+                    .GroupBy(i => i.SourcePurchaseRequestItemId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Qty));
+
+                foreach (var kvp in requestedInThisSubmission)
+                {
+                    var sourceItemId = kvp.Key;
+                    var requestedQty = kvp.Value;
+
+                    if (!prItems.TryGetValue(sourceItemId, out var originalQty))
+                        return BadRequest(ApiResponse<object>.Fail($"Source MR item {sourceItemId} not found."));
+
+                    var alreadyAllocatedQty = alreadyAllocated.TryGetValue(sourceItemId, out var a) ? a : 0;
+                    var remainingQty = originalQty - alreadyAllocatedQty;
+
+                    if (requestedQty > remainingQty)
+                        return BadRequest(ApiResponse<object>.Fail(
+                            $"Cannot allocate {requestedQty} — only {remainingQty} remaining on this MR item (already used in other POs)."));
+                }
+            }
+
             var po = new InternationalPurchaseOrder
             {
                 Id = Guid.NewGuid(),
@@ -100,6 +171,8 @@ namespace Procurement.Api.Controllers.InternationalPO
                 CompanyId = dto.CompanyId,
                 LinkedPurchaseRequestId = dto.LinkedPurchaseRequestId,
                 MrReferenceNumber = dto.MrReferenceNumber,
+                IsInternational = dto.IsInternational,
+                RootPoNo = dto.PoNo,   // ← NEW — this PO's own number is the "root" for its future revisions
                 SupplierId = dto.SupplierId,
                 PoDate = DateTime.UtcNow,
                 ContactPerson = dto.ContactPerson,
@@ -108,6 +181,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 Mobile = dto.Mobile,
                 DeliveryDateTime = dto.DeliveryDateTime,
                 DeliveryLocationId = dto.DeliveryLocationId,
+                DeliveryLocationName = dto.DeliveryLocationName,
                 ProjectId = dto.ProjectId,
                 PaymentType = dto.PaymentType,
                 Email = dto.Email,
@@ -159,8 +233,6 @@ namespace Procurement.Api.Controllers.InternationalPO
                 });
             }
 
-            await RecalculateTotalsAsync(po);
-
             _db.AuditLogs.Add(new AuditLog
             {
                 Id = Guid.NewGuid(),
@@ -171,6 +243,11 @@ namespace Procurement.Api.Controllers.InternationalPO
                 CreatedAt = DateTime.UtcNow
             });
 
+            // ── Save the PO + items FIRST, so RecalculateTotalsAsync's SUM
+            // query (which reads back from the database) actually sees them.
+            await _db.SaveChangesAsync();
+
+            await RecalculateTotalsAsync(po);
             await _db.SaveChangesAsync();
 
             var resultDto = await BuildDetailDtoAsync(po);
@@ -212,10 +289,12 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (!string.IsNullOrWhiteSpace(dto.BrightPoNumber))
                 po.BrightPoNumber = dto.BrightPoNumber;
 
-            await RecalculateTotalsAsync(po);
             po.UpdatedAt = DateTime.UtcNow;
-
             await _db.SaveChangesAsync();
+
+            await RecalculateTotalsAsync(po);
+            await _db.SaveChangesAsync();
+
             return Ok(ApiResponse<object>.Ok(null, "International PO updated."));
         }
 
@@ -223,12 +302,45 @@ namespace Procurement.Api.Controllers.InternationalPO
         [HttpPost("{id:guid}/items")]
         public async Task<IActionResult> AddItem(Guid id, CreateInternationalPoItemDto dto)
         {
+
             var po = await _db.InternationalPurchaseOrders.FindAsync(id);
             if (po == null || !po.IsActive)
                 return NotFound(ApiResponse<object>.Fail("International PO not found."));
 
+            // ── NEW: block adding a brand-new item (no SourcePurchaseRequestItemId)
+            // to any MR-linked PO, original or revision. A revision may only
+            // adjust the qty/rate of items that already trace back to the MR —
+            // never introduce a new, untracked line.
+            if (po.LinkedPurchaseRequestId.HasValue && !dto.SourcePurchaseRequestItemId.HasValue)
+                return BadRequest(ApiResponse<object>.Fail("This PO is linked to an MR — new items can't be added directly. Create a separate PO for anything not already on this list."));
+
             if (dto.Qty <= 0)
                 return BadRequest(ApiResponse<object>.Fail("Quantity must be greater than zero."));
+
+          
+            // ── same remaining-qty guard for items added post-create ──
+            if (dto.SourcePurchaseRequestItemId.HasValue)
+            {
+                var sourceItemId = dto.SourcePurchaseRequestItemId.Value;
+
+                var prItem = await _db.PurchaseRequestItems.FindAsync(sourceItemId);
+                if (prItem == null)
+                    return BadRequest(ApiResponse<object>.Fail("Source MR item not found."));
+
+                var alreadyAllocatedQty = await _db.InternationalPOItems
+                    .Where(poi => poi.SourcePurchaseRequestItemId == sourceItemId && poi.IsActive)
+                    .Join(_db.InternationalPurchaseOrders.Where(p => p.Status != InternationalPoStatus.Cancelled && p.IsActive && p.SupersededByPoId == null),
+                        poi => poi.InternationalPoId,
+                        p => p.Id,
+                        (poi, p) => poi)
+                    .SumAsync(poi => (decimal?)poi.Qty) ?? 0;
+
+                var remainingQty = prItem.Quantity - alreadyAllocatedQty;
+
+                if (dto.Qty > remainingQty)
+                    return BadRequest(ApiResponse<object>.Fail(
+                        $"Cannot allocate {dto.Qty} — only {remainingQty} remaining on this MR item."));
+            }
 
             var maxOrder = await _db.InternationalPOItems
                 .Where(i => i.InternationalPoId == id && i.IsActive)
@@ -256,6 +368,8 @@ namespace Procurement.Api.Controllers.InternationalPO
             };
 
             _db.InternationalPOItems.Add(item);
+            await _db.SaveChangesAsync();  // persist the new item first
+
             await RecalculateTotalsAsync(po);
             await _db.SaveChangesAsync();
 
@@ -277,13 +391,73 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             item.IsActive = false;
             item.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();  // persist the removal first
 
             await RecalculateTotalsAsync(po);
             await _db.SaveChangesAsync();
 
             return Ok(ApiResponse<object>.Ok(null, "Item removed."));
         }
+        // ── PUT /api/international-po/{id}/items/{itemId} — edit item qty/rate ──
+        // Only allowed when items aren't locked (see frontend itemsLocked logic —
+        // this mirrors the same rule server-side so the API can't be called
+        // directly to bypass the UI lock).
+        [HttpPut("{id:guid}/items/{itemId:guid}")]
+        public async Task<IActionResult> UpdateItem(Guid id, Guid itemId, UpdateInternationalPoItemDto dto)
+        {
+            var po = await _db.InternationalPurchaseOrders.FindAsync(id);
+            if (po == null || !po.IsActive)
+                return NotFound(ApiResponse<object>.Fail("International PO not found."));
 
+            var lockedStatuses = new[] { InternationalPoStatus.Completed, InternationalPoStatus.Cancelled, "Blocked", InternationalPoStatus.Superseded };
+            if (lockedStatuses.Contains(po.Status))
+                return BadRequest(ApiResponse<object>.Fail("This PO's items cannot be edited in its current status."));
+
+            // MR-linked items are normally locked, EXCEPT on a revision (RevisionNumber > 0)
+            // — a revision's whole purpose is correcting quantities against the original.
+            if (po.LinkedPurchaseRequestId.HasValue && po.RevisionNumber == 0)
+                return BadRequest(ApiResponse<object>.Fail("Items on an MR-linked PO can't be edited directly. Create a revision instead."));
+
+            if (dto.Qty <= 0)
+                return BadRequest(ApiResponse<object>.Fail("Quantity must be greater than zero."));
+
+            var item = await _db.InternationalPOItems
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.InternationalPoId == id && i.IsActive);
+            if (item == null)
+                return NotFound(ApiResponse<object>.Fail("Item not found."));
+
+            // same remaining-qty guard as AddItem, excluding this item's own current
+            // allocation from the "already allocated" sum (since we're replacing it)
+            if (item.SourcePurchaseRequestItemId.HasValue)
+            {
+                var sourceItemId = item.SourcePurchaseRequestItemId.Value; 
+                var prItem = await _db.PurchaseRequestItems.FindAsync(sourceItemId);
+                if (prItem == null)
+                    return BadRequest(ApiResponse<object>.Fail("Source MR item not found."));
+
+                var alreadyAllocatedQty = await _db.InternationalPOItems
+                    .Where(poi => poi.SourcePurchaseRequestItemId == sourceItemId && poi.IsActive && poi.Id != itemId)
+                    .Join(_db.InternationalPurchaseOrders.Where(p => p.Status != InternationalPoStatus.Cancelled && p.IsActive && p.SupersededByPoId == null),
+                        poi => poi.InternationalPoId, p => p.Id, (poi, p) => poi)
+                    .SumAsync(poi => (decimal?)poi.Qty) ?? 0;
+
+                var remainingQty = prItem.Quantity - alreadyAllocatedQty;
+                if (dto.Qty > remainingQty)
+                    return BadRequest(ApiResponse<object>.Fail($"Cannot set qty to {dto.Qty} — only {remainingQty} remaining on this MR item."));
+            }
+
+            item.Qty = dto.Qty;
+            item.Rate = dto.Rate;
+            item.DiscountAmount = dto.DiscountAmount;
+            item.Amount = (dto.Qty * dto.Rate) - dto.DiscountAmount;
+            item.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            await RecalculateTotalsAsync(po);
+            await _db.SaveChangesAsync();
+
+            return Ok(ApiResponse<object>.Ok(null, "Item updated."));
+        }
         // ── POST /api/international-po/{id}/quotes — add a vendor quote ─
         // InternationalPoItemId = null  -> whole-PO-level quote
         // InternationalPoItemId = set   -> per-item quote
@@ -335,9 +509,6 @@ namespace Procurement.Api.Controllers.InternationalPO
         }
 
         // ── POST /api/international-po/{id}/quotes/{quoteId}/select ─────
-        // Marks this quote as the winner. If whole-PO-level, locks the header
-        // Supplier + Currency and updates ALL item rates. If per-item, updates
-        // just that item's rate. Unselects sibling quotes at the same scope.
         [HttpPost("{id:guid}/quotes/{quoteId:guid}/select")]
         public async Task<IActionResult> SelectQuote(Guid id, Guid quoteId)
         {
@@ -352,7 +523,6 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             if (quote.InternationalPoItemId.HasValue)
             {
-                // Per-item selection: unselect siblings for the same item, update that item's rate.
                 var siblingQuotes = await _db.InternationalPOItemQuotes
                     .Where(q => q.InternationalPoId == id && q.InternationalPoItemId == quote.InternationalPoItemId)
                     .ToListAsync();
@@ -370,9 +540,6 @@ namespace Procurement.Api.Controllers.InternationalPO
             }
             else
             {
-                // Whole-PO-level selection: unselect siblings at PO-level, lock header
-                // supplier/currency, and apply this rate to every item that doesn't
-                // already have its own selected per-item quote.
                 var siblingQuotes = await _db.InternationalPOItemQuotes
                     .Where(q => q.InternationalPoId == id && q.InternationalPoItemId == null)
                     .ToListAsync();
@@ -402,9 +569,10 @@ namespace Procurement.Api.Controllers.InternationalPO
             }
 
             po.Status = InternationalPoStatus.SupplierSelected;
-            await RecalculateTotalsAsync(po);
             po.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
 
+            await RecalculateTotalsAsync(po);
             await _db.SaveChangesAsync();
 
             var resultDto = await BuildDetailDtoAsync(po);
@@ -426,9 +594,8 @@ namespace Procurement.Api.Controllers.InternationalPO
             await _db.SaveChangesAsync();
             return Ok(ApiResponse<object>.Ok(null, "Quote removed."));
         }
-
-        // ── PUT /api/international-po/{id}/status — status transition ───
         [HttpPut("{id:guid}/status")]
+        
         public async Task<IActionResult> UpdateStatus(Guid id, UpdateStatusDto dto)
         {
             var po = await _db.InternationalPurchaseOrders.FindAsync(id);
@@ -437,14 +604,71 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             var validStatuses = new[]
             {
-                InternationalPoStatus.Draft, InternationalPoStatus.QuotesCollected,
-                InternationalPoStatus.SupplierSelected, InternationalPoStatus.Finalized,
-                InternationalPoStatus.SentToBright, InternationalPoStatus.Completed,
-                InternationalPoStatus.Cancelled
-            };
+        InternationalPoStatus.Draft, InternationalPoStatus.QuotesCollected,
+        InternationalPoStatus.SupplierSelected, InternationalPoStatus.Finalized,
+        InternationalPoStatus.SentToBright, InternationalPoStatus.Completed,
+        InternationalPoStatus.Cancelled, "Blocked"
+    };
 
             if (!validStatuses.Contains(dto.Status))
                 return BadRequest(ApiResponse<object>.Fail("Invalid status value."));
+
+            if (dto.Status == InternationalPoStatus.Draft)
+            {
+                if (po.SupersededByPoId.HasValue)
+                    return BadRequest(ApiResponse<object>.Fail("This PO has been revised — edit the latest revision instead."));
+                if (po.Status == InternationalPoStatus.Cancelled)
+                    return BadRequest(ApiResponse<object>.Fail("A cancelled PO cannot be returned to Draft."));
+                if (po.Status == InternationalPoStatus.Completed)
+                    return BadRequest(ApiResponse<object>.Fail("A Completed PO cannot be returned to Draft. Use Create Revision instead to make a tracked correction."));
+            }
+
+            // ── NEW: remember the status this PO was in right before it gets
+            // Blocked, so Unblock can restore exactly that — not always "Draft".
+            // This closes the loophole where Block -> Unblock on a Completed PO
+            // silently turned it back into an editable Draft.
+            if (dto.Status == "Blocked")
+            {
+                po.StatusBeforeBlock = po.Status;
+            }
+
+            // ── NEW: Unblock restores the remembered prior status instead of
+            // hardcoding "Draft". A Completed PO that got blocked comes back as
+            // Completed (still locked, still no edit), not Draft.
+            if (po.Status == "Blocked" && dto.Status == InternationalPoStatus.Draft)
+            {
+                var restoreStatus = string.IsNullOrWhiteSpace(po.StatusBeforeBlock)
+                    ? InternationalPoStatus.Draft
+                    : po.StatusBeforeBlock;
+
+                po.Status = restoreStatus;
+                po.StatusBeforeBlock = null;
+                po.UpdatedAt = DateTime.UtcNow;
+
+                _db.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Module = "International PO",
+                    Action = $"Unblock -> {restoreStatus}",
+                    UserName = "System",
+                    Details = po.PoNo ?? po.Id.ToString(),
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await _db.SaveChangesAsync();
+                return Ok(ApiResponse<object>.Ok(null, $"Unblocked — restored to {restoreStatus}."));
+            }
+
+            if (dto.Status == InternationalPoStatus.Cancelled && po.ParentPoId.HasValue)
+            {
+                var parent = await _db.InternationalPurchaseOrders.FindAsync(po.ParentPoId.Value);
+                if (parent != null && parent.SupersededByPoId == po.Id)
+                {
+                    parent.SupersededByPoId = null;
+                    parent.Status = InternationalPoStatus.Completed;
+                    parent.UpdatedAt = DateTime.UtcNow;
+                }
+            }
 
             po.Status = dto.Status;
             po.UpdatedAt = DateTime.UtcNow;
@@ -461,6 +685,185 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             await _db.SaveChangesAsync();
             return Ok(ApiResponse<object>.Ok(null, $"Status updated to {dto.Status}."));
+        }
+     
+        private async Task<List<SignatoryDto>> BuildSignatoriesAsync(Guid companyId)
+        {
+            async Task<string?> GetNameByRoleAsync(string roleName)
+            {
+                return await _db.UserRoles
+                    .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur, r })
+                    .Where(x => x.r.Name == roleName)
+                    .Join(_db.Users.Where(u => u.IsActive), x => x.ur.UserId, u => u.Id, (x, u) => u.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
+            async Task<string?> GetCompanyGmNameAsync(Guid compId)
+            {
+                var gmRoleIds = await _db.Roles
+                    .Where(r => r.Name.EndsWith("-GM") || r.Name == "Company GM" || r.Name == "HTC GM")
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                return await _db.UserRoles
+                    .Where(ur => gmRoleIds.Contains(ur.RoleId))
+                    .Join(_db.UserCompanies.Where(uc => uc.CompanyId == compId && uc.IsActive),
+                        ur => ur.UserId, uc => uc.UserId, (ur, uc) => ur.UserId)
+                    .Join(_db.Users.Where(u => u.IsActive), uid => uid, u => u.Id, (uid, u) => u.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
+            return new List<SignatoryDto>
+            {
+                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Purchase Manager") },
+                new() { Label = "General Manager",              Name = await GetCompanyGmNameAsync(companyId) },
+                new() { Label = "Deputy Chief Executive Officer", Name = await GetNameByRoleAsync("DCEO") },
+                new() { Label = "Chief Executive Officer",       Name = await GetNameByRoleAsync("CEO") },
+                new() { Label = "Chairman/Vice Chairman",        Name = await GetNameByRoleAsync("Vice Chairman") },
+            };
+        }
+        // ── POST /api/international-po/{id}/create-revision ─────────────
+        // Only allowed on a Completed PO that hasn't already been revised.
+        // Copies the full header + items into a brand-new Draft PO named
+        // "<RootPoNo>-R<n>", and marks the original as superseded so it
+        // stays visible for audit but points forward to the live version.
+        [HttpPost("{id:guid}/create-revision")]
+        public async Task<IActionResult> CreateRevision(Guid id, [FromBody] CreateRevisionDto? dto)
+        {
+            var original = await _db.InternationalPurchaseOrders.FindAsync(id);
+            if (original == null || !original.IsActive)
+                return NotFound(ApiResponse<object>.Fail("International PO not found."));
+
+            if (original.Status != InternationalPoStatus.Completed)
+                return BadRequest(ApiResponse<object>.Fail("Only a Completed PO can be revised."));
+
+            // ── CHANGED: don't blindly block on SupersededByPoId — check whether
+            // the existing revision is still "live". If it was Cancelled, allow a
+            // fresh revision to be created and clear the stale link.
+            if (original.SupersededByPoId.HasValue)
+            {
+                var existingRevision = await _db.InternationalPurchaseOrders.FindAsync(original.SupersededByPoId.Value);
+
+                if (existingRevision != null && existingRevision.Status != InternationalPoStatus.Cancelled)
+                    return BadRequest(ApiResponse<object>.Fail(
+                        $"This PO has already been revised as {existingRevision.PoNo}. Open that revision instead, or cancel it first to create a new one."));
+
+                // existing revision was cancelled — clear the stale link, allow retry
+                original.SupersededByPoId = null;
+            }
+
+            if (string.IsNullOrWhiteSpace(original.PoNo))
+                return BadRequest(ApiResponse<object>.Fail("This PO has no PO Number set. Add one via Edit before creating a revision."));
+
+            var rootPoNo = string.IsNullOrWhiteSpace(original.RootPoNo) ? original.PoNo : original.RootPoNo;
+
+            // ── CHANGED: base the next revision number on original.RevisionNumber,
+            // which we now persist on the original every time a revision is made —
+            // this prevents number reuse (e.g. R1 cancelled -> next is R2, not R1 again).
+            var newRevisionNumber = original.RevisionNumber + 1;
+            var newPoNo = string.IsNullOrWhiteSpace(rootPoNo) ? null : $"{rootPoNo}-R{newRevisionNumber}";
+
+            var revision = new InternationalPurchaseOrder
+            {
+                Id = Guid.NewGuid(),
+                PoNo = newPoNo,
+                CompanyId = original.CompanyId,
+                LinkedPurchaseRequestId = original.LinkedPurchaseRequestId,
+                MrReferenceNumber = original.MrReferenceNumber,
+                IsInternational = original.IsInternational,
+                RevisionNumber = newRevisionNumber,
+                ParentPoId = original.Id,
+                RootPoNo = rootPoNo,
+                RevisionReason = dto?.Reason,   // ── NEW
+                SupplierId = original.SupplierId,
+                PoDate = DateTime.UtcNow,
+                ContactPerson = original.ContactPerson,
+                ForDeliveryName = original.ForDeliveryName,
+                LandlineEmail = original.LandlineEmail,
+                Mobile = original.Mobile,
+                DeliveryDateTime = original.DeliveryDateTime,
+                DeliveryLocationId = original.DeliveryLocationId,
+                DeliveryLocationName = original.DeliveryLocationName,
+                ProjectId = original.ProjectId,
+                PaymentType = original.PaymentType,
+                Email = original.Email,
+                OriginCountry = original.OriginCountry,
+                DestinationPort = original.DestinationPort,
+                Incoterm = original.Incoterm,
+                PerformaNo = original.PerformaNo,
+                RequestedById = original.RequestedById,
+                Currency = original.Currency,
+                ExchangeRate = original.ExchangeRate,
+                ModeOfFreight = original.ModeOfFreight,
+                TypeOfCargo = original.TypeOfCargo,
+                PaymentTermsText = original.PaymentTermsText,
+                AdvancePayment = original.AdvancePayment,
+                DiscountAmount = original.DiscountAmount,
+                InsuranceAmount = original.InsuranceAmount,
+                OthersAmount = original.OthersAmount,
+                TermsAndConditions = original.TermsAndConditions,
+                Notes = original.Notes,
+                Status = InternationalPoStatus.Draft,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            _db.InternationalPurchaseOrders.Add(revision);
+            await _db.SaveChangesAsync();
+
+            var originalItems = await _db.InternationalPOItems
+                .Where(i => i.InternationalPoId == original.Id && i.IsActive)
+                .OrderBy(i => i.LineOrder)
+                .ToListAsync();
+
+            foreach (var item in originalItems)
+            {
+                _db.InternationalPOItems.Add(new InternationalPOItem
+                {
+                    Id = Guid.NewGuid(),
+                    InternationalPoId = revision.Id,
+                    ItemId = item.ItemId,
+                    SourcePurchaseRequestItemId = item.SourcePurchaseRequestItemId,
+                    FreeTextItemCode = item.FreeTextItemCode,
+                    FreeTextItemName = item.FreeTextItemName,
+                    Qty = item.Qty,
+                    Uom = item.Uom,
+                    Rate = item.Rate,
+                    DiscountAmount = item.DiscountAmount,
+                    Amount = item.Amount,
+                    LineOrder = item.LineOrder,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+            }
+
+            await _db.SaveChangesAsync();
+
+            await RecalculateTotalsAsync(revision);
+            await _db.SaveChangesAsync();
+
+            // ── CHANGED: original now flips to "Superseded" (was left as
+            // "Completed" before, which was misleading since it's no longer live),
+            // and persists its RevisionNumber so future re-revisions number correctly.
+            original.SupersededByPoId = revision.Id;
+            original.Status = InternationalPoStatus.Superseded;
+            original.RevisionNumber = newRevisionNumber;
+            original.UpdatedAt = DateTime.UtcNow;
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Module = "International PO",
+                Action = "Create Revision",
+                UserName = "System",
+                Details = $"{original.PoNo} -> {revision.PoNo}" + (dto?.Reason != null ? $" | Reason: {dto.Reason}" : ""),
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            var resultDto = await BuildDetailDtoAsync(revision);
+            return Ok(ApiResponse<InternationalPoDetailDto>.Ok(resultDto, "Revision created."));
         }
 
         // ── DELETE /api/international-po/{id} — soft delete / cancel ────
@@ -519,6 +922,14 @@ namespace Procurement.Api.Controllers.InternationalPO
                 : null;
             var linkedPr = po.LinkedPurchaseRequestId.HasValue
                 ? await _db.PurchaseRequests.FindAsync(po.LinkedPurchaseRequestId.Value)
+                : null;
+
+            // ── NEW: revision family lookup ──
+            var parentPoNo = po.ParentPoId.HasValue
+                ? await _db.InternationalPurchaseOrders.Where(p => p.Id == po.ParentPoId.Value).Select(p => p.PoNo).FirstOrDefaultAsync()
+                : null;
+            var supersededByPoNo = po.SupersededByPoId.HasValue
+                ? await _db.InternationalPurchaseOrders.Where(p => p.Id == po.SupersededByPoId.Value).Select(p => p.PoNo).FirstOrDefaultAsync()
                 : null;
 
             var items = await _db.InternationalPOItems
@@ -580,9 +991,18 @@ namespace Procurement.Api.Controllers.InternationalPO
                 PoNo = po.PoNo,
                 CompanyId = po.CompanyId,
                 CompanyName = company?.Name ?? "",
+                CompanyLogoUrl = company?.LogoUrl,
                 LinkedPurchaseRequestId = po.LinkedPurchaseRequestId,
                 LinkedRequestNumber = linkedPr?.RequestNumber,
                 MrReferenceNumber = po.MrReferenceNumber,
+                IsInternational = po.IsInternational,
+
+                RevisionNumber = po.RevisionNumber,
+                ParentPoId = po.ParentPoId,
+                ParentPoNo = parentPoNo,
+                SupersededByPoId = po.SupersededByPoId,
+                SupersededByPoNo = supersededByPoNo,
+                RevisionReason = po.RevisionReason,   // ← ITH ADD CHEYYUKA
                 SupplierId = po.SupplierId,
                 Supplier = supplier == null ? null : new SupplierDto
                 {
@@ -610,7 +1030,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 Mobile = po.Mobile,
                 DeliveryDateTime = po.DeliveryDateTime,
                 DeliveryLocationId = po.DeliveryLocationId,
-                DeliveryLocationName = deliveryLocation?.Name,
+                DeliveryLocationName = po.DeliveryLocationName ?? deliveryLocation?.Name,
                 ProjectId = po.ProjectId,
                 ProjectName = project?.Name,
                 PaymentType = po.PaymentType,
@@ -637,7 +1057,8 @@ namespace Procurement.Api.Controllers.InternationalPO
                 BrightPoNumber = po.BrightPoNumber,
                 Notes = po.Notes,
                 Items = itemDtos,
-                Quotes = allQuotes.Where(q => q.InternationalPoItemId == null).Select(MapQuote).ToList()
+                Quotes = allQuotes.Where(q => q.InternationalPoItemId == null).Select(MapQuote).ToList(),
+                Signatories = await BuildSignatoriesAsync(po.CompanyId)   // ← NEW
             };
         }
 

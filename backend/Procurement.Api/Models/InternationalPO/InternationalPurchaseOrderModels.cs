@@ -53,7 +53,7 @@ namespace Procurement.Api.Models.InternationalPO
         public string Name { get; set; } = "";
     }
 
-    // ── INTERNATIONAL PO STATUS ──────────────────────────────────────
+    // ── INTERNATIONAL PO STATUS ───────────────────────
     public static class InternationalPoStatus
     {
         public const string Draft = "Draft";
@@ -63,9 +63,10 @@ namespace Procurement.Api.Models.InternationalPO
         public const string SentToBright = "SentToBright";
         public const string Completed = "Completed";
         public const string Cancelled = "Cancelled";
+        public const string Superseded = "Superseded";
     }
 
-    // ── INTERNATIONAL PO HEADER ──────────────────────────────────────
+    // ── INTERNATIONAL PO HEADER ──────────────────
     public class InternationalPurchaseOrder : BaseEntity
     {
         public string? PoNo { get; set; }                       // manual entry for now
@@ -73,8 +74,14 @@ namespace Procurement.Api.Models.InternationalPO
 
         public Guid? LinkedPurchaseRequestId { get; set; }       // optional link to existing PR
         public string? MrReferenceNumber { get; set; }           // free text, e.g. Bright MR No
-
+        public bool IsInternational { get; set; } = true;        // ← NEW LINE — Local vs International PO
+                                                                 // ── Revision tracking ─────────────────────────────────
+        public int RevisionNumber { get; set; } = 0;              // 0 = original, 1 = Rev 1, 2 = Rev 2...
+        public Guid? ParentPoId { get; set; }                     // PO this one was revised FROM
+        public string? RootPoNo { get; set; }                     // shared PO number across the whole revision family
+        public Guid? SupersededByPoId { get; set; }               // PO that replaced this one (set on the OLD PO once revised)
         public Guid SupplierId { get; set; }
+        public string? RevisionReason { get; set; }
 
         public DateTime PoDate { get; set; } = DateTime.UtcNow;
         public string? ContactPerson { get; set; }
@@ -84,6 +91,7 @@ namespace Procurement.Api.Models.InternationalPO
         public DateTime? DeliveryDateTime { get; set; }
 
         public Guid? DeliveryLocationId { get; set; }
+        public string? DeliveryLocationName { get; set; }
         public Guid? ProjectId { get; set; }
 
         public string? PaymentType { get; set; }                 // Cash / Credit / LC
@@ -118,6 +126,7 @@ namespace Procurement.Api.Models.InternationalPO
         public string? BrightPoNumber { get; set; }               // filled manually post-Bright entry
 
         public string? Notes { get; set; }
+        public string? StatusBeforeBlock { get; set; }
 
         // Navigation
         public Supplier? Supplier { get; set; }

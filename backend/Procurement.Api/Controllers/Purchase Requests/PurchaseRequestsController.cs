@@ -611,15 +611,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Procurement.Api.Data;
+using Procurement.Api.DTOs.InternationalPO;
 using Procurement.Api.DTOs.PurchaseRequests;
 using Procurement.Api.Models;
+using Procurement.Api.Models.InternationalPO;
 using Procurement.Api.Models.PurchaseRequests;
 using Procurement.Api.Services.Common;
 using Procurement.Api.Services.Workflow;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using Procurement.Api.Models.InternationalPO;
-
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 namespace Procurement.Api.Controllers.PurchaseRequests
 {
     [Authorize]
@@ -827,6 +827,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     pr.CreatedAt,
                     pr.DeliveryLocation,
                     pr.ContactNumber,
+                    companyId = pr.CompanyId,          // ← NEW — needed by International PO Create page to auto-fill Company when converting an MR
+                    projectId = pr.ProjectId,
                     Company = _db.Companies
                                     .Where(c => c.Id == pr.CompanyId)
                                     .Select(c => c.Name).FirstOrDefault(),
@@ -1029,7 +1031,51 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             if (request == null) return NotFound();
             return Ok(request);
         }
+        // ── Resolves current role holders for the printed signature panel.
+        // Only signatories with an actual assigned person are returned —
+        // if a role has no holder (or doesn't apply, e.g. DCEO/Chairman
+        // often blank on smaller Local POs), that box is simply omitted
+        // rather than shown empty. This makes the panel size itself
+        // automatically per company/PO without any Local-vs-International
+        // hardcoding.
+        private async Task<List<SignatoryDto>> BuildSignatoriesAsync(Guid companyId)
+        {
+            async Task<string?> GetNameByRoleAsync(string roleName)
+            {
+                return await _db.UserRoles
+                    .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur, r })
+                    .Where(x => x.r.Name == roleName)
+                    .Join(_db.Users.Where(u => u.IsActive), x => x.ur.UserId, u => u.Id, (x, u) => u.FullName)
+                    .FirstOrDefaultAsync();
+            }
 
+            async Task<string?> GetCompanyGmNameAsync(Guid compId)
+            {
+                var gmRoleIds = await _db.Roles
+                    .Where(r => r.Name.EndsWith("-GM") || r.Name == "Company GM" || r.Name == "HTC GM")
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                return await _db.UserRoles
+                    .Where(ur => gmRoleIds.Contains(ur.RoleId))
+                    .Join(_db.UserCompanies.Where(uc => uc.CompanyId == compId && uc.IsActive),
+                        ur => ur.UserId, uc => uc.UserId, (ur, uc) => ur.UserId)
+                    .Join(_db.Users.Where(u => u.IsActive), uid => uid, u => u.Id, (uid, u) => u.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
+            var all = new List<SignatoryDto>
+            {
+                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Purchase Manager") },
+                new() { Label = "General Manager",              Name = await GetCompanyGmNameAsync(companyId) },
+                new() { Label = "Deputy Chief Executive Officer", Name = await GetNameByRoleAsync("DCEO") },
+                new() { Label = "Chief Executive Officer",       Name = await GetNameByRoleAsync("CEO") },
+                new() { Label = "Chairman/Vice Chairman",        Name = await GetNameByRoleAsync("Vice Chairman") },
+            };
+
+            // ── NEW: drop any signatory with no assigned holder ──
+            return all.Where(s => !string.IsNullOrWhiteSpace(s.Name)).ToList();
+        }
         // POST /api/purchase-requests/{id}/resubmit
         [HttpPost("{id}/resubmit")]
         public async Task<IActionResult> Resubmit(Guid id)
@@ -1172,6 +1218,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
         // can see what's left to allocate. Used by International PO Create
         // page's "pull items from MR" feature.
         [HttpGet("{id:guid}/items")]
+      
         public async Task<IActionResult> GetItems(Guid id)
         {
             var items = await _db.PurchaseRequestItems
@@ -1193,11 +1240,16 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             var itemIds = items.Select(i => i.id).ToList();
 
+            // ── CHANGED: exclude superseded POs (ones already revised) from
+            // the allocation count. A revision copy carries the same
+            // SourcePurchaseRequestItemId as its parent — without this
+            // filter, a revised PO's qty gets double-counted against the MR
+            // (once from the original, once from the revision).
             var allocatedByItem = await _db.InternationalPOItems
                 .Where(poi => poi.SourcePurchaseRequestItemId != null
                             && itemIds.Contains(poi.SourcePurchaseRequestItemId!.Value)
                             && poi.IsActive)
-                .Join(_db.InternationalPurchaseOrders.Where(po => po.Status != "Cancelled" && po.IsActive),
+                .Join(_db.InternationalPurchaseOrders.Where(po => po.Status != "Cancelled" && po.IsActive && po.SupersededByPoId == null),
                     poi => poi.InternationalPoId,
                     po => po.Id,
                     (poi, po) => poi)

@@ -31,23 +31,21 @@ namespace Procurement.Api.Controllers.InternationalPO
             var query = _db.Suppliers.Where(s => s.IsActive);
 
             if (companyId.HasValue)
-                query = query.Where(s => s.CompanyId == null || s.CompanyId == companyId.Value);
-            // ✅ NOTE: suppliers with CompanyId == null (not yet mapped,
-            // or manually added without a company) still show up in
-            // every company's dropdown, rather than disappearing. Once
-            // more branches get mapped in Oracle Monitor, they'll
-            // automatically narrow down on the next sync.
+                query = query.Where(s => s.CompanyId == companyId.Value);
+            // ✅ CHANGED: strict company filter — selecting a company now
+            // shows ONLY suppliers explicitly assigned to it. Unassigned
+            // suppliers (CompanyId == null) no longer show up under every
+            // company's filter, since that was confusing in the UI (looked
+            // like suppliers belonged to a company they didn't).
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(s => s.Name.Contains(search) || s.SupplierCode.Contains(search));
 
-            // ✅ NEW — cap results. With 6500+ suppliers, loading everything
-            // on page load was the slow part. Without a search term, return
-            // a manageable first page; typing a search narrows it server-side.
             var cappedTop = top <= 0 || top > 500 ? 100 : top;
 
             var companyIds = await query.Where(s => s.CompanyId != null)
                 .Select(s => s.CompanyId!.Value).Distinct().ToListAsync();
+
             var companyNames = await _db.Companies
                 .Where(c => companyIds.Contains(c.Id))
                 .ToDictionaryAsync(c => c.Id, c => c.Name);
@@ -88,6 +86,13 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (s == null)
                 return NotFound(ApiResponse<object>.Fail("Supplier not found."));
 
+            // ── FIX: CompanyId/CompanyName were missing here even though
+            // GetAll() already returned them — the Edit panel (which loads
+            // via this endpoint) had no company data to show or pre-fill.
+            var companyName = s.CompanyId.HasValue
+                ? await _db.Companies.Where(c => c.Id == s.CompanyId.Value).Select(c => c.Name).FirstOrDefaultAsync()
+                : null;
+
             var dto = new SupplierDto
             {
                 Id = s.Id,
@@ -107,6 +112,8 @@ namespace Procurement.Api.Controllers.InternationalPO
                 SourceType = s.SourceType,
                 IsActive = s.IsActive,
                 Rating = s.Rating,
+                CompanyId = s.CompanyId,
+                CompanyName = companyName,
             };
 
             return Ok(ApiResponse<SupplierDto>.Ok(dto));
@@ -142,6 +149,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 BankAddress = dto.BankAddress,
                 BankName = dto.BankName,
                 Iban = dto.Iban,
+                CompanyId = dto.CompanyId,   // ← NEW — optional, null means "not tied to a specific company"
                 SourceType = "MANUAL",
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
@@ -173,6 +181,7 @@ namespace Procurement.Api.Controllers.InternationalPO
             supplier.BankAddress = dto.BankAddress;
             supplier.BankName = dto.BankName;
             supplier.Iban = dto.Iban;
+            supplier.CompanyId = dto.CompanyId;   // ← NEW — lets admin assign/reassign/clear the company later
             supplier.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
@@ -236,9 +245,6 @@ namespace Procurement.Api.Controllers.InternationalPO
         }
 
         // POST /api/suppliers/{id}/documents
-        // Call this AFTER uploading the file via the existing
-        // POST /api/attachments/upload endpoint — pass the returned
-        // storageKey + fileName here to link it to this supplier.
         [HttpPost("{id:guid}/documents")]
         public async Task<IActionResult> AddDocument(Guid id, AddSupplierDocumentDto dto)
         {
@@ -285,8 +291,5 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             return Ok(ApiResponse<object>.Ok(null, "Document removed."));
         }
- 
- 
- 
     }
 }

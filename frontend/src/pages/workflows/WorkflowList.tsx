@@ -214,10 +214,21 @@ export default function WorkflowList() {
                     <div style={{ fontWeight: 600, color: "#0b1c30", fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {wf.name || <span style={{ color: "#DC2626", fontStyle: "italic" }}>(Unnamed rule)</span>}
                     </div>
-                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                      {wf.code ? <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{wf.code}</span> : "—"}
-                      {wf.isDefault ? " · Default fallback rule" : ""}
-                    </div>
+                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px", display: "flex", alignItems: "center", gap: "8px" }}>
+  <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{wf.code || "—"}</span>
+  {wf.isDefault && <span>· Default fallback rule</span>}
+  {(wf.conditions?.length ?? 0) > 1 && wf.conditionMatchLogic === "ALL" && (
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      background: "#FEE2E2", color: "#DC2626",
+      fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
+      padding: "2px 8px", borderRadius: "4px",
+      flexShrink: 0, whiteSpace: "nowrap"
+    }}>
+    🔗  COMBO
+    </span>
+  )}
+</div>
                     {wf.description && (
                       <div style={{
                         fontSize: "12px", color: "#94a3b8", marginTop: "3px",

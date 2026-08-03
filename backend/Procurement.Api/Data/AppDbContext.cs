@@ -108,17 +108,39 @@ public class AppDbContext : DbContext
     .Ignore(x => x.UpdatedAt);
 
         modelBuilder.Entity<ApprovalAction>()
-            .Ignore(e => e.ActionByUser);
-        base.OnModelCreating(modelBuilder);
+   .Ignore(x => x.UpdatedAt);
 
-        modelBuilder.Entity<ItemCategory>(b =>
-    {
-        b.ToTable("ItemCategories");
-        b.HasKey(e => e.Id);
-        b.Property(e => e.Code).HasMaxLength(50).IsRequired();
-        b.Property(e => e.Name).HasMaxLength(100).IsRequired();
-        b.HasIndex(e => e.Code).IsUnique();
-    });
+        modelBuilder.Entity<ApprovalAction>()
+            .Ignore(e => e.ActionByUser);
+
+        // ── International PO relationships ───────────────────────────
+        // EF Core's default convention expects the FK property on the
+        // dependent side to be named "<PrincipalClassName>Id" (e.g.
+        // "InternationalPurchaseOrderId"). Our actual column/property is
+        // "InternationalPoId", which doesn't match that convention, so EF
+        // was silently creating an extra shadow FK column
+        // ("InternationalPurchaseOrderId") that doesn't exist in the DB —
+        // causing "Invalid column name 'InternationalPurchaseOrderId'" on
+        // save. These explicit mappings fix that.
+        modelBuilder.Entity<Procurement.Api.Models.InternationalPO.InternationalPOItem>()
+            .HasOne<Procurement.Api.Models.InternationalPO.InternationalPurchaseOrder>()
+            .WithMany(p => p.Items)
+            .HasForeignKey(i => i.InternationalPoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Procurement.Api.Models.InternationalPO.InternationalPOItemQuote>()
+            .HasOne<Procurement.Api.Models.InternationalPO.InternationalPurchaseOrder>()
+            .WithMany(p => p.Quotes)
+            .HasForeignKey(q => q.InternationalPoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Procurement.Api.Models.InternationalPO.InternationalPOItemQuote>()
+            .HasOne<Procurement.Api.Models.InternationalPO.InternationalPOItem>()
+            .WithMany(i => i.Quotes)
+            .HasForeignKey(q => q.InternationalPoItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<ItemGroupCategoryMap>(b =>
         {

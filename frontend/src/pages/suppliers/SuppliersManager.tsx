@@ -100,8 +100,6 @@ export default function SuppliersManager() {
     api.get('/companies').then(r => setCompanies(r.data?.data ?? r.data ?? [])).catch(console.error);
   }, []);
 
-  // ✅ CHANGED: debounced server-side search instead of loading all 6500+
-  // suppliers on every render — this was the actual cause of the slow load.
   useEffect(() => {
     const t = setTimeout(() => load(), 300);
     return () => clearTimeout(t);
@@ -187,6 +185,21 @@ export default function SuppliersManager() {
                     </div>
                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${badge.cls}`}>{badge.label}</span>
                   </div>
+
+                  {/* Company badge — shows which company this supplier belongs
+                      to (or "Unassigned" if not tied to one yet) */}
+                  <div className="mb-2">
+                    {s.companyName ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700">
+                        <Building2 className="w-2.5 h-2.5" /> {s.companyName}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-400">
+                        Unassigned
+                      </span>
+                    )}
+                  </div>
+
                   <div className="space-y-1.5 text-xs text-gray-500">
                     {s.country && <p className="flex items-center gap-1.5"><MapPin className="w-3 h-3" /> {s.country}</p>}
                     {s.mobile && <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {s.mobile}</p>}
@@ -204,6 +217,7 @@ export default function SuppliersManager() {
 
       {showCreate && (
         <SupplierFormModal
+          companies={companies}
           onClose={() => setShowCreate(false)}
           onSaved={() => { setShowCreate(false); load(); }}
         />
@@ -212,6 +226,7 @@ export default function SuppliersManager() {
       {detailId && (
         <SupplierDetailPanel
           supplierId={detailId}
+          companies={companies}
           onClose={() => setDetailId(null)}
           onChanged={load}
         />
@@ -223,11 +238,12 @@ export default function SuppliersManager() {
 // ═══════════════════════════════════════════════════════════════════
 // CREATE MODAL
 // ═══════════════════════════════════════════════════════════════════
-function SupplierFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function SupplierFormModal({ companies, onClose, onSaved }: { companies: any[]; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     supplierCode: '', name: '', country: '', address: '', contactPerson: '',
     landline: '', email: '', mobile: '', defaultCurrency: 'USD',
     bankAccountName: '', bankAddress: '', bankName: '', iban: '',
+    companyId: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -240,7 +256,12 @@ function SupplierFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
     if (!form.supplierCode.trim()) return setError('Supplier code is required.');
     setSaving(true);
     try {
-      await api.post('/suppliers', { ...form, sourceType: 'MANUAL', isActive: true });
+      await api.post('/suppliers', {
+        ...form,
+        companyId: form.companyId || null,
+        sourceType: 'MANUAL',
+        isActive: true,
+      });
       onSaved();
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to save supplier.');
@@ -273,6 +294,19 @@ function SupplierFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
               <input value={form.name} onChange={e => set('name', e.target.value)}
                 className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
             </div>
+
+            {/* Company — optional. Same vendor can exist under multiple
+                companies in Bright; leave blank if this supplier isn't tied
+                to one specific company. */}
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-gray-500">Company (optional)</label>
+              <select value={form.companyId} onChange={e => set('companyId', e.target.value)}
+                className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <option value="">— Not tied to a specific company —</option>
+                {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
             <div>
               <label className="text-xs font-medium text-gray-500">Country</label>
               <input value={form.country} onChange={e => set('country', e.target.value)}
@@ -356,8 +390,8 @@ function SupplierFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
 // ═══════════════════════════════════════════════════════════════════
 // DETAIL / EDIT SLIDE-OVER
 // ═══════════════════════════════════════════════════════════════════
-function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
-  supplierId: string; onClose: () => void; onChanged: () => void;
+function SupplierDetailPanel({ supplierId, companies, onClose, onChanged }: {
+  supplierId: string; companies: any[]; onClose: () => void; onChanged: () => void;
 }) {
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [docs, setDocs] = useState<SupplierDoc[]>([]);
@@ -378,7 +412,7 @@ function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
       ]);
       const s = sRes.data?.data ?? sRes.data;
       setSupplier(s);
-      setForm(s);
+      setForm({ ...s, companyId: s.companyId ?? '' });
       setDocs(dRes.data?.data ?? []);
     } catch (err) {
       console.error(err);
@@ -405,7 +439,10 @@ function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
     setSaving(true);
     setError('');
     try {
-      await api.put(`/suppliers/${supplierId}`, form);
+      await api.put(`/suppliers/${supplierId}`, {
+        ...form,
+        companyId: form.companyId || null,
+      });
       setEditing(false);
       await load();
       onChanged();
@@ -470,11 +507,20 @@ function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
                 </div>
                 <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 shrink-0"><X className="w-5 h-5" /></button>
               </div>
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
                 <Stars value={supplier.rating} onChange={handleRating} size={20} />
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(SOURCE_BADGES[supplier.sourceType] ?? { cls: 'bg-gray-100 text-gray-600' }).cls}`}>
-                  {(SOURCE_BADGES[supplier.sourceType] ?? { label: supplier.sourceType }).label}
-                </span>
+                <div className="flex items-center gap-2">
+                  {supplier.companyName ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                      <Building2 className="w-3 h-3" /> {supplier.companyName}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-400">Unassigned</span>
+                  )}
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(SOURCE_BADGES[supplier.sourceType] ?? { cls: 'bg-gray-100 text-gray-600' }).cls}`}>
+                    {(SOURCE_BADGES[supplier.sourceType] ?? { label: supplier.sourceType }).label}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -489,7 +535,7 @@ function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
                     <button onClick={() => setEditing(true)} className="text-xs text-blue-600 font-medium hover:underline">Edit</button>
                   ) : (
                     <div className="flex gap-2">
-                      <button onClick={() => { setEditing(false); setForm(supplier); }} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                      <button onClick={() => { setEditing(false); setForm({ ...supplier, companyId: supplier.companyId ?? '' }); }} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
                       <button onClick={handleSave} disabled={saving}
                         className="flex items-center gap-1 text-xs text-blue-600 font-medium hover:underline disabled:opacity-50">
                         {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save
@@ -510,6 +556,15 @@ function SupplierDetailPanel({ supplierId, onClose, onChanged }: {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {/* Company — same optional dropdown, editable any time */}
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Company</label>
+                      <select value={form.companyId ?? ''} onChange={e => set('companyId', e.target.value)}
+                        className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        <option value="">— Not tied to a specific company —</option>
+                        {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
                     {[
                       ['country', 'Country'], ['address', 'Address'], ['contactPerson', 'Contact Person'],
                       ['mobile', 'Mobile'], ['landline', 'Landline'], ['email', 'Email'],

@@ -22,10 +22,6 @@ const STATUS_STYLE: Record<string, string> = {
 
 const PROCUREMENT_ROLES = ['Purchase Officer', 'Procurement Officer', 'Purchase Manager'];
 
-// ✅ FIXED: Company GM, Vice Chairman added — these are the PO approval
-// chain roles (Procurement Manager → Company GM → CEO → Vice Chairman).
-// Without this, users with only these roles fell through to
-// RequesterDashboard and never saw their pending approvals.
 const APPROVER_ROLES = [
   'Manager', 'IT Manager', 'Budget Manager', 'Asset Manager',
   'Finance Approver', 'Purchase Officer', 'CEO', 'Approver',
@@ -57,7 +53,52 @@ function ChartTip({ active, payload, label }: any) {
   );
 }
 
-function ProcurementDashboard({ d, name }: { d: any; name: string }) {
+// ── NEW: SAP-style welcome banner — date/day, time-of-day greeting, name,
+// and role, with an optional action button on the right. Used at the top
+// of every dashboard variant below instead of the old plain "Welcome, X"
+// heading.
+function greetingWord() {
+  const h = new Date().getHours();
+  if (h < 5)  return 'Still up, ';
+  if (h < 12) return 'Good morning, ';
+  if (h < 17) return 'Good afternoon, ';
+  if (h < 21) return 'Good evening, ';
+  return 'Working late, ';
+}
+
+function GreetingBanner({ name, roles, action }: { name: string; roles: string[]; action?: React.ReactNode }) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const primaryRole = roles?.[0];
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 px-6 py-5 sm:px-7 sm:py-6 shadow-sm">
+      {/* decorative circles, purely visual */}
+      <div className="pointer-events-none absolute -right-8 -top-10 w-40 h-40 bg-white/10 rounded-full" />
+      <div className="pointer-events-none absolute right-20 -bottom-14 w-28 h-28 bg-white/10 rounded-full" />
+
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-medium text-blue-100 uppercase tracking-wide">{dateStr}</p>
+          <h1 className="text-2xl font-bold text-white mt-1">
+            {greetingWord()}{name}!
+          </h1>
+          <div className="flex items-center gap-2 mt-1.5">
+            <p className="text-sm text-blue-100">Great to see you .</p>
+            {primaryRole && (
+              <span className="text-[10px] font-semibold bg-white/20 text-white rounded-full px-2.5 py-0.5">
+                {/* {primaryRole} */}
+              </span>
+            )}
+          </div>
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProcurementDashboard({ d, name, roles }: { d: any; name: string; roles: string[] }) {
   const navigate = useNavigate();
   const [queue, setQueue] = useState<any[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
@@ -75,16 +116,12 @@ function ProcurementDashboard({ d, name }: { d: any; name: string }) {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Welcome, {name}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Procurement queue and PO management</p>
-        </div>
+      <GreetingBanner name={name} roles={roles} action={
         <button onClick={() => navigate('/procurement')}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-sm transition">
+          className="bg-white text-blue-700 hover:bg-blue-50 text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition">
           Open Procurement Queue
         </button>
-      </div>
+      } />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
@@ -201,7 +238,7 @@ function ProcurementDashboard({ d, name }: { d: any; name: string }) {
   );
 }
 
-function RequesterDashboard({ d, name }: { d: any; name: string }) {
+function RequesterDashboard({ d, name, roles }: { d: any; name: string; roles: string[] }) {
   const navigate = useNavigate();
   const cards = [
     { label: 'Total',    value: fmt(d.myRequestsTotal   ?? 0), color: 'border-blue-400',  note: 'All requests',      nav: '/my-requests' },
@@ -212,16 +249,12 @@ function RequesterDashboard({ d, name }: { d: any; name: string }) {
   ];
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Welcome, {name}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Track your purchase requests and approvals</p>
-        </div>
+      <GreetingBanner name={name} roles={roles} action={
         <button onClick={() => navigate('/create-request')}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-sm transition">
+          className="bg-white text-blue-700 hover:bg-blue-50 text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition">
           + New Request
         </button>
-      </div>
+      } />
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map(c => (
           <div key={c.label} onClick={() => navigate(c.nav)}
@@ -277,7 +310,7 @@ function RequesterDashboard({ d, name }: { d: any; name: string }) {
   );
 }
 
-function ApproverDashboard({ d, name }: { d: any; name: string }) {
+function ApproverDashboard({ d, name, roles }: { d: any; name: string; roles: string[] }) {
   const navigate = useNavigate();
   const myPending = d.myPendingApprovals ?? 0;
   const pendingQueue: any[] = d.pendingApprovalQueue ?? [];
@@ -290,13 +323,9 @@ function ApproverDashboard({ d, name }: { d: any; name: string }) {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Welcome, {name}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Approval queue and request status</p>
-        </div>
+      <GreetingBanner name={name} roles={roles} action={
         <button onClick={() => navigate('/approvals')}
-          className="relative bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-sm transition">
+          className="relative bg-white text-amber-700 hover:bg-amber-50 text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition">
           Go to Approvals
           {myPending > 0 && (
             <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
@@ -304,7 +333,7 @@ function ApproverDashboard({ d, name }: { d: any; name: string }) {
             </span>
           )}
         </button>
-      </div>
+      } />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {statCards.map(c => (
@@ -386,7 +415,7 @@ function ApproverDashboard({ d, name }: { d: any; name: string }) {
   );
 }
 
-function AdminDashboard({ d, name }: { d: any; name: string }) {
+function AdminDashboard({ d, name, roles }: { d: any; name: string; roles: string[] }) {
   const navigate = useNavigate();
   const statusChart:    any[] = d.statusChart    ?? [];
   const monthlyTrend:   any[] = d.monthlyTrend   ?? [];
@@ -404,12 +433,7 @@ function AdminDashboard({ d, name }: { d: any; name: string }) {
 
   return (
     <div className="space-y-7 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Welcome, {name}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Al Hattab Holding — Full procurement overview</p>
-        </div>
-      </div>
+      <GreetingBanner name={name} roles={roles} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {topCards.map(c => (
@@ -598,9 +622,8 @@ export default function Dashboard() {
   const userRoles: string[] = user.roles ?? d.userRoles ?? [];
   const firstName = (user.fullName ?? user.email ?? 'there').split(' ')[0];
 
-  if (isAdminRole(userRoles))       return <AdminDashboard       d={d} name={firstName} />;
-  if (isProcurementRole(userRoles)) return <ProcurementDashboard d={d} name={firstName} />;
-  if (isApproverRole(userRoles))    return <ApproverDashboard    d={d} name={firstName} />;
-  return                                   <RequesterDashboard   d={d} name={firstName} />;
+  if (isAdminRole(userRoles))       return <AdminDashboard       d={d} name={firstName} roles={userRoles} />;
+  if (isProcurementRole(userRoles)) return <ProcurementDashboard d={d} name={firstName} roles={userRoles} />;
+  if (isApproverRole(userRoles))    return <ApproverDashboard    d={d} name={firstName} roles={userRoles} />;
+  return                                   <RequesterDashboard   d={d} name={firstName} roles={userRoles} />;
 }
- 

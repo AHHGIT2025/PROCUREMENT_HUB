@@ -33,6 +33,8 @@ import RfqList from './pages/rfq/RfqList';
 import RfqCreate from './pages/rfq/RfqCreate';
 import RfqDetail from './pages/rfq/RfqDetail';
 import InternationalPODetail from './pages/internationalPO/InternationalPODetail';
+import InternationalPOPrint from './pages/internationalPO/InternationalPOPrint';
+ 
 // ...
    
 function ProtectedLayout() {
@@ -50,7 +52,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         {/* ✅ MOVED — print route sits OUTSIDE ProtectedLayout so no
             sidebar/header wraps it. MRPrintReport.tsx has its own
             token check internally, so auth is still enforced. */}
-        <Route path="/purchase-requests/:id/print" element={<MRPrintReport />} />
+          <Route path="/purchase-requests/:id/print" element={<MRPrintReport />} />
+
+        {/* ✅ MOVED — International PO print route also sits OUTSIDE
+            ProtectedLayout, same pattern as MRPrintReport, so no
+            sidebar/header wraps the printable document. */}
+        <Route path="/international-po/:id/print" element={<InternationalPOPrint />} />
 
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard"        element={<Dashboard />} />
@@ -69,6 +76,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
          <Route path="/international-po" element={<InternationalPOList />} />
 <Route path="/international-po/create" element={<InternationalPOCreate />} />
 <Route path="/international-po/:id" element={<InternationalPODetail />} />
+ 
 <Route path="/suppliers" element={<SuppliersManager />} />
 <Route path="/rfq" element={<RfqList />} />
 <Route path="/rfq/create" element={<RfqCreate />} />

@@ -24,7 +24,7 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? BankName { get; set; }
         public string? Iban { get; set; }
         public string SourceType { get; set; } = "MANUAL";
-        public decimal? Rating { get; set; }        // ← NEW LINE
+        public decimal? Rating { get; set; }
         public bool IsActive { get; set; }
         public Guid? CompanyId { get; set; }
         public string? CompanyName { get; set; }
@@ -45,6 +45,7 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? BankAddress { get; set; }
         public string? BankName { get; set; }
         public string? Iban { get; set; }
+        public Guid? CompanyId { get; set; }
     }
 
     // ── DELIVERY LOCATION ─────────────────────────────────────────────
@@ -78,8 +79,18 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? BrightPoNumber { get; set; }
         public DateTime PoDate { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsInternational { get; set; }
+        public string? MrReferenceNumber { get; set; }
+        public string? LinkedRequestNumber { get; set; }
+        public int RevisionNumber { get; set; }
+        public string? RootPoNo { get; set; }
     }
 
+    // ── NEW: request body for creating a revision ──────────────────────
+    public class CreateRevisionDto
+    {
+        public string? Reason { get; set; }
+    }
     // ── INTERNATIONAL PO — CREATE ─────────────────────────────────────
     public class CreateInternationalPoDto
     {
@@ -87,6 +98,7 @@ namespace Procurement.Api.DTOs.InternationalPO
         public Guid CompanyId { get; set; }
         public Guid? LinkedPurchaseRequestId { get; set; }
         public string? MrReferenceNumber { get; set; }
+        public bool IsInternational { get; set; } = true;
 
         public Guid SupplierId { get; set; }
 
@@ -97,6 +109,7 @@ namespace Procurement.Api.DTOs.InternationalPO
         public DateTime? DeliveryDateTime { get; set; }
 
         public Guid? DeliveryLocationId { get; set; }
+        public string? DeliveryLocationName { get; set; }
         public Guid? ProjectId { get; set; }
 
         public string? PaymentType { get; set; }
@@ -172,11 +185,16 @@ namespace Procurement.Api.DTOs.InternationalPO
     {
         public string Status { get; set; } = "";
     }
-
+    public class UpdateInternationalPoItemDto
+    {
+        public decimal Qty { get; set; }
+        public decimal Rate { get; set; }
+        public decimal DiscountAmount { get; set; }
+    }
     // ── QUOTES (comparison) ────────────────────────────────────────────
     public class AddQuoteDto
     {
-        public Guid? InternationalPoItemId { get; set; }   // null = whole-PO-level quote
+        public Guid? InternationalPoItemId { get; set; }
         public Guid SupplierId { get; set; }
         public decimal UnitPrice { get; set; }
         public string Currency { get; set; } = "USD";
@@ -201,7 +219,12 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? Notes { get; set; }
         public bool IsSelected { get; set; }
     }
-
+    // ── NEW: signature panel entries (dedicated last page) ──────────────
+    public class SignatoryDto
+    {
+        public string Label { get; set; } = "";
+        public string? Name { get; set; }
+    }
     // ── INTERNATIONAL PO — FULL DETAIL (for edit screen / print) ──────
     public class InternationalPoDetailDto
     {
@@ -209,10 +232,18 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? PoNo { get; set; }
         public Guid CompanyId { get; set; }
         public string CompanyName { get; set; } = "";
-
+        public string? CompanyLogoUrl { get; set; }
         public Guid? LinkedPurchaseRequestId { get; set; }
         public string? LinkedRequestNumber { get; set; }
         public string? MrReferenceNumber { get; set; }
+        public bool IsInternational { get; set; }
+        public string? RevisionReason { get; set; }   // ← NEW
+        // ── Revision tracking ─────────────────────────────────
+        public int RevisionNumber { get; set; }
+        public Guid? ParentPoId { get; set; }
+        public string? ParentPoNo { get; set; }
+        public Guid? SupersededByPoId { get; set; }
+        public string? SupersededByPoNo { get; set; }
 
         public Guid SupplierId { get; set; }
         public SupplierDto? Supplier { get; set; }
@@ -261,6 +292,8 @@ namespace Procurement.Api.DTOs.InternationalPO
 
         public List<InternationalPoItemDto> Items { get; set; } = new();
         public List<InternationalPoItemQuoteDto> Quotes { get; set; } = new();
+         
+        public List<SignatoryDto> Signatories { get; set; } = new();   // ← NEW
     }
 
     public class InternationalPoItemDto
@@ -277,9 +310,10 @@ namespace Procurement.Api.DTOs.InternationalPO
         public int LineOrder { get; set; }
         public List<InternationalPoItemQuoteDto> Quotes { get; set; } = new();
     }
+
     public class UpdateSupplierRatingDto
     {
-        public decimal Rating { get; set; } // 1.0 - 5.0
+        public decimal Rating { get; set; }
     }
 
     public class AddSupplierDocumentDto
@@ -302,4 +336,3 @@ namespace Procurement.Api.DTOs.InternationalPO
         public DateTime CreatedAt { get; set; }
     }
 }
- 

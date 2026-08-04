@@ -32,6 +32,10 @@ import {
 // work (typing, clicking, scrolling) resets the timer, so a user who is
 // actually working never gets logged out mid-task.
 const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+
+// const IDLE_TIMEOUT_MS = 15 * 60 * 1000;   // 15 minutes
+// const IDLE_TIMEOUT_MS = 5 * 60 * 1000;    // 5 minutes
+// const IDLE_TIMEOUT_MS = 30 * 60 * 1000;   // 30 minutes
 const IDLE_ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
 
 // ── Standalone top-level items ───────────────────────────────────────────────

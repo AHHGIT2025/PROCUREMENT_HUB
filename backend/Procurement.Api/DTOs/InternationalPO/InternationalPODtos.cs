@@ -244,7 +244,7 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? ParentPoNo { get; set; }
         public Guid? SupersededByPoId { get; set; }
         public string? SupersededByPoNo { get; set; }
-
+        public string? StatusBeforeBlock { get; set; }   // ← NEW
         public Guid SupplierId { get; set; }
         public SupplierDto? Supplier { get; set; }
 

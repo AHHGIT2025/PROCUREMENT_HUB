@@ -1,4 +1,3 @@
-
 // ===== FILE: pages/internationalPO/InternationalPOCreate.tsx =====
 // Save under: src/pages/internationalPO/InternationalPOCreate.tsx
 
@@ -172,6 +171,15 @@ export default function InternationalPOCreate() {
       .catch(console.error)
       .finally(() => setLoadingPrItems(false));
   }, [form.linkedPurchaseRequestId]);
+
+  // ── NEW: Local POs are always QAR — no supplier is being paid in a
+  // foreign currency for a local order, so this is locked instead of
+  // being an easy-to-miss manual step for the officer.
+  useEffect(() => {
+    if (!form.isInternational) {
+      set('currency', 'QAR');
+    }
+  }, [form.isInternational]);
 
   const pullSelectedPrItems = () => {
     const toAdd: LineItem[] = prItems
@@ -563,12 +571,23 @@ export default function InternationalPOCreate() {
             <CreditCard className="w-4 h-4" /> Currency &amp; Payment
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* ── CHANGED: Currency is locked to QAR and shown read-only
+                whenever the PO is Local. Only International POs get the
+                free-choice currency dropdown. ── */}
             <div>
-              <label className="text-xs font-medium text-gray-500">Currency</label>
-              <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                Currency {!form.isInternational && <Lock className="w-3 h-3 text-gray-400" />}
+              </label>
+              {!form.isInternational ? (
+                <div className="mt-1 w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600">
+                  QAR — Local orders are always in Qatari Riyal
+                </div>
+              ) : (
+                <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                  className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                  {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500">Payment Type</label>

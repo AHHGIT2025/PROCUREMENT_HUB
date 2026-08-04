@@ -72,7 +72,7 @@ export default function InternationalPOPrint() {
         <div className="flex items-start justify-between pb-3 border-b-2 border-gray-800">
           <div className="flex items-center gap-3">
             {logoSrc && (
-              <img src={logoSrc} alt={po.companyName} className="h-10 w-auto object-contain" />
+            <img src={logoSrc} alt={po.companyName} className="h-16 w-auto max-w-[180px] object-contain" />
             )}
             <div>
               <h1 className="text-base font-bold text-gray-900 leading-tight">{po.companyName}</h1>

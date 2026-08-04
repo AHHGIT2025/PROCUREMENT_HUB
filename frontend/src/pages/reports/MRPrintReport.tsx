@@ -55,9 +55,10 @@ const STORE_STATUS_LABEL: Record<number, { label: string; color: string }> = {
 function fmtDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleString("en-GB", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
   });
 }
+ 
 function fmtQ(n: number) {
   return "QAR " + Number(n ?? 0).toLocaleString("en-QA", { minimumFractionDigits: 2 });
 }

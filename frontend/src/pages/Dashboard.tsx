@@ -59,11 +59,9 @@ function ChartTip({ active, payload, label }: any) {
 // heading.
 function greetingWord() {
   const h = new Date().getHours();
-  if (h < 5)  return 'Still up, ';
   if (h < 12) return 'Good morning, ';
   if (h < 17) return 'Good afternoon, ';
-  if (h < 21) return 'Good evening, ';
-  return 'Working late, ';
+  return 'Good evening, ';
 }
 
 function GreetingBanner({ name, roles, action }: { name: string; roles: string[]; action?: React.ReactNode }) {

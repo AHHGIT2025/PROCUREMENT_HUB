@@ -9,6 +9,8 @@ using Procurement.Api.Data;
 using Procurement.Api.DTOs.InternationalPO;
 using Procurement.Api.Models;
 using Procurement.Api.Models.InternationalPO;
+using System.Security.Claims;
+ 
 
 namespace Procurement.Api.Controllers.InternationalPO
 {
@@ -594,8 +596,21 @@ namespace Procurement.Api.Controllers.InternationalPO
             await _db.SaveChangesAsync();
             return Ok(ApiResponse<object>.Ok(null, "Quote removed."));
         }
+        private async Task<bool> IsManagerRoleAsync()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+                return false;
+
+            var roles = await _db.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
+                .ToListAsync();
+
+            return roles.Contains("Purchase Manager") || roles.Contains("System Admin");
+        }
+
         [HttpPut("{id:guid}/status")]
-        
         public async Task<IActionResult> UpdateStatus(Guid id, UpdateStatusDto dto)
         {
             var po = await _db.InternationalPurchaseOrders.FindAsync(id);
@@ -613,6 +628,19 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (!validStatuses.Contains(dto.Status))
                 return BadRequest(ApiResponse<object>.Fail("Invalid status value."));
 
+            // ── NEW: "Unpost" (Completed -> Blocked) and "Post" (Blocked-that-came-
+            // from-Completed -> back to Completed) are Manager-only actions. This is
+            // the only way a Completed PO gets reopened for revision — an officer
+            // can never do this themselves; a manager has to explicitly unpost it
+            // first. This check runs before any other logic below.
+            bool isUnpostAction = po.Status == InternationalPoStatus.Completed && dto.Status == "Blocked";
+            bool isRepostAction = po.Status == "Blocked"
+                                   && po.StatusBeforeBlock == InternationalPoStatus.Completed
+                                   && dto.Status == InternationalPoStatus.Completed;
+
+            if ((isUnpostAction || isRepostAction) && !await IsManagerRoleAsync())
+                return Forbid();
+
             if (dto.Status == InternationalPoStatus.Draft)
             {
                 if (po.SupersededByPoId.HasValue)
@@ -623,18 +651,17 @@ namespace Procurement.Api.Controllers.InternationalPO
                     return BadRequest(ApiResponse<object>.Fail("A Completed PO cannot be returned to Draft. Use Create Revision instead to make a tracked correction."));
             }
 
-            // ── NEW: remember the status this PO was in right before it gets
-            // Blocked, so Unblock can restore exactly that — not always "Draft".
-            // This closes the loophole where Block -> Unblock on a Completed PO
-            // silently turned it back into an editable Draft.
+            // ── existing: remember the status this PO was in right before it gets
+            // Blocked, so Unblock/Post can restore exactly that — not always "Draft".
             if (dto.Status == "Blocked")
             {
                 po.StatusBeforeBlock = po.Status;
             }
 
-            // ── NEW: Unblock restores the remembered prior status instead of
-            // hardcoding "Draft". A Completed PO that got blocked comes back as
-            // Completed (still locked, still no edit), not Draft.
+            // ── existing: Unblock restores the remembered prior status instead of
+            // hardcoding "Draft". A Completed PO that got Unposted comes back as
+            // Completed via this same path when dto.Status == Draft is sent for a
+            // non-Completed-origin Blocked PO (e.g. a Draft that got Blocked).
             if (po.Status == "Blocked" && dto.Status == InternationalPoStatus.Draft)
             {
                 var restoreStatus = string.IsNullOrWhiteSpace(po.StatusBeforeBlock)
@@ -657,6 +684,30 @@ namespace Procurement.Api.Controllers.InternationalPO
 
                 await _db.SaveChangesAsync();
                 return Ok(ApiResponse<object>.Ok(null, $"Unblocked — restored to {restoreStatus}."));
+            }
+
+            // ── NEW: explicit "Post" — Manager re-locks a Blocked-Completed PO
+            // (Unposted state) straight back to Completed, without going through
+            // the Draft-restore path above (that path is for a Draft that got
+            // Blocked, which is a different scenario).
+            if (isRepostAction)
+            {
+                po.Status = InternationalPoStatus.Completed;
+                po.StatusBeforeBlock = null;
+                po.UpdatedAt = DateTime.UtcNow;
+
+                _db.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Module = "International PO",
+                    Action = "Post (re-lock as Completed)",
+                    UserName = "System",
+                    Details = po.PoNo ?? po.Id.ToString(),
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await _db.SaveChangesAsync();
+                return Ok(ApiResponse<object>.Ok(null, "PO posted — locked as Completed again."));
             }
 
             if (dto.Status == InternationalPoStatus.Cancelled && po.ParentPoId.HasValue)
@@ -686,7 +737,97 @@ namespace Procurement.Api.Controllers.InternationalPO
             await _db.SaveChangesAsync();
             return Ok(ApiResponse<object>.Ok(null, $"Status updated to {dto.Status}."));
         }
-     
+        //    public async Task<IActionResult> UpdateStatus(Guid id, UpdateStatusDto dto)
+        //    {
+        //        var po = await _db.InternationalPurchaseOrders.FindAsync(id);
+        //        if (po == null || !po.IsActive)
+        //            return NotFound(ApiResponse<object>.Fail("International PO not found."));
+
+        //        var validStatuses = new[]
+        //        {
+        //    InternationalPoStatus.Draft, InternationalPoStatus.QuotesCollected,
+        //    InternationalPoStatus.SupplierSelected, InternationalPoStatus.Finalized,
+        //    InternationalPoStatus.SentToBright, InternationalPoStatus.Completed,
+        //    InternationalPoStatus.Cancelled, "Blocked"
+        //};
+
+        //        if (!validStatuses.Contains(dto.Status))
+        //            return BadRequest(ApiResponse<object>.Fail("Invalid status value."));
+
+        //        if (dto.Status == InternationalPoStatus.Draft)
+        //        {
+        //            if (po.SupersededByPoId.HasValue)
+        //                return BadRequest(ApiResponse<object>.Fail("This PO has been revised — edit the latest revision instead."));
+        //            if (po.Status == InternationalPoStatus.Cancelled)
+        //                return BadRequest(ApiResponse<object>.Fail("A cancelled PO cannot be returned to Draft."));
+        //            if (po.Status == InternationalPoStatus.Completed)
+        //                return BadRequest(ApiResponse<object>.Fail("A Completed PO cannot be returned to Draft. Use Create Revision instead to make a tracked correction."));
+        //        }
+
+        //        // ── NEW: remember the status this PO was in right before it gets
+        //        // Blocked, so Unblock can restore exactly that — not always "Draft".
+        //        // This closes the loophole where Block -> Unblock on a Completed PO
+        //        // silently turned it back into an editable Draft.
+        //        if (dto.Status == "Blocked")
+        //        {
+        //            po.StatusBeforeBlock = po.Status;
+        //        }
+
+        //        // ── NEW: Unblock restores the remembered prior status instead of
+        //        // hardcoding "Draft". A Completed PO that got blocked comes back as
+        //        // Completed (still locked, still no edit), not Draft.
+        //        if (po.Status == "Blocked" && dto.Status == InternationalPoStatus.Draft)
+        //        {
+        //            var restoreStatus = string.IsNullOrWhiteSpace(po.StatusBeforeBlock)
+        //                ? InternationalPoStatus.Draft
+        //                : po.StatusBeforeBlock;
+
+        //            po.Status = restoreStatus;
+        //            po.StatusBeforeBlock = null;
+        //            po.UpdatedAt = DateTime.UtcNow;
+
+        //            _db.AuditLogs.Add(new AuditLog
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                Module = "International PO",
+        //                Action = $"Unblock -> {restoreStatus}",
+        //                UserName = "System",
+        //                Details = po.PoNo ?? po.Id.ToString(),
+        //                CreatedAt = DateTime.UtcNow
+        //            });
+
+        //            await _db.SaveChangesAsync();
+        //            return Ok(ApiResponse<object>.Ok(null, $"Unblocked — restored to {restoreStatus}."));
+        //        }
+
+        //        if (dto.Status == InternationalPoStatus.Cancelled && po.ParentPoId.HasValue)
+        //        {
+        //            var parent = await _db.InternationalPurchaseOrders.FindAsync(po.ParentPoId.Value);
+        //            if (parent != null && parent.SupersededByPoId == po.Id)
+        //            {
+        //                parent.SupersededByPoId = null;
+        //                parent.Status = InternationalPoStatus.Completed;
+        //                parent.UpdatedAt = DateTime.UtcNow;
+        //            }
+        //        }
+
+        //        po.Status = dto.Status;
+        //        po.UpdatedAt = DateTime.UtcNow;
+
+        //        _db.AuditLogs.Add(new AuditLog
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            Module = "International PO",
+        //            Action = $"Status -> {dto.Status}",
+        //            UserName = "System",
+        //            Details = po.PoNo ?? po.Id.ToString(),
+        //            CreatedAt = DateTime.UtcNow
+        //        });
+
+        //        await _db.SaveChangesAsync();
+        //        return Ok(ApiResponse<object>.Ok(null, $"Status updated to {dto.Status}."));
+        //    }
+
         private async Task<List<SignatoryDto>> BuildSignatoriesAsync(Guid companyId)
         {
             async Task<string?> GetNameByRoleAsync(string roleName)
@@ -728,14 +869,22 @@ namespace Procurement.Api.Controllers.InternationalPO
         // "<RootPoNo>-R<n>", and marks the original as superseded so it
         // stays visible for audit but points forward to the live version.
         [HttpPost("{id:guid}/create-revision")]
+        
         public async Task<IActionResult> CreateRevision(Guid id, [FromBody] CreateRevisionDto? dto)
         {
             var original = await _db.InternationalPurchaseOrders.FindAsync(id);
             if (original == null || !original.IsActive)
                 return NotFound(ApiResponse<object>.Fail("International PO not found."));
 
-            if (original.Status != InternationalPoStatus.Completed)
-                return BadRequest(ApiResponse<object>.Fail("Only a Completed PO can be revised."));
+            // ── CHANGED: a revision can now be created from a still-Completed PO
+            // (old flow, kept for safety) OR from an "Unposted" PO — one that a
+            // manager explicitly Blocked from Completed status via the Unpost
+            // action. Unposted is the primary path now, since a manager must
+            // unpost a Completed PO before anyone can revise it.
+            bool isUnposted = original.Status == "Blocked" && original.StatusBeforeBlock == InternationalPoStatus.Completed;
+
+            if (original.Status != InternationalPoStatus.Completed && !isUnposted)
+                return BadRequest(ApiResponse<object>.Fail("Only a Completed (or Unposted) PO can be revised."));
 
             // ── CHANGED: don't blindly block on SupersededByPoId — check whether
             // the existing revision is still "live". If it was Cancelled, allow a
@@ -774,7 +923,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 RevisionNumber = newRevisionNumber,
                 ParentPoId = original.Id,
                 RootPoNo = rootPoNo,
-                RevisionReason = dto?.Reason,   // ── NEW
+                RevisionReason = dto?.Reason,
                 SupplierId = original.SupplierId,
                 PoDate = DateTime.UtcNow,
                 ContactPerson = original.ContactPerson,
@@ -842,11 +991,12 @@ namespace Procurement.Api.Controllers.InternationalPO
             await RecalculateTotalsAsync(revision);
             await _db.SaveChangesAsync();
 
-            // ── CHANGED: original now flips to "Superseded" (was left as
-            // "Completed" before, which was misleading since it's no longer live),
-            // and persists its RevisionNumber so future re-revisions number correctly.
+            // ── existing: original flips to "Superseded" (works the same whether
+            // it came from Completed or from Unposted/Blocked) and StatusBeforeBlock
+            // is cleared since it's no longer relevant once superseded.
             original.SupersededByPoId = revision.Id;
             original.Status = InternationalPoStatus.Superseded;
+            original.StatusBeforeBlock = null;   // ── NEW: clean up, no longer meaningful once Superseded
             original.RevisionNumber = newRevisionNumber;
             original.UpdatedAt = DateTime.UtcNow;
 
@@ -865,7 +1015,6 @@ namespace Procurement.Api.Controllers.InternationalPO
             var resultDto = await BuildDetailDtoAsync(revision);
             return Ok(ApiResponse<InternationalPoDetailDto>.Ok(resultDto, "Revision created."));
         }
-
         // ── DELETE /api/international-po/{id} — soft delete / cancel ────
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
@@ -1054,6 +1203,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 TotalAmount = po.TotalAmount,
                 TermsAndConditions = po.TermsAndConditions,
                 Status = po.Status,
+                StatusBeforeBlock = po.StatusBeforeBlock,
                 BrightPoNumber = po.BrightPoNumber,
                 Notes = po.Notes,
                 Items = itemDtos,

@@ -4,7 +4,7 @@ import { useNavigate ,useSearchParams } from "react-router-dom";
 import api from "../../api/client";
 import {
   FileText, Paperclip, AlertTriangle,
-  Clock, CheckCircle2, XCircle, RotateCcw, Calendar, Printer
+  Clock, CheckCircle2, XCircle, RotateCcw, Calendar, Printer, Download
 } from "lucide-react";
  
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
@@ -69,6 +69,9 @@ export default function MyRequests() {
   const [toast,           setToast]           = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [submitting,      setSubmitting]      = useState(false);
   const [deleting,        setDeleting]        = useState(false);
+
+  // ── NEW: image preview lightbox state ──
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
 useEffect(() => {
   const urlFilter = searchParams.get("filter");
@@ -487,6 +490,7 @@ useEffect(() => {
                         { label: "Status",           value: req.status },
                         { label: "Delivery Location", value: req.deliveryLocation || "—" },
                         { label: "Contact Number",    value: req.contactNumber || "—" },
+                        ...(req.assignedToName ? [{ label: "Assigned To (Procurement)", value: req.assignedToName }] : []),
                       ].map(({ label, value }) => (
                         <div key={label} className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
                           <p className="text-xs text-gray-400 mb-1">{label}</p>
@@ -542,10 +546,12 @@ useEffect(() => {
                                   <td className="px-3 py-3">
                                     {item.attachmentUrl ? (
                                       isImage(item.attachmentFileName) ? (
-                                        <a href={getFileUrl(item.attachmentUrl)} target="_blank" rel="noreferrer">
+                                        <button type="button"
+                                          onClick={() => setPreviewImage({ url: getFileUrl(item.attachmentUrl), name: item.attachmentFileName })}
+                                          className="block">
                                           <img src={getFileUrl(item.attachmentUrl)} alt={item.attachmentFileName}
-                                            className="h-10 w-10 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition" />
-                                        </a>
+                                            className="h-10 w-10 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition cursor-pointer" />
+                                        </button>
                                       ) : (
                                         <a href={getFileUrl(item.attachmentUrl)} target="_blank" rel="noreferrer"
                                           className="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">
@@ -652,6 +658,33 @@ useEffect(() => {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW: Image preview lightbox — opens attachment images in-page
+          with a preview, and a separate explicit Download button. Avoids
+          relying on the browser's default file-open behavior, which was
+          triggering a download instead of a preview for some server
+          response configurations. ── */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-6"
+          onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="absolute -top-10 right-0 flex items-center gap-3">
+              <a href={previewImage.url} download={previewImage.name}
+                className="flex items-center gap-1.5 text-white text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition"
+                onClick={e => e.stopPropagation()}>
+                <Download size={14} /> Download
+              </a>
+              <button onClick={() => setPreviewImage(null)}
+                className="text-white text-3xl leading-none hover:text-gray-300 transition">
+                ✕
+              </button>
+            </div>
+            <img src={previewImage.url} alt={previewImage.name}
+              className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain" />
+            <p className="text-center text-white text-sm mt-3">{previewImage.name}</p>
           </div>
         </div>
       )}

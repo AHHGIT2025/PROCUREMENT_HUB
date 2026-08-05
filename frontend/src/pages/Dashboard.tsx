@@ -96,7 +96,7 @@ function GreetingBanner({ name, roles, action }: { name: string; roles: string[]
   );
 }
 
-function ProcurementDashboard({ d, name, roles }: { d: any; name: string; roles: string[] }) {
+function ProcurementDashboard({ d, name, roles, userId }: { d: any; name: string; roles: string[]; userId: string }) {
   const navigate = useNavigate();
   const [queue, setQueue] = useState<any[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
@@ -110,7 +110,10 @@ function ProcurementDashboard({ d, name, roles }: { d: any; name: string; roles:
 
   const pending = queue.filter(x => x.poStatus === 'PENDING');
   const issued  = queue.filter(x => x.poStatus === 'ISSUED');
-  const myTasks = queue.filter(x => x.assignmentStatus === 'ASSIGNED' || x.assignmentStatus === 'IN_PROGRESS');
+  const myTasks = queue.filter(x =>
+  (x.assignmentStatus === 'ASSIGNED' || x.assignmentStatus === 'IN_PROGRESS') &&
+  x.assignedToId === userId
+);
 
   return (
     <div className="space-y-6 pb-8">
@@ -136,7 +139,7 @@ function ProcurementDashboard({ d, name, roles }: { d: any; name: string; roles:
           </div>
         ))}
       </div>
-
+ {!roles.includes('Purchase Manager') && (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">
@@ -177,7 +180,7 @@ function ProcurementDashboard({ d, name, roles }: { d: any; name: string; roles:
           </div>
         )}
       </div>
-
+  )}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">
@@ -621,7 +624,7 @@ export default function Dashboard() {
   const firstName = (user.fullName ?? user.email ?? 'there').split(' ')[0];
 
   if (isAdminRole(userRoles))       return <AdminDashboard       d={d} name={firstName} roles={userRoles} />;
-  if (isProcurementRole(userRoles)) return <ProcurementDashboard d={d} name={firstName} roles={userRoles} />;
+if (isProcurementRole(userRoles)) return <ProcurementDashboard d={d} name={firstName} roles={userRoles} userId={user.id} />;
   if (isApproverRole(userRoles))    return <ApproverDashboard    d={d} name={firstName} roles={userRoles} />;
   return                                   <RequesterDashboard   d={d} name={firstName} roles={userRoles} />;
 }

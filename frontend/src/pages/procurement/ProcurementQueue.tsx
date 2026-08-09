@@ -864,7 +864,7 @@ export default function ProcurementQueue() {
       {viewPoRow && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+            {/* <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
               <div>
                 <h2 className="font-bold text-gray-800">Purchase Orders</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{viewPoRow.requestNumber} — {viewPoRow.companyName}</p>
@@ -872,7 +872,21 @@ export default function ProcurementQueue() {
               <button onClick={() => setViewPoRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
                 <X className="w-5 h-5" />
               </button>
-            </div>
+            </div> */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+  <div>
+    <h2 className="font-bold text-gray-800">Purchase Orders</h2>
+    <p className="text-xs text-gray-400 mt-0.5">{viewPoRow.requestNumber} — {viewPoRow.companyName}</p>
+    <span className={`inline-block mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+      viewPoRow.isFullyConverted ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+    }`}>
+      {viewPoRow.isFullyConverted ? 'Fully Converted' : 'Items Pending'}
+    </span>
+  </div>
+  <button onClick={() => setViewPoRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+    <X className="w-5 h-5" />
+  </button>
+</div>
             <div className="p-5">
               {poLoading ? (
                 <div className="flex items-center justify-center py-10">

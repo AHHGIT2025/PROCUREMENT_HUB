@@ -13,6 +13,11 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="App_Data\attachments\**" />
+    <Compile Remove="App_Data\attachments\**" />
+    <None Remove="App_Data\attachments\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Controllers\Approvals\" />
     <Folder Include="DTOs\Workflow\" />
     <Folder Include="Migrations\" />

@@ -986,7 +986,7 @@ export default function ProcurementQueue() {
                             {Number(item.estimatedUnitPrice ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </td>
                           <td className="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap">
-                            {Number(item.lineTotal ?? (item.quantity * item.estimatedUnitPrice) ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {(Number(item.quantity || 0) * Number(item.estimatedUnitPrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
                       ))}

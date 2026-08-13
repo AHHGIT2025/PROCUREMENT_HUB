@@ -566,7 +566,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
                 .ToListAsync();
 
-            return roles.Contains("Purchase Manager") || roles.Contains("System Admin");
+            return roles.Contains("Procurement Manager") || roles.Contains("System Admin");
         }
 
         [HttpPut("{id:guid}/status")]
@@ -815,7 +815,7 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             return new List<SignatoryDto>
             {
-                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Purchase Manager") },
+                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Procurement Manager") },
                 new() { Label = "General Manager",              Name = await GetCompanyGmNameAsync(companyId) },
                 new() { Label = "Deputy Chief Executive Officer", Name = await GetNameByRoleAsync("DCEO") },
                 new() { Label = "Chief Executive Officer",       Name = await GetNameByRoleAsync("CEO") },

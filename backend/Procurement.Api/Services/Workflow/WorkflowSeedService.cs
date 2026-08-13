@@ -19,7 +19,7 @@ namespace Procurement.Api.Services.Workflow
                 Guid? managerRoleId = roles.FirstOrDefault(r => r.Name == "Manager")?.Id;
                 Guid? itMgrRoleId = roles.FirstOrDefault(r => r.Name == "IT Manager")?.Id;
                 Guid? budgetRoleId = roles.FirstOrDefault(r => r.Name == "Budget Manager")?.Id;
-                Guid? purchaseRoleId = roles.FirstOrDefault(r => r.Name == "Purchase Officer")?.Id;
+                Guid? purchaseRoleId = roles.FirstOrDefault(r => r.Name == "Procurement Officer")?.Id;
                 Guid? assetRoleId = roles.FirstOrDefault(r => r.Name == "Asset Manager")?.Id;
                 Guid? ceoRoleId = roles.FirstOrDefault(r => r.Name == "CEO")?.Id;
 
@@ -77,8 +77,8 @@ namespace Procurement.Api.Services.Workflow
                         Id = Guid.NewGuid(),
                         WorkflowDefinitionId = generalFlow.Id,
                         StepOrder = 3,
-                        Name = "Purchase Officer Approval",
-                        RoleName = "Purchase Officer",
+                        Name = "Procurement Officer Approval",
+                        RoleName = "Procurement Officer",
                         RoleId = purchaseRoleId,
                         ApproverType = "ROLE",
                         StepType = "SEQUENTIAL",
@@ -173,8 +173,8 @@ namespace Procurement.Api.Services.Workflow
                         Id = Guid.NewGuid(),
                         WorkflowDefinitionId = itFlow.Id,
                         StepOrder = 4,
-                        Name = "Purchase Officer Approval",
-                        RoleName = "Purchase Officer",
+                        Name = "Procurement Officer Approval",
+                        RoleName = "Procurement Officer",
                         RoleId = purchaseRoleId,
                         ApproverType = "ROLE",
                         StepType = "SEQUENTIAL",
@@ -269,8 +269,8 @@ namespace Procurement.Api.Services.Workflow
                         Id = Guid.NewGuid(),
                         WorkflowDefinitionId = assetFlow.Id,
                         StepOrder = 4,
-                        Name = "Purchase Officer Approval",
-                        RoleName = "Purchase Officer",
+                        Name = "Procurement Officer Approval",
+                        RoleName = "Procurement Officer",
                         RoleId = purchaseRoleId,
                         ApproverType = "ROLE",
                         StepType = "SEQUENTIAL",

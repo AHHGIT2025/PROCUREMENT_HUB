@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/client';
-
+import AIAssistantWidget from '../components/AIAssistantWidget';
 import {
   Bell,
   BarChart3,
@@ -489,14 +489,17 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <section className="p-7 overflow-x-auto">
+         <section className="p-7  pb-24 overflow-x-auto">
           <Outlet />
         </section>
       </main>
+
+      <AIAssistantWidget />
     </div>
   );
 }
 
+ 
 function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -596,4 +599,5 @@ function NotificationBell({ userId }: { userId: string }) {
       )}
     </div>
   );
+  
 }

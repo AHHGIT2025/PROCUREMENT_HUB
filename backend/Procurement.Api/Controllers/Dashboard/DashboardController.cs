@@ -28,11 +28,11 @@ namespace Procurement.Api.Controllers.Dashboard
 
             var isAdmin = userRoles.Contains("System Admin");
 
-            // ✅ FIXED: Purchase Manager, Company GM, Vice Chairman added
+            // ✅ FIXED: Procurement Manager, Company GM, Vice Chairman added
             var isApprover = userRoles.Any(r =>
                 r is "Manager" or "IT Manager" or "Budget Manager" or
-                    "Asset Manager" or "Finance Approver" or "Purchase Officer" or
-                    "Purchase Manager" or
+                    "Asset Manager" or "Finance Approver" or "Procurement Officer" or
+                    "Procurement Manager" or
                     "Company GM" or "Vice Chairman" or
                     "CEO" or "Approver" or "System Admin");
 

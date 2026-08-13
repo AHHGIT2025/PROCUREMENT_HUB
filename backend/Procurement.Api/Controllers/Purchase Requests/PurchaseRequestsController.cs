@@ -469,7 +469,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             var all = new List<SignatoryDto>
             {
-                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Purchase Manager") },
+                new() { Label = "Holding Procurement Manager", Name = await GetNameByRoleAsync("Procurement Manager") },
                 new() { Label = "General Manager",              Name = await GetCompanyGmNameAsync(companyId) },
                 new() { Label = "Deputy Chief Executive Officer", Name = await GetNameByRoleAsync("DCEO") },
                 new() { Label = "Chief Executive Officer",       Name = await GetNameByRoleAsync("CEO") },

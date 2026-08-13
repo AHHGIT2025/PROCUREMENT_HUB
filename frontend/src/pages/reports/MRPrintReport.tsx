@@ -34,7 +34,7 @@ interface RequestDetail {
   totalAmount: number;
   createdAt: string;
   companyName: string;
-  companyLogoUrl?: string | null;   // ✅ NEW
+  companyLogoUrl?: string | null;
   projectName: string;
   departmentName: string;
   requestedBy: string;
@@ -52,19 +52,19 @@ const STORE_STATUS_LABEL: Record<number, { label: string; color: string }> = {
   3: { label: "Purchase Required", color: "#E11D48" },
 };
 
+// ✅ CHANGED — hour12: true so times print as 12-hour with AM/PM
+// (e.g. "12:01 AM") instead of 24-hour ("00:01").
 function fmtDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleString("en-GB", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true,
   });
 }
- 
+
 function fmtQ(n: number) {
   return "QAR " + Number(n ?? 0).toLocaleString("en-QA", { minimumFractionDigits: 2 });
 }
 
-// ✅ NEW — same pattern used elsewhere (CreateRequest.tsx, ListPage.tsx) to
-// resolve a relative /api/attachments/file/... path into a full URL.
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
 function getLogoUrl(path?: string | null) {
   if (!path) return "";
@@ -84,6 +84,18 @@ export default function MRPrintReport() {
       .then(r => setData(r.data))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ✅ NEW — sets a clean tab title (the Request Number) right before
+  // printing, then restores it after. This doesn't remove the browser's
+  // own header/footer (URL, date, page number) — that's a browser print
+  // setting the page cannot control — but if headers/footers are left on,
+  // at least the title shown is meaningful instead of a generic page title.
+  function handlePrint() {
+    const originalTitle = document.title;
+    if (data) document.title = `MR ${data.requestNumber}`;
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 500);
+  }
 
   if (loading) {
     return <div style={{ padding: 60, textAlign: "center", color: "#94a3b8", fontFamily: "Inter, sans-serif" }}>Loading report...</div>;
@@ -109,13 +121,21 @@ export default function MRPrintReport() {
       {/* Screen-only toolbar — hidden on print */}
       <div className="no-print" style={{
         position: "sticky", top: 0, zIndex: 10, background: "white", borderBottom: "1px solid #E2E8F0",
-        padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center"
+        padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px"
       }}>
         <div style={{ fontSize: "14px", color: "#64748b" }}>Print Preview — {data.requestNumber}</div>
-        <button onClick={() => window.print()} style={{
-          padding: "8px 20px", borderRadius: "6px", fontSize: "14px", fontWeight: 600,
-          cursor: "pointer", background: "#1a2b4b", color: "white", border: "none"
-        }}>🖨 Print</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* ✅ NEW — reminder note, since removing the browser's own
+              header/footer (URL, date, page number) can only be done by
+              the user in the print dialog itself, not from this page. */}
+          <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+            For a clean printout, uncheck "Headers and footers" in the print dialog's "More settings"
+          </span>
+          <button onClick={handlePrint} style={{
+            padding: "8px 20px", borderRadius: "6px", fontSize: "14px", fontWeight: 600,
+            cursor: "pointer", background: "#1a2b4b", color: "white", border: "none", whiteSpace: "nowrap"
+          }}>🖨 Print</button>
+        </div>
       </div>
 
       {/* Printable sheet */}
@@ -127,7 +147,6 @@ export default function MRPrintReport() {
         {/* Letterhead */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #1a2b4b", paddingBottom: "16px", marginBottom: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {/* ✅ NEW — company logo, only rendered if one has been uploaded */}
             {data.companyLogoUrl && (
               <img
                 src={getLogoUrl(data.companyLogoUrl)}

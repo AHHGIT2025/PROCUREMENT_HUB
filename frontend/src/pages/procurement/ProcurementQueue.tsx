@@ -482,9 +482,12 @@
 // ===== FILE: pages/procurement/ProcurementQueue.tsx =====
 // Save under: src/pages/procurement/ProcurementQueue.tsx
 
+// ===== FILE: pages/procurement/ProcurementQueue.tsx =====
+// Save under: src/pages/procurement/ProcurementQueue.tsx
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, RefreshCw, Eye, X, Loader2, Calendar } from 'lucide-react';
+import { Search, UserPlus, RefreshCw, Eye, X, Loader2, Calendar, ListChecks } from 'lucide-react';
 import api from '../../api/client';
 
 const PO_STATUS_COLORS: Record<string, string> = {
@@ -500,8 +503,13 @@ export default function ProcurementQueue() {
   const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
   const userRoles: string[] = user.roles ?? [];
 
+  // CHANGED — added 'Procurement Manager' alongside the old 'Purchase
+  // Manager' name. Role names were renamed in the database (Purchase
+  // Manager -> Procurement Manager), and this check was hardcoded to the
+  // old string, which silently broke manager visibility here. Keeping
+  // both covers any cached/old data too.
   const isManager = userRoles.some(r =>
-    ['System Admin', 'Manager', 'Purchase Manager'].includes(r)
+    ['System Admin', 'Manager', 'Purchase Manager', 'Procurement Manager'].includes(r)
   );
 
   const [rows, setRows]               = useState<any[]>([]);
@@ -522,6 +530,13 @@ export default function ProcurementQueue() {
   const [viewPoRow, setViewPoRow] = useState<any>(null);
   const [poList, setPoList] = useState<any[]>([]);
   const [poLoading, setPoLoading] = useState(false);
+
+  // NEW — quick "View Items" for Purchase/Procurement Officer, so they can
+  // see what materials are on an MR before deciding to Convert to PO,
+  // without navigating away from this page.
+  const [viewItemsRow, setViewItemsRow] = useState<any>(null);
+  const [itemsList, setItemsList] = useState<any[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -568,6 +583,22 @@ export default function ProcurementQueue() {
       console.error(e);
     } finally {
       setPoLoading(false);
+    }
+  }
+
+  // NEW — fetches the full purchase request (same endpoint used elsewhere
+  // in the app) and shows just the items list in a lightweight modal.
+  async function openViewItems(row: any) {
+    setViewItemsRow(row);
+    setItemsLoading(true);
+    setItemsList([]);
+    try {
+      const r = await api.get(`/purchase-requests/${row.id}`);
+      setItemsList(r.data?.items ?? []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setItemsLoading(false);
     }
   }
 
@@ -658,8 +689,7 @@ export default function ProcurementQueue() {
           ))}
         </div>
 
-        {/* Search + Company + Date — status buttons removed, Task Status is
-            merged into the Action column now */}
+        {/* Search + Company + Date */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
@@ -770,14 +800,16 @@ export default function ProcurementQueue() {
                               </button>
                             </div>
                           ) : (
-                            // ── Officer: Task Status + Action merged into one
-                            // column — status dropdown (locked to Completed
-                            // once fully converted), Convert to PO, and a
-                            // View eye-button once fully converted so they
-                            // can check the actual PO's details (same as
-                            // the manager's View PO), without needing a
-                            // whole separate "Task Status" column.
+                            // Officer: View Items (NEW) + Task Status + Convert to PO,
+                            // and a View PO eye-button once fully converted.
                             <div className="flex items-center gap-1.5 flex-nowrap">
+                              {!row.isFullyConverted && (
+                                <button onClick={() => openViewItems(row)}
+                                  title="See what materials are on this MR"
+                                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition whitespace-nowrap">
+                                  <ListChecks className="w-3 h-3" /> View Items
+                                </button>
+                              )}
                               {row.assignmentStatus && row.assignmentStatus !== 'UNASSIGNED' && (
                                 <select
                                   value={row.isFullyConverted ? 'COMPLETED' : row.assignmentStatus}
@@ -864,29 +896,20 @@ export default function ProcurementQueue() {
       {viewPoRow && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            {/* <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
               <div>
                 <h2 className="font-bold text-gray-800">Purchase Orders</h2>
                 <p className="text-xs text-gray-400 mt-0.5">{viewPoRow.requestNumber} — {viewPoRow.companyName}</p>
+                <span className={`inline-block mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  viewPoRow.isFullyConverted ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {viewPoRow.isFullyConverted ? 'Fully Converted' : 'Items Pending'}
+                </span>
               </div>
               <button onClick={() => setViewPoRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
                 <X className="w-5 h-5" />
               </button>
-            </div> */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-  <div>
-    <h2 className="font-bold text-gray-800">Purchase Orders</h2>
-    <p className="text-xs text-gray-400 mt-0.5">{viewPoRow.requestNumber} — {viewPoRow.companyName}</p>
-    <span className={`inline-block mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-      viewPoRow.isFullyConverted ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-    }`}>
-      {viewPoRow.isFullyConverted ? 'Fully Converted' : 'Items Pending'}
-    </span>
-  </div>
-  <button onClick={() => setViewPoRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-    <X className="w-5 h-5" />
-  </button>
-</div>
+            </div>
             <div className="p-5">
               {poLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -912,6 +935,63 @@ export default function ProcurementQueue() {
                       </span>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW — VIEW ITEMS POPUP — Officer only, before Convert to PO, so
+          they can see what materials/quantities are on the MR without
+          needing to start the conversion flow first. */}
+      {viewItemsRow && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <div>
+                <h2 className="font-bold text-gray-800">MR Items</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{viewItemsRow.requestNumber} — {viewItemsRow.companyName}</p>
+              </div>
+              <button onClick={() => setViewItemsRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              {itemsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                </div>
+              ) : itemsList.length === 0 ? (
+                <p className="text-center text-gray-400 text-sm py-8">No items found on this request.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        {['#', 'Code', 'Material', 'Qty', 'UOM', 'Unit Price', 'Line Total'].map(h => (
+                          <th key={h} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {itemsList.map((item: any, i: number) => (
+                        <tr key={item.id ?? i} className="hover:bg-gray-50">
+                          <td className="px-3 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                          <td className="px-3 py-2.5 font-mono text-xs text-gray-600 whitespace-nowrap">{item.materialCode}</td>
+                          <td className="px-3 py-2.5 text-gray-800 font-medium">{item.materialName}</td>
+                          <td className="px-3 py-2.5 font-semibold text-gray-800">{item.quantity}</td>
+                          <td className="px-3 py-2.5 text-gray-500">{item.uom}</td>
+                          <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">
+                            {Number(item.estimatedUnitPrice ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap">
+                            {Number(item.lineTotal ?? (item.quantity * item.estimatedUnitPrice) ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

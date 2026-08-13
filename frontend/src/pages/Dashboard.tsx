@@ -20,12 +20,12 @@ const STATUS_STYLE: Record<string, string> = {
   'Oracle Ready':     'bg-teal-100 text-teal-700',
 };
 
-const PROCUREMENT_ROLES = ['Purchase Officer', 'Procurement Officer', 'Purchase Manager'];
+const PROCUREMENT_ROLES = ['Procurement Officer', 'Procurement Manager'];
 
 const APPROVER_ROLES = [
   'Manager', 'IT Manager', 'Budget Manager', 'Asset Manager',
-  'Finance Approver', 'Purchase Officer', 'CEO', 'Approver',
-  'Department Manager', 'Procurement Officer', 'Purchase Manager', 'SW-DM-Design', 'SW-DM-EX', 'SW-DM-FUR',
+  'Finance Approver',   'CEO', 'Approver',
+  'Department Manager', 'Procurement Officer', 'Procurement Manager', 'SW-DM-Design', 'SW-DM-EX', 'SW-DM-FUR',
   'Company GM', 'Vice Chairman'
 ];
 

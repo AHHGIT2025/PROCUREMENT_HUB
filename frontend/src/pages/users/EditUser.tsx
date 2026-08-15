@@ -33,7 +33,7 @@ export default function EditUser() {
   const [showReportDropdown,setShowReportDropdown]= useState(false);
   const [showSubDropdown,   setShowSubDropdown]   = useState(false);
   const [showPassword,      setShowPassword]      = useState(false); // ✅ NEW
-
+const [deleting, setDeleting] = useState(false);
   // ── Load base data ──────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
@@ -142,7 +142,19 @@ export default function EditUser() {
       setLoading(false);
     }
   };
-
+async function handleDelete() {
+  if (!confirm(`Delete ${form.fullName || "this user"}? This will deactivate their account — it can be reversed later, but they will immediately lose access.`)) return;
+  try {
+    setDeleting(true);
+    await api.delete(`/users/${id}`);
+    showToast("✅ User deactivated", "success");
+    setTimeout(() => navigate("/users"), 1200);
+  } catch (err: any) {
+    showToast(err.response?.data?.message || "❌ Error deleting user", "error");
+  } finally {
+    setDeleting(false);
+  }
+}
   const inputStyle: React.CSSProperties = {
     width: "100%", border: "1px solid #E2E8F0", padding: "9px 12px",
     borderRadius: "4px", marginTop: "6px", fontSize: "14px",
@@ -446,24 +458,36 @@ export default function EditUser() {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-          <button type="button" onClick={() => navigate("/users")}
+            {/* Buttons */}
+        <div style={{ display: "flex", gap: "12px", justifyContent: "space-between" }}>
+          <button type="button" onClick={handleDelete} disabled={deleting || loading}
             style={{
               padding: "10px 24px", borderRadius: "8px", fontSize: "14px",
-              fontWeight: 500, cursor: "pointer", background: "white",
-              border: "1px solid #E2E8F0", color: "#64748b"
+              fontWeight: 600, cursor: (deleting || loading) ? "not-allowed" : "pointer",
+              background: "white", border: "1px solid #FCA5A5", color: "#DC2626",
+              opacity: (deleting || loading) ? 0.6 : 1
             }}>
-            Cancel
+            {deleting ? "Deleting..." : "🗑 Delete User"}
           </button>
-          <button type="submit" disabled={loading}
-            style={{
-              padding: "10px 24px", borderRadius: "8px", fontSize: "14px",
-              fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
-              background: loading ? "#93C5FD" : "#1a2b4b", color: "white", border: "none"
-            }}>
-            {loading ? "Saving..." : "💾 Save Changes"}
-          </button>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button type="button" onClick={() => navigate("/users")}
+              style={{
+                padding: "10px 24px", borderRadius: "8px", fontSize: "14px",
+                fontWeight: 500, cursor: "pointer", background: "white",
+                border: "1px solid #E2E8F0", color: "#64748b"
+              }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading || deleting}
+              style={{
+                padding: "10px 24px", borderRadius: "8px", fontSize: "14px",
+                fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
+                background: loading ? "#93C5FD" : "#1a2b4b", color: "white", border: "none"
+              }}>
+              {loading ? "Saving..." : "💾 Save Changes"}
+            </button>
+          </div>
         </div>
 
       </form>

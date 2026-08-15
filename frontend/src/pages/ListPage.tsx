@@ -147,6 +147,10 @@ export default function ListPage({ type }: { type: string }) {
   const [roleFilter, setRoleFilter]       = useState("");
   const [sourceFilter, setSourceFilter]   = useState("");
 
+  // NEW — hides deactivated users from the list by default. Toggle to
+  // reveal them (e.g. to reactivate someone later).
+  const [showInactive, setShowInactive]   = useState(false);
+
   const [reqCompanyFilter, setReqCompanyFilter] = useState("");
   const [reqCompanies, setReqCompanies]         = useState<any[]>([]);
   const [dateFrom, setDateFrom]                 = useState("");
@@ -332,6 +336,7 @@ export default function ListPage({ type }: { type: string }) {
   }
 
   const filteredRows = rows
+    .filter(r => type !== "users" || showInactive || (r.isActive ?? r.IsActive) !== false)
     .filter(r => type !== "users" || !companyFilter || r.company === companyFilter)
     .filter(r => type !== "users" || !roleFilter || r.role === roleFilter)
     .filter(r => type !== "materials" || !sourceFilter || r.source === sourceFilter)
@@ -544,6 +549,14 @@ export default function ListPage({ type }: { type: string }) {
               <option value="">All Roles</option>
               {userRoles.map((r, i) => <option key={i} value={r}>{r}</option>)}
             </select>
+            <label className="flex items-center gap-2 text-sm text-gray-600 px-3 py-2.5 rounded-xl border border-gray-200 bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={e => setShowInactive(e.target.checked)}
+              />
+              Show inactive
+            </label>
           </>
         )}
 

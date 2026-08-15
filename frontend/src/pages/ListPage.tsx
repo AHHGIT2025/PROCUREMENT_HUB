@@ -219,7 +219,17 @@ export default function ListPage({ type }: { type: string }) {
       })
       .finally(() => setMatLoading(false));
   }, [type, matCompanyId, matPage, search]);
-
+async function toggleUserStatus(userId: string, e: React.MouseEvent) {
+  e.stopPropagation();
+  try {
+    await api.put(`/users/${userId}/status`);
+    if (type === "users" && c?.endpoint) {
+      api.get(c.endpoint).then(r => setRows(r.data?.data ?? r.data ?? []));
+    }
+  } catch (err: any) {
+    alert(err?.response?.data?.message || "Failed to update status.");
+  }
+}
   function reloadMaterials() {
     if (!matCompanyId) return;
     setMatLoading(true);
@@ -336,7 +346,7 @@ export default function ListPage({ type }: { type: string }) {
   }
 
   const filteredRows = rows
-    .filter(r => type !== "users" || showInactive || (r.isActive ?? r.IsActive) !== false)
+       .filter(r => type !== "users" || (showInactive ? (r.isActive ?? r.IsActive) === false : (r.isActive ?? r.IsActive) !== false))
     .filter(r => type !== "users" || !companyFilter || r.company === companyFilter)
     .filter(r => type !== "users" || !roleFilter || r.role === roleFilter)
     .filter(r => type !== "materials" || !sourceFilter || r.source === sourceFilter)
@@ -749,15 +759,24 @@ export default function ListPage({ type }: { type: string }) {
                             )}
                           </td>
                         )}
-
-                        {isUsers && (
+   {isUsers && (
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                            <button
-                              onClick={() => navigate(`/users/edit/${rowId}`)}
-                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 rounded-lg transition"
-                            >
-                              <Pencil size={11} /> Edit
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => navigate(`/users/edit/${rowId}`)}
+                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 rounded-lg transition"
+                              >
+                                <Pencil size={11} /> Edit
+                              </button>
+                              {(r.isActive ?? r.IsActive) === false && (
+                                <button
+                                  onClick={(e) => toggleUserStatus(rowId, e)}
+                                  className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 border border-emerald-200 hover:border-emerald-400 px-2.5 py-1.5 rounded-lg transition"
+                                >
+                                  ✓ Activate
+                                </button>
+                              )}
+                            </div>
                           </td>
                         )}
 

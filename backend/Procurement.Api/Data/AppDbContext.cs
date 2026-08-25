@@ -70,7 +70,9 @@ public class AppDbContext : DbContext
     public DbSet<BudgetCenter> BudgetCenters => Set<BudgetCenter>();
     public DbSet<PurchaseRequest> PurchaseRequests => Set<PurchaseRequest>();
     public DbSet<PurchaseRequestItem> PurchaseRequestItems => Set<PurchaseRequestItem>();
- 
+    public DbSet<SupplierExpenseType> SupplierExpenseTypes => Set<SupplierExpenseType>();
+    public DbSet<InternationalPOExpense> InternationalPOExpenses => Set<InternationalPOExpense>();
+
     public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
     public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
     public DbSet<WorkflowCondition> WorkflowConditions => Set<WorkflowCondition>();

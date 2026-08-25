@@ -30,6 +30,8 @@ namespace Procurement.Api.Controllers.InternationalPO
 
         // ── GET /api/international-po — list view ──────────────────────
         [HttpGet]
+
+        [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] Guid? companyId, [FromQuery] string? status, [FromQuery] Guid? linkedPurchaseRequestId)
         {
             var query = _db.InternationalPurchaseOrders.Where(p => p.IsActive);
@@ -40,8 +42,6 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(p => p.Status == status);
 
-            // ── NEW: lets Procurement Queue's "View PO" popup fetch every
-            // PO created from a specific MR, to show their statuses.
             if (linkedPurchaseRequestId.HasValue)
                 query = query.Where(p => p.LinkedPurchaseRequestId == linkedPurchaseRequestId.Value);
 
@@ -71,8 +71,77 @@ namespace Procurement.Api.Controllers.InternationalPO
                .OrderByDescending(p => p.CreatedAt)
                .ToListAsync();
 
+            // ── NEW: bulk-fetch every PO's full linked-MR list in one shot,
+            // instead of one query per row. Groups InternationalPOItems ->
+            // PurchaseRequestItems -> PurchaseRequests by PO id, so a
+            // multi-MR PO shows ALL its source MR numbers here, not just
+            // the single primary one used for LinkedRequestNumber above.
+            var poIds = data.Select(d => d.Id).ToList();
+
+            var mrLookup = await _db.InternationalPOItems
+                .Where(poi => poIds.Contains(poi.InternationalPoId) && poi.IsActive && poi.SourcePurchaseRequestItemId.HasValue)
+                .Join(_db.PurchaseRequestItems, poi => poi.SourcePurchaseRequestItemId!.Value, pri => pri.Id,
+                    (poi, pri) => new { poi.InternationalPoId, pri.PurchaseRequestId })
+                .Join(_db.PurchaseRequests, x => x.PurchaseRequestId, pr => pr.Id,
+                    (x, pr) => new { x.InternationalPoId, pr.RequestNumber })
+                .Distinct()
+                .ToListAsync();
+
+            var mrByPoId = mrLookup
+                .GroupBy(x => x.InternationalPoId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.RequestNumber).ToList());
+
+            foreach (var row in data)
+            {
+                row.LinkedMrNumbers = mrByPoId.TryGetValue(row.Id, out var mrs) ? mrs : new List<string>();
+            }
+
             return Ok(ApiResponse<List<InternationalPoListItemDto>>.Ok(data));
         }
+
+        //public async Task<IActionResult> GetAll([FromQuery] Guid? companyId, [FromQuery] string? status, [FromQuery] Guid? linkedPurchaseRequestId)
+        //{
+        //    var query = _db.InternationalPurchaseOrders.Where(p => p.IsActive);
+
+        //    if (companyId.HasValue)
+        //        query = query.Where(p => p.CompanyId == companyId.Value);
+
+        //    if (!string.IsNullOrWhiteSpace(status))
+        //        query = query.Where(p => p.Status == status);
+
+        //    // ── NEW: lets Procurement Queue's "View PO" popup fetch every
+        //    // PO created from a specific MR, to show their statuses.
+        //    if (linkedPurchaseRequestId.HasValue)
+        //        query = query.Where(p => p.LinkedPurchaseRequestId == linkedPurchaseRequestId.Value);
+
+        //    var data = await query
+        //       .Join(_db.Companies, p => p.CompanyId, c => c.Id, (p, c) => new { p, CompanyName = c.Name })
+        //       .Join(_db.Suppliers, x => x.p.SupplierId, s => s.Id, (x, s) => new InternationalPoListItemDto
+        //       {
+        //           Id = x.p.Id,
+        //           PoNo = x.p.PoNo,
+        //           CompanyName = x.CompanyName,
+        //           SupplierName = s.Name,
+        //           Currency = x.p.Currency,
+        //           TotalAmount = x.p.TotalAmount,
+        //           Status = x.p.Status,
+        //           BrightPoNumber = x.p.BrightPoNumber,
+        //           PoDate = x.p.PoDate,
+        //           CreatedAt = x.p.CreatedAt,
+        //           IsInternational = x.p.IsInternational,
+        //           MrReferenceNumber = x.p.MrReferenceNumber,
+        //           LinkedRequestNumber = x.p.LinkedPurchaseRequestId.HasValue
+        //               ? _db.PurchaseRequests.Where(pr => pr.Id == x.p.LinkedPurchaseRequestId.Value)
+        //                     .Select(pr => pr.RequestNumber).FirstOrDefault()
+        //               : null,
+        //           RevisionNumber = x.p.RevisionNumber,
+        //           RootPoNo = x.p.RootPoNo
+        //       })
+        //       .OrderByDescending(p => p.CreatedAt)
+        //       .ToListAsync();
+
+        //    return Ok(ApiResponse<List<InternationalPoListItemDto>>.Ok(data));
+        //}
         // ── GET /api/international-po/{id} — full detail (edit screen / print) ──
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -121,6 +190,27 @@ namespace Procurement.Api.Controllers.InternationalPO
                         $"SELECT Id FROM PurchaseRequestItems WITH (UPDLOCK, ROWLOCK) WHERE Id IN ({idList})");
                 }
 
+                // ── NEW: if items come from one or more MRs, every one of
+                // those MRs must belong to the same company as this PO. A PO
+                // is a single-supplier, single-company document — mixing MRs
+                // from different companies onto one PO would make the
+                // accounting/expense attribution ambiguous. This is what makes
+                // multi-MR combination safe: same-company MRs (even across
+                // different departments/projects/cost centers) can be pooled
+                // onto one PO, but a different-company MR is always rejected.
+                if (sourceItemIds.Count > 0)
+                {
+                    var sourceMrCompanyIds = await _db.PurchaseRequestItems
+                        .Where(pi => sourceItemIds.Contains(pi.Id))
+                        .Join(_db.PurchaseRequests, pi => pi.PurchaseRequestId, pr => pr.Id, (pi, pr) => pr.CompanyId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    if (sourceMrCompanyIds.Any(cid => cid != dto.CompanyId))
+                        return BadRequest(ApiResponse<object>.Fail(
+                            "All linked MRs must belong to the same company as this PO. One or more selected items come from an MR under a different company."));
+                }
+
                 // ── Existing allocation check, unchanged ──
                 foreach (var item in dto.Items.Where(i => i.SourcePurchaseRequestItemId.HasValue))
                 {
@@ -164,6 +254,8 @@ namespace Procurement.Api.Controllers.InternationalPO
                     DestinationPort = dto.DestinationPort,
                     Incoterm = dto.Incoterm,
                     PerformaNo = dto.PerformaNo,
+                    ContainerDetails = dto.ContainerDetails,
+                    DeliveryPeriodText = dto.DeliveryPeriodText,
                     RequestedById = dto.RequestedById,
                     // ── Currency: Local POs are always QAR, no manual override ──
                     Currency = !dto.IsInternational ? "QAR" : (string.IsNullOrWhiteSpace(dto.Currency) ? "USD" : dto.Currency),
@@ -216,6 +308,135 @@ namespace Procurement.Api.Controllers.InternationalPO
                 throw;
             }
         }
+        //public async Task<IActionResult> Create(CreateInternationalPoDto dto)
+        //{
+        //    if (string.IsNullOrWhiteSpace(dto.SupplierId.ToString()))
+        //        return BadRequest(ApiResponse<object>.Fail("Supplier is required."));
+
+        //    var company = await _db.Companies.FindAsync(dto.CompanyId);
+        //    if (company == null)
+        //        return BadRequest(ApiResponse<object>.Fail("Company not found."));
+
+        //    // ── NEW: wrap allocation-check + insert in a transaction with a row
+        //    // lock on the source MR items. This closes a race condition where two
+        //    // officers converting the same MR item at nearly the same moment could
+        //    // both read "qty still available" before either one's PO actually
+        //    // saved, resulting in over-allocation beyond the MR's approved qty.
+        //    using var transaction = await _db.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        var sourceItemIds = dto.Items
+        //            .Where(i => i.SourcePurchaseRequestItemId.HasValue)
+        //            .Select(i => i.SourcePurchaseRequestItemId!.Value)
+        //            .Distinct()
+        //            .ToList();
+
+        //        if (sourceItemIds.Count > 0)
+        //        {
+        //            // Lock these PurchaseRequestItems rows for the duration of this
+        //            // transaction — any other request trying to check/allocate
+        //            // against the same rows will wait until this one commits or
+        //            // rolls back, instead of reading a stale "still available" qty.
+        //            var idList = string.Join(",", sourceItemIds.Select(id => $"'{id}'"));
+        //            await _db.Database.ExecuteSqlRawAsync(
+        //                $"SELECT Id FROM PurchaseRequestItems WITH (UPDLOCK, ROWLOCK) WHERE Id IN ({idList})");
+        //        }
+
+        //        // ── Existing allocation check, unchanged ──
+        //        foreach (var item in dto.Items.Where(i => i.SourcePurchaseRequestItemId.HasValue))
+        //        {
+        //            var sourceItemId = item.SourcePurchaseRequestItemId!.Value;
+        //            var prItem = await _db.PurchaseRequestItems.FindAsync(sourceItemId);
+        //            if (prItem == null)
+        //                return BadRequest(ApiResponse<object>.Fail("Source MR item not found."));
+
+        //            var alreadyAllocatedQty = await _db.InternationalPOItems
+        //                .Where(poi => poi.SourcePurchaseRequestItemId == sourceItemId && poi.IsActive)
+        //                .Join(_db.InternationalPurchaseOrders.Where(p => p.Status != "Cancelled" && p.IsActive && p.SupersededByPoId == null),
+        //                    poi => poi.InternationalPoId, p => p.Id, (poi, p) => poi)
+        //                .SumAsync(poi => (decimal?)poi.Qty) ?? 0;
+
+        //            var remainingQty = prItem.Quantity - alreadyAllocatedQty;
+        //            if (item.Qty > remainingQty)
+        //                return BadRequest(ApiResponse<object>.Fail(
+        //                    $"Cannot allocate {item.Qty} for this item — only {remainingQty} remaining on the MR."));
+        //        }
+
+        //        var po = new InternationalPurchaseOrder
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            PoNo = dto.PoNo,
+        //            CompanyId = dto.CompanyId,
+        //            LinkedPurchaseRequestId = dto.LinkedPurchaseRequestId,
+        //            MrReferenceNumber = dto.MrReferenceNumber,
+        //            IsInternational = dto.IsInternational,
+        //            SupplierId = dto.SupplierId,
+        //            PoDate = DateTime.UtcNow,
+        //            ContactPerson = dto.ContactPerson,
+        //            ForDeliveryName = dto.ForDeliveryName,
+        //            LandlineEmail = dto.LandlineEmail,
+        //            Mobile = dto.Mobile,
+        //            DeliveryLocationId = dto.DeliveryLocationId,
+        //            DeliveryLocationName = dto.DeliveryLocationName,
+        //            ProjectId = dto.ProjectId,
+        //            PaymentType = dto.PaymentType,
+        //            Email = dto.Email,
+        //            OriginCountry = dto.OriginCountry,
+        //            DestinationPort = dto.DestinationPort,
+        //            Incoterm = dto.Incoterm,
+        //            PerformaNo = dto.PerformaNo,
+        //            RequestedById = dto.RequestedById,
+        //            // ── Currency: Local POs are always QAR, no manual override ──
+        //            Currency = !dto.IsInternational ? "QAR" : (string.IsNullOrWhiteSpace(dto.Currency) ? "USD" : dto.Currency),
+        //            ExchangeRate = dto.ExchangeRate,
+        //            ModeOfFreight = dto.ModeOfFreight,
+        //            TypeOfCargo = dto.TypeOfCargo,
+        //            PaymentTermsText = dto.PaymentTermsText,
+        //            TermsAndConditions = dto.TermsAndConditions,
+        //            Status = InternationalPoStatus.Draft,
+        //            CreatedAt = DateTime.UtcNow,
+        //            IsActive = true
+        //        };
+
+        //        _db.InternationalPurchaseOrders.Add(po);
+        //        await _db.SaveChangesAsync();
+
+        //        int lineOrder = 1;
+        //        foreach (var item in dto.Items)
+        //        {
+        //            _db.InternationalPOItems.Add(new InternationalPOItem
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                InternationalPoId = po.Id,
+        //                SourcePurchaseRequestItemId = item.SourcePurchaseRequestItemId,
+        //                FreeTextItemCode = item.FreeTextItemCode,
+        //                FreeTextItemName = item.FreeTextItemName,
+        //                Qty = item.Qty,
+        //                Uom = item.Uom,
+        //                Rate = item.Rate,
+        //                DiscountAmount = item.DiscountAmount,
+        //                Amount = (item.Qty * item.Rate) - item.DiscountAmount,
+        //                LineOrder = lineOrder++,
+        //                CreatedAt = DateTime.UtcNow,
+        //                IsActive = true
+        //            });
+        //        }
+
+        //        await _db.SaveChangesAsync();
+        //        await RecalculateTotalsAsync(po);
+        //        await _db.SaveChangesAsync();
+
+        //        await transaction.CommitAsync();
+
+        //        var resultDto = await BuildDetailDtoAsync(po);
+        //        return Ok(ApiResponse<InternationalPoDetailDto>.Ok(resultDto, "International PO created."));
+        //    }
+        //    catch
+        //    {
+        //        await transaction.RollbackAsync();
+        //        throw;
+        //    }
+        //}
 
         // ── PUT /api/international-po/{id} — update header ──────────────
         [HttpPut("{id:guid}")]
@@ -239,6 +460,8 @@ namespace Procurement.Api.Controllers.InternationalPO
             po.DestinationPort = dto.DestinationPort;
             po.Incoterm = dto.Incoterm;
             po.PerformaNo = dto.PerformaNo;
+            po.ContainerDetails = dto.ContainerDetails;
+            po.DeliveryPeriodText = dto.DeliveryPeriodText;
             po.ModeOfFreight = dto.ModeOfFreight;
             po.TypeOfCargo = dto.TypeOfCargo;
             po.PaymentTermsText = dto.PaymentTermsText;
@@ -376,8 +599,13 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             // MR-linked items are normally locked, EXCEPT on a revision (RevisionNumber > 0)
             // — a revision's whole purpose is correcting quantities against the original.
-            if (po.LinkedPurchaseRequestId.HasValue && po.RevisionNumber == 0)
-                return BadRequest(ApiResponse<object>.Fail("Items on an MR-linked PO can't be edited directly. Create a revision instead."));
+            // ── CHANGED: MR-linked items are locked from direct edit UNLESS still in
+            // Draft. MRs never carry pricing (only quantity), so an officer needs to
+            // be able to type the price in during Draft, before Mark Complete —
+            // otherwise there's no way to ever set a price on an MR-linked PO short
+            // of the (heavier) revision flow, which is meant for Completed POs only.
+            if (po.LinkedPurchaseRequestId.HasValue && po.RevisionNumber == 0 && po.Status != InternationalPoStatus.Draft)
+                return BadRequest(ApiResponse<object>.Fail("Items on an MR-linked PO can't be edited directly outside of Draft. Create a revision instead."));
 
             if (dto.Qty <= 0)
                 return BadRequest(ApiResponse<object>.Fail("Quantity must be greater than zero."));
@@ -578,14 +806,29 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             var validStatuses = new[]
             {
-        InternationalPoStatus.Draft, InternationalPoStatus.QuotesCollected,
-        InternationalPoStatus.SupplierSelected, InternationalPoStatus.Finalized,
-        InternationalPoStatus.SentToBright, InternationalPoStatus.Completed,
-        InternationalPoStatus.Cancelled, "Blocked"
-    };
+    InternationalPoStatus.Draft, InternationalPoStatus.QuotesCollected,
+    InternationalPoStatus.SupplierSelected, InternationalPoStatus.Finalized,
+    InternationalPoStatus.SentToBright, InternationalPoStatus.Completed,
+    InternationalPoStatus.Cancelled, "Blocked"
+};
 
             if (!validStatuses.Contains(dto.Status))
                 return BadRequest(ApiResponse<object>.Fail("Invalid status value."));
+
+            // ── NEW: block marking a PO as Completed if any active item still
+            // has a zero rate — a zero-priced item slipping through means the
+            // PO's Net PO Value could be entirely made up of expenses with no
+            // actual item cost, which is almost always a data-entry mistake
+            // (officer forgot to fill in the price).
+            if (dto.Status == InternationalPoStatus.Completed)
+            {
+                var hasZeroRateItems = await _db.InternationalPOItems
+                    .AnyAsync(i => i.InternationalPoId == id && i.IsActive && i.Rate <= 0);
+
+                if (hasZeroRateItems)
+                    return BadRequest(ApiResponse<object>.Fail(
+                        "One or more items have no price (Rate = 0). Enter the item price before marking this PO as Completed."));
+            }
 
             // ── NEW: "Unpost" (Completed -> Blocked) and "Post" (Blocked-that-came-
             // from-Completed -> back to Completed) are Manager-only actions. This is
@@ -946,6 +1189,27 @@ namespace Procurement.Api.Controllers.InternationalPO
             }
 
             await _db.SaveChangesAsync();
+            // ── Copy expenses to revision ──
+            var originalExpenses = await _db.InternationalPOExpenses
+                .Where(e => e.InternationalPoId == original.Id && e.IsActive)
+                .ToListAsync();
+
+            foreach (var exp in originalExpenses)
+            {
+                _db.InternationalPOExpenses.Add(new InternationalPOExpense
+                {
+                    Id = Guid.NewGuid(),
+                    InternationalPoId = revision.Id,
+                    SupplierExpenseTypeId = exp.SupplierExpenseTypeId,
+                    Amount = exp.Amount,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _db.SaveChangesAsync();
+
+            await RecalculateTotalsAsync(revision);
 
             await RecalculateTotalsAsync(revision);
             await _db.SaveChangesAsync();
@@ -992,15 +1256,90 @@ namespace Procurement.Api.Controllers.InternationalPO
 
         // ── HELPERS ───────────────────────────────────────────────────
 
+        // ── GET /api/international-po/{id}/expenses ─────────────────────
+        [HttpGet("{id:guid}/expenses")]
+        public async Task<IActionResult> GetExpenses(Guid id)
+        {
+            var po = await _db.InternationalPurchaseOrders.FindAsync(id);
+            if (po == null || !po.IsActive)
+                return NotFound(ApiResponse<object>.Fail("International PO not found."));
+
+            var expenses = await _db.InternationalPOExpenses
+                .Where(e => e.InternationalPoId == id && e.IsActive)
+                .Join(_db.SupplierExpenseTypes, e => e.SupplierExpenseTypeId, t => t.Id, (e, t) => new InternationalPoExpenseDto
+                {
+                    Id = e.Id,
+                    SupplierExpenseTypeId = e.SupplierExpenseTypeId,
+                    ExpenseCode = t.Code,
+                    ExpenseDescription = t.Description,
+                    Amount = e.Amount
+                })
+                .ToListAsync();
+
+            return Ok(ApiResponse<List<InternationalPoExpenseDto>>.Ok(expenses));
+        }
+
+        // ── POST /api/international-po/{id}/expenses — bulk save ────────
+        // Replaces all existing expense lines for this PO with the new set.
+        // Frontend sends only checked expense types with their amounts.
+        [HttpPost("{id:guid}/expenses")]
+        public async Task<IActionResult> SaveExpenses(Guid id, SavePoExpensesDto dto)
+        {
+            var po = await _db.InternationalPurchaseOrders.FindAsync(id);
+            if (po == null || !po.IsActive)
+                return NotFound(ApiResponse<object>.Fail("International PO not found."));
+
+            // Soft-delete all existing expense rows for this PO
+            var existing = await _db.InternationalPOExpenses
+                .Where(e => e.InternationalPoId == id && e.IsActive)
+                .ToListAsync();
+
+            foreach (var e in existing)
+            {
+                e.IsActive = false;
+                e.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // Insert new rows
+            foreach (var line in dto.Expenses.Where(l => l.Amount != 0))
+            {
+                _db.InternationalPOExpenses.Add(new InternationalPOExpense
+                {
+                    Id = Guid.NewGuid(),
+                    InternationalPoId = id,
+                    SupplierExpenseTypeId = line.SupplierExpenseTypeId,
+                    Amount = line.Amount,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _db.SaveChangesAsync();
+
+            // Recalculate totals now that expenses changed
+            await RecalculateTotalsAsync(po);
+            await _db.SaveChangesAsync();
+
+            return Ok(ApiResponse<object>.Ok(null, "Expenses saved."));
+        }
+
         private async Task RecalculateTotalsAsync(InternationalPurchaseOrder po)
         {
             var subTotal = await _db.InternationalPOItems
                 .Where(i => i.InternationalPoId == po.Id && i.IsActive)
                 .SumAsync(i => (decimal?)i.Amount) ?? 0;
 
+            var expensesTotal = await _db.InternationalPOExpenses
+                .Where(e => e.InternationalPoId == po.Id && e.IsActive)
+                .SumAsync(e => (decimal?)e.Amount) ?? 0;
+
             po.SubTotal = subTotal;
-            po.TotalAmount = subTotal - po.DiscountAmount + po.InsuranceAmount + po.OthersAmount;
+            // TotalAmount = items subtotal - discount + expenses total
+            // (legacy flat fields InsuranceAmount/OthersAmount kept for backward
+            //  compat with older POs; new POs use the expenses table instead)
+            po.TotalAmount = subTotal - po.DiscountAmount + po.InsuranceAmount + po.OthersAmount + expensesTotal;
         }
+
 
         // POST /api/international-po/{id}/submit-for-approval
         [HttpPost("{id:guid}/submit-for-approval")]
@@ -1016,7 +1355,6 @@ namespace Procurement.Api.Controllers.InternationalPO
                 ? Ok(ApiResponse<object>.Ok(result.Data, result.Message))
                 : BadRequest(ApiResponse<object>.Fail(result.Message));
         }
-
         private async Task<InternationalPoDetailDto> BuildDetailDtoAsync(InternationalPurchaseOrder po)
         {
             var company = await _db.Companies.FindAsync(po.CompanyId);
@@ -1059,6 +1397,56 @@ namespace Procurement.Api.Controllers.InternationalPO
             var supplierLookup = await _db.Suppliers
                 .Where(s => supplierIds.Contains(s.Id))
                 .ToDictionaryAsync(s => s.Id, s => s.Name);
+
+            // ── Load expenses ──
+            var expenses = await _db.InternationalPOExpenses
+                .Where(e => e.InternationalPoId == po.Id && e.IsActive)
+                .Join(_db.SupplierExpenseTypes, e => e.SupplierExpenseTypeId, t => t.Id, (e, t) => new InternationalPoExpenseDto
+                {
+                    Id = e.Id,
+                    SupplierExpenseTypeId = e.SupplierExpenseTypeId,
+                    ExpenseCode = t.Code,
+                    ExpenseDescription = t.Description,
+                    Amount = e.Amount
+                })
+                .ToListAsync();
+
+            var expensesTotal = expenses.Sum(e => e.Amount);
+
+            // ── derive the distinct set of MR numbers this PO's items
+            // were actually pulled from. A PO created from a single MR will
+            // just show that one number here (same info LinkedRequestNumber
+            // already carries); a PO combining several MRs via multi-select
+            // shows all of them, in no particular guaranteed order.
+            var sourceItemIdsForMrList = items
+                .Where(i => i.SourcePurchaseRequestItemId.HasValue)
+                .Select(i => i.SourcePurchaseRequestItemId!.Value)
+                .Distinct()
+                .ToList();
+
+            var linkedMrNumbers = sourceItemIdsForMrList.Count > 0
+                ? await _db.PurchaseRequestItems
+                    .Where(pi => sourceItemIdsForMrList.Contains(pi.Id))
+                    .Join(_db.PurchaseRequests, pi => pi.PurchaseRequestId, pr => pr.Id, (pi, pr) => pr.RequestNumber)
+                    .Distinct()
+                    .ToListAsync()
+                : new List<string>();
+
+            // ── NEW: derive the distinct set of Project names across every MR
+            // this PO's items were pulled from. A single-MR PO shows just that
+            // MR's project (same info projectName already carries); a multi-MR
+            // PO shows every distinct project, since "Project" doubles as Cost
+            // Center in this system and each source MR may carry a different one.
+            var projectNames = sourceItemIdsForMrList.Count > 0
+                ? await _db.PurchaseRequestItems
+                    .Where(pi => sourceItemIdsForMrList.Contains(pi.Id))
+                    .Join(_db.PurchaseRequests, pi => pi.PurchaseRequestId, pr => pr.Id, (pi, pr) => pr.ProjectId)
+                    .Where(pid => pid != null)
+                    .Distinct()
+                    .Join(_db.Projects, pid => pid, proj => proj.Id, (pid, proj) => proj.Name)
+                    .Distinct()
+                    .ToListAsync()
+                : new List<string>();
 
             InternationalPoItemQuoteDto MapQuote(InternationalPOItemQuote q) => new InternationalPoItemQuoteDto
             {
@@ -1103,6 +1491,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 LinkedPurchaseRequestId = po.LinkedPurchaseRequestId,
                 LinkedRequestNumber = linkedPr?.RequestNumber,
                 MrReferenceNumber = po.MrReferenceNumber,
+                LinkedMrNumbers = linkedMrNumbers,
                 IsInternational = po.IsInternational,
 
                 RevisionNumber = po.RevisionNumber,
@@ -1110,7 +1499,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 ParentPoNo = parentPoNo,
                 SupersededByPoId = po.SupersededByPoId,
                 SupersededByPoNo = supersededByPoNo,
-                RevisionReason = po.RevisionReason,   // ← ITH ADD CHEYYUKA
+                RevisionReason = po.RevisionReason,
                 SupplierId = po.SupplierId,
                 Supplier = supplier == null ? null : new SupplierDto
                 {
@@ -1141,12 +1530,15 @@ namespace Procurement.Api.Controllers.InternationalPO
                 DeliveryLocationName = po.DeliveryLocationName ?? deliveryLocation?.Name,
                 ProjectId = po.ProjectId,
                 ProjectName = project?.Name,
+                ProjectNames = projectNames,
                 PaymentType = po.PaymentType,
                 Email = po.Email,
                 OriginCountry = po.OriginCountry,
                 DestinationPort = po.DestinationPort,
                 Incoterm = po.Incoterm,
                 PerformaNo = po.PerformaNo,
+                ContainerDetails = po.ContainerDetails,
+                DeliveryPeriodText = po.DeliveryPeriodText,
                 RequestedById = po.RequestedById,
                 RequestedByName = requestedBy?.FullName,
                 Currency = po.Currency,
@@ -1167,9 +1559,179 @@ namespace Procurement.Api.Controllers.InternationalPO
                 Notes = po.Notes,
                 Items = itemDtos,
                 Quotes = allQuotes.Where(q => q.InternationalPoItemId == null).Select(MapQuote).ToList(),
-                Signatories = await BuildSignatoriesAsync(po.CompanyId)   // ← NEW
+                Expenses = expenses,
+                ExpensesTotal = expensesTotal,
+                Signatories = await BuildSignatoriesAsync(po.CompanyId)
             };
         }
+        //private async Task<InternationalPoDetailDto> BuildDetailDtoAsync(InternationalPurchaseOrder po)
+        //{
+        //    var company = await _db.Companies.FindAsync(po.CompanyId);
+        //    var supplier = await _db.Suppliers.FindAsync(po.SupplierId);
+        //    var requestedBy = await _db.Users.FindAsync(po.RequestedById);
+        //    var deliveryLocation = po.DeliveryLocationId.HasValue
+        //        ? await _db.DeliveryLocations.FindAsync(po.DeliveryLocationId.Value)
+        //        : null;
+        //    var project = po.ProjectId.HasValue
+        //        ? await _db.Projects.FindAsync(po.ProjectId.Value)
+        //        : null;
+        //    var linkedPr = po.LinkedPurchaseRequestId.HasValue
+        //        ? await _db.PurchaseRequests.FindAsync(po.LinkedPurchaseRequestId.Value)
+        //        : null;
+
+        //    // ── NEW: revision family lookup ──
+        //    var parentPoNo = po.ParentPoId.HasValue
+        //        ? await _db.InternationalPurchaseOrders.Where(p => p.Id == po.ParentPoId.Value).Select(p => p.PoNo).FirstOrDefaultAsync()
+        //        : null;
+        //    var supersededByPoNo = po.SupersededByPoId.HasValue
+        //        ? await _db.InternationalPurchaseOrders.Where(p => p.Id == po.SupersededByPoId.Value).Select(p => p.PoNo).FirstOrDefaultAsync()
+        //        : null;
+
+        //    var items = await _db.InternationalPOItems
+        //        .Where(i => i.InternationalPoId == po.Id && i.IsActive)
+        //        .OrderBy(i => i.LineOrder)
+        //        .ToListAsync();
+
+        //    var itemIds = items.Select(i => i.Id).ToList();
+        //    var linkedItemMasterIds = items.Where(i => i.ItemId.HasValue).Select(i => i.ItemId!.Value).ToList();
+        //    var itemMasterLookup = await _db.Items
+        //        .Where(m => linkedItemMasterIds.Contains(m.Id))
+        //        .ToDictionaryAsync(m => m.Id, m => m);
+
+        //    var allQuotes = await _db.InternationalPOItemQuotes
+        //        .Where(q => q.InternationalPoId == po.Id && q.IsActive)
+        //        .ToListAsync();
+
+        //    var supplierIds = allQuotes.Select(q => q.SupplierId).Distinct().ToList();
+        //    var supplierLookup = await _db.Suppliers
+        //        .Where(s => supplierIds.Contains(s.Id))
+        //        .ToDictionaryAsync(s => s.Id, s => s.Name);
+        //    // ── Load expenses ──
+        //    var expenses = await _db.InternationalPOExpenses
+        //        .Where(e => e.InternationalPoId == po.Id && e.IsActive)
+        //        .Join(_db.SupplierExpenseTypes, e => e.SupplierExpenseTypeId, t => t.Id, (e, t) => new InternationalPoExpenseDto
+        //        {
+        //            Id = e.Id,
+        //            SupplierExpenseTypeId = e.SupplierExpenseTypeId,
+        //            ExpenseCode = t.Code,
+        //            ExpenseDescription = t.Description,
+        //            Amount = e.Amount
+        //        })
+        //        .ToListAsync();
+
+        //    var expensesTotal = expenses.Sum(e => e.Amount);
+        //    InternationalPoItemQuoteDto MapQuote(InternationalPOItemQuote q) => new InternationalPoItemQuoteDto
+        //    {
+        //        Id = q.Id,
+        //        InternationalPoItemId = q.InternationalPoItemId,
+        //        SupplierId = q.SupplierId,
+        //        SupplierName = supplierLookup.TryGetValue(q.SupplierId, out var sn) ? sn : "",
+        //        UnitPrice = q.UnitPrice,
+        //        Currency = q.Currency,
+        //        ExchangeRateToQar = q.ExchangeRateToQar,
+        //        ConvertedPriceQar = q.ConvertedPriceQar,
+        //        LeadTimeDays = q.LeadTimeDays,
+        //        ValidityDate = q.ValidityDate,
+        //        Notes = q.Notes,
+        //        IsSelected = q.IsSelected
+        //    };
+
+        //    var itemDtos = items.Select(i => new InternationalPoItemDto
+        //    {
+        //        Id = i.Id,
+        //        ItemId = i.ItemId,
+        //        ItemCode = i.ItemId.HasValue && itemMasterLookup.TryGetValue(i.ItemId.Value, out var m)
+        //            ? m.ItemCode : (i.FreeTextItemCode ?? ""),
+        //        ItemName = i.ItemId.HasValue && itemMasterLookup.TryGetValue(i.ItemId.Value, out var m2)
+        //            ? m2.Name : (i.FreeTextItemName ?? ""),
+        //        Qty = i.Qty,
+        //        Uom = i.Uom,
+        //        Rate = i.Rate,
+        //        DiscountAmount = i.DiscountAmount,
+        //        Amount = i.Amount,
+        //        LineOrder = i.LineOrder,
+        //        Quotes = allQuotes.Where(q => q.InternationalPoItemId == i.Id).Select(MapQuote).ToList()
+        //    }).ToList();
+
+        //    return new InternationalPoDetailDto
+        //    {
+        //        Id = po.Id,
+        //        PoNo = po.PoNo,
+        //        CompanyId = po.CompanyId,
+        //        CompanyName = company?.Name ?? "",
+        //        CompanyLogoUrl = company?.LogoUrl,
+        //        LinkedPurchaseRequestId = po.LinkedPurchaseRequestId,
+        //        LinkedRequestNumber = linkedPr?.RequestNumber,
+        //        MrReferenceNumber = po.MrReferenceNumber,
+        //        IsInternational = po.IsInternational,
+
+        //        RevisionNumber = po.RevisionNumber,
+        //        ParentPoId = po.ParentPoId,
+        //        ParentPoNo = parentPoNo,
+        //        SupersededByPoId = po.SupersededByPoId,
+        //        SupersededByPoNo = supersededByPoNo,
+        //        RevisionReason = po.RevisionReason,   // ← ITH ADD CHEYYUKA
+        //        SupplierId = po.SupplierId,
+        //        Supplier = supplier == null ? null : new SupplierDto
+        //        {
+        //            Id = supplier.Id,
+        //            SupplierCode = supplier.SupplierCode,
+        //            Name = supplier.Name,
+        //            Country = supplier.Country,
+        //            Address = supplier.Address,
+        //            ContactPerson = supplier.ContactPerson,
+        //            Landline = supplier.Landline,
+        //            Email = supplier.Email,
+        //            Mobile = supplier.Mobile,
+        //            DefaultCurrency = supplier.DefaultCurrency,
+        //            BankAccountName = supplier.BankAccountName,
+        //            BankAddress = supplier.BankAddress,
+        //            BankName = supplier.BankName,
+        //            Iban = supplier.Iban,
+        //            SourceType = supplier.SourceType,
+        //            IsActive = supplier.IsActive
+        //        },
+        //        PoDate = po.PoDate,
+        //        ContactPerson = po.ContactPerson,
+        //        ForDeliveryName = po.ForDeliveryName,
+        //        LandlineEmail = po.LandlineEmail,
+        //        Mobile = po.Mobile,
+        //        DeliveryDateTime = po.DeliveryDateTime,
+        //        DeliveryLocationId = po.DeliveryLocationId,
+        //        DeliveryLocationName = po.DeliveryLocationName ?? deliveryLocation?.Name,
+        //        ProjectId = po.ProjectId,
+        //        ProjectName = project?.Name,
+        //        PaymentType = po.PaymentType,
+        //        Email = po.Email,
+        //        OriginCountry = po.OriginCountry,
+        //        DestinationPort = po.DestinationPort,
+        //        Incoterm = po.Incoterm,
+        //        PerformaNo = po.PerformaNo,
+        //        RequestedById = po.RequestedById,
+        //        RequestedByName = requestedBy?.FullName,
+        //        Currency = po.Currency,
+        //        ExchangeRate = po.ExchangeRate,
+        //        ModeOfFreight = po.ModeOfFreight,
+        //        TypeOfCargo = po.TypeOfCargo,
+        //        PaymentTermsText = po.PaymentTermsText,
+        //        AdvancePayment = po.AdvancePayment,
+        //        DiscountAmount = po.DiscountAmount,
+        //        InsuranceAmount = po.InsuranceAmount,
+        //        OthersAmount = po.OthersAmount,
+        //        SubTotal = po.SubTotal,
+        //        TotalAmount = po.TotalAmount,
+        //        TermsAndConditions = po.TermsAndConditions,
+        //        Status = po.Status,
+        //        StatusBeforeBlock = po.StatusBeforeBlock,
+        //        BrightPoNumber = po.BrightPoNumber,
+        //        Notes = po.Notes,
+        //        Items = itemDtos,
+        //        Quotes = allQuotes.Where(q => q.InternationalPoItemId == null).Select(MapQuote).ToList(),
+        //        Expenses = expenses,
+        //        ExpensesTotal = expensesTotal,
+        //        Signatories = await BuildSignatoriesAsync(po.CompanyId)   // ← NEW
+        //    };
+        //}
 
         private const string DefaultTermsAndConditions =
 @"1. Supplier to submit to Buyer the original shipping documents (B/L, Commercial Invoice, Packing List, Certificate of Origin, Test Certificate, Data Sheet etc) in Five working days Before Shipment Arrival.

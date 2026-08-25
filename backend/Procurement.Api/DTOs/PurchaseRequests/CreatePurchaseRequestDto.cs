@@ -45,6 +45,7 @@
         public bool Submit { get; set; }
         public string DeliveryLocation { get; set; } = "";
         public string ContactNumber { get; set; } = "";
+
     }
 
     public class CreatePurchaseRequestItemDto

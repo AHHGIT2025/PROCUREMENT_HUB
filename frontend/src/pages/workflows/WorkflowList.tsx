@@ -217,7 +217,7 @@ export default function WorkflowList() {
                     <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px", display: "flex", alignItems: "center", gap: "8px" }}>
   <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{wf.code || "—"}</span>
   {wf.isDefault && <span>· Default fallback rule</span>}
-  {(wf.conditions?.length ?? 0) > 1 && wf.conditionMatchLogic === "ALL" && (
+ {(wf.conditions?.length ?? 0) > 1 && wf.conditionMatchLogic === "ALL" && (
     <span style={{
       display: "inline-flex", alignItems: "center",
       background: "#FEE2E2", color: "#DC2626",
@@ -226,6 +226,17 @@ export default function WorkflowList() {
       flexShrink: 0, whiteSpace: "nowrap"
     }}>
     🔗  COMBO
+    </span>
+  )}
+  {(wf.steps ?? []).some((s: any) => s.approverType === "STORE_VERIFICATION" || s.name === "STORE_KEEPER" || s.roleName === "Store keeper") && (
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      background: "#DBEAFE", color: "#1D4ED8",
+      fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
+      padding: "2px 8px", borderRadius: "4px",
+      flexShrink: 0, whiteSpace: "nowrap"
+    }}>
+    📦  SK
     </span>
   )}
 </div>

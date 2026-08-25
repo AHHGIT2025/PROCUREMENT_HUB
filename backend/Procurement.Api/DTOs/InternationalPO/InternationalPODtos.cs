@@ -84,6 +84,12 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? LinkedRequestNumber { get; set; }
         public int RevisionNumber { get; set; }
         public string? RootPoNo { get; set; }
+        public List<string> LinkedMrNumbers { get; set; } = new();
+        // ── NEW: full list of distinct Project/Cost Center names across
+        // every MR this PO's items were pulled from. Same list-of-one
+        // behavior for single-MR POs, comma-worthy list for multi-MR ones.
+        public List<string> ProjectNames { get; set; } = new();
+
     }
 
     // ── NEW: request body for creating a revision ──────────────────────
@@ -120,6 +126,8 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? Incoterm { get; set; }
         public string? PerformaNo { get; set; }
 
+        public string? ContainerDetails { get; set; }
+        public string? DeliveryPeriodText { get; set; }
         public Guid RequestedById { get; set; }
 
         public string Currency { get; set; } = "USD";
@@ -169,6 +177,8 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? DestinationPort { get; set; }
         public string? Incoterm { get; set; }
         public string? PerformaNo { get; set; }
+        public string? ContainerDetails { get; set; }
+        public string? DeliveryPeriodText { get; set; }
         public string? ModeOfFreight { get; set; }
         public string? TypeOfCargo { get; set; }
         public string? PaymentTermsText { get; set; }
@@ -236,6 +246,16 @@ namespace Procurement.Api.DTOs.InternationalPO
         public Guid? LinkedPurchaseRequestId { get; set; }
         public string? LinkedRequestNumber { get; set; }
         public string? MrReferenceNumber { get; set; }
+        // ADD immediately after:
+
+        // ── NEW: full list of MR numbers this PO's items were pulled
+        // from — populated when the PO combines multiple MRs (via
+        // multi-select on the Create page). For a single-MR PO this will
+        // just contain that one MR number (same info as LinkedRequestNumber,
+        // kept as a list for consistent frontend handling either way).
+        public List<string> LinkedMrNumbers { get; set; } = new();
+
+        public List<string> ProjectNames { get; set; } = new();
         public bool IsInternational { get; set; }
         public string? RevisionReason { get; set; }   // ← NEW
         // ── Revision tracking ─────────────────────────────────
@@ -267,7 +287,8 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? DestinationPort { get; set; }
         public string? Incoterm { get; set; }
         public string? PerformaNo { get; set; }
-
+        public string? ContainerDetails { get; set; }
+        public string? DeliveryPeriodText { get; set; }
         public Guid RequestedById { get; set; }
         public string? RequestedByName { get; set; }
 
@@ -292,8 +313,10 @@ namespace Procurement.Api.DTOs.InternationalPO
 
         public List<InternationalPoItemDto> Items { get; set; } = new();
         public List<InternationalPoItemQuoteDto> Quotes { get; set; } = new();
-         
+
         public List<SignatoryDto> Signatories { get; set; } = new();   // ← NEW
+        public List<InternationalPoExpenseDto> Expenses { get; set; } = new();    // ← ADD
+        public decimal ExpensesTotal { get; set; }
     }
 
     public class InternationalPoItemDto
@@ -335,4 +358,34 @@ namespace Procurement.Api.DTOs.InternationalPO
         public string? UploadedByName { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+    // ── SUPPLIER EXPENSE TYPE (for GET /api/supplier-expense-types) ──
+    public class SupplierExpenseTypeDto
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int SortOrder { get; set; }
+    }
+
+    // ── PO EXPENSE LINE (returned inside detail DTO) ─────────────────
+    public class InternationalPoExpenseDto
+    {
+        public Guid Id { get; set; }
+        public Guid SupplierExpenseTypeId { get; set; }
+        public string ExpenseCode { get; set; } = "";
+        public string ExpenseDescription { get; set; } = "";
+        public decimal Amount { get; set; }
+    }
+    // ── SAVE EXPENSES (bulk upsert from frontend) ────────────────────
+    public class SavePoExpensesDto
+    {
+        public List<SavePoExpenseLineDto> Expenses { get; set; } = new();
+    }
+
+    public class SavePoExpenseLineDto
+    {
+        public Guid SupplierExpenseTypeId { get; set; }
+        public decimal Amount { get; set; }
+    }
 }
+ 

@@ -25,7 +25,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
         // GET /api/procurement/queue
 
         [HttpGet("queue")]
-        
+
         public async Task<IActionResult> GetQueue()
         {
             var userId = CurrentUserId();
@@ -71,6 +71,34 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         ? _db.Users.Where(u => u.Id == x.AssignedToId)
                                    .Select(u => u.FullName).FirstOrDefault()
                         : null,
+
+                    // ── NEW: officer-to-officer transfer fields. Manager's
+                    // original AssignedToId/AssignedToName above is kept
+                    // untouched as the permanent "key assignment" record.
+                    // These new fields track whether the MR has since been
+                    // handed off to someone else, and who should actually be
+                    // treated as the current owner for queue-visibility and
+                    // PO-conversion purposes.
+                    transferredToId = x.TransferredToId,
+                    transferredToName = x.TransferredToId != null
+                        ? _db.Users.Where(u => u.Id == x.TransferredToId)
+                                   .Select(u => u.FullName).FirstOrDefault()
+                        : null,
+                    transferredAt = x.TransferredAt,
+                    transferNote = x.TransferNote,
+                    isTransferred = x.TransferredToId != null,
+
+                    // ── Effective owner: whoever should currently see/work
+                    // this MR. If it's been transferred, that's the
+                    // transferee; otherwise it's the original Manager-assigned
+                    // officer. Frontend should filter/display using THIS field
+                    // instead of assignedToId directly.
+                    effectiveOwnerId = x.TransferredToId ?? x.AssignedToId,
+                    effectiveOwnerName = x.TransferredToId != null
+                        ? _db.Users.Where(u => u.Id == x.TransferredToId).Select(u => u.FullName).FirstOrDefault()
+                        : (x.AssignedToId != null
+                            ? _db.Users.Where(u => u.Id == x.AssignedToId).Select(u => u.FullName).FirstOrDefault()
+                            : null),
 
                     poNumber = x.PoNumber,
                     poStatus = x.PoStatus ?? "PENDING",
@@ -296,6 +324,59 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { success = true, message = $"PO updated — {dto.PoStatus}." });
         }
+        // -- POST: Transfer PR from one officer to another --------------
+        // POST /api/procurement/{id}/transfer
+        // Unlike Assign (Manager -> any officer, the original/key
+        // assignment), Transfer is peer-to-peer: only the officer who
+        // currently holds the MR (its effective owner — see EffectiveOwner
+        // logic in GetQueue) can hand it off to someone else. Managers can
+        // also transfer, since they can already do anything an officer can.
+        [HttpPost("{id:guid}/transfer")]
+        public async Task<IActionResult> Transfer(Guid id, [FromBody] TransferDto dto)
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            var pr = await _db.PurchaseRequests.FindAsync(id);
+            if (pr == null)
+                return NotFound(new { success = false, message = "Request not found." });
+
+            var transferee = await _db.Users.FindAsync(dto.TransferredToId);
+            if (transferee == null)
+                return BadRequest(new { success = false, message = "Transfer target user not found." });
+
+            // Effective current owner: transferred owner if set, else the
+            // original Manager-assigned officer.
+            var currentOwnerId = pr.TransferredToId ?? pr.AssignedToId;
+
+            var isManager = (await _db.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
+                .ToListAsync())
+                .Any(r => r == "Manager" || r == "System Admin");
+
+            if (!isManager && currentOwnerId != userId)
+                return Forbid();
+
+            pr.TransferredToId = dto.TransferredToId;
+            pr.TransferredById = userId;
+            pr.TransferredAt = DateTime.UtcNow;
+            pr.TransferNote = dto.Note;
+            pr.UpdatedAt = DateTime.UtcNow;
+
+            _db.Notifications.Add(new Procurement.Api.Models.Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = dto.TransferredToId,
+                Title = "MR Transferred To You",
+                Message = $"Request {pr.RequestNumber} has been transferred to you. Note: {dto.Note ?? "—"}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Request transferred." });
+        }
     }
 
     // ── DTOs ──────────────────────────────────────────────────
@@ -304,7 +385,11 @@ namespace Procurement.Api.Controllers.PurchaseRequests
         public Guid AssignedToId { get; set; }
         public string? Note { get; set; }
     }
-
+    public class TransferDto
+    {
+        public Guid TransferredToId { get; set; }
+        public string? Note { get; set; }
+    }
     public class UpdateStatusDto
     {
         public string AssignmentStatus { get; set; } = "";

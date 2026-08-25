@@ -42,6 +42,14 @@
         // ── DELIVERY DETAILS (mandatory) ──────────────────────
         public string DeliveryLocation { get; set; } = "";
         public string ContactNumber { get; set; } = "";
+        // ── Officer-to-officer transfer (separate from Manager's original
+        // AssignedToId) — lets an officer hand off an MR they were assigned
+        // to another officer, e.g. to consolidate several MRs onto one
+        // person before converting them into a single combined PO.
+        public Guid? TransferredToId { get; set; }
+        public Guid? TransferredById { get; set; }
+        public DateTime? TransferredAt { get; set; }
+        public string? TransferNote { get; set; }
 
     }
 }

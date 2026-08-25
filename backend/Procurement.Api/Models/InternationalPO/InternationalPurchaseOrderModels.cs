@@ -101,7 +101,9 @@ namespace Procurement.Api.Models.InternationalPO
         public string? DestinationPort { get; set; }
         public string? Incoterm { get; set; }                    // CIP / FOB / CIF / EXW
         public string? PerformaNo { get; set; }
-
+        public string? ContainerDetails { get; set; }
+        public string? DeliveryPeriodText { get; set; }
+           // e.g. "25 days after payment"
         public Guid RequestedById { get; set; }
 
         public string Currency { get; set; } = "USD";
@@ -180,4 +182,31 @@ namespace Procurement.Api.Models.InternationalPO
         // Navigation
         public Supplier? Supplier { get; set; }
     }
+
+    // ── SUPPLIER EXPENSE TYPE (master/lookup) ────────────────────────
+    public class SupplierExpenseType
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    // ── PER-PO EXPENSE LINE ─────────────────────────────────────────
+    public class InternationalPOExpense
+    {
+        public Guid Id { get; set; }
+        public Guid InternationalPoId { get; set; }
+        public Guid SupplierExpenseTypeId { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+
+        // Navigation
+        public SupplierExpenseType? ExpenseType { get; set; }
+    }
+
 }

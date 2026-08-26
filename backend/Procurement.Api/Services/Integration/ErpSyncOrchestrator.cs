@@ -61,14 +61,20 @@ namespace Procurement.Api.Services.Integration
 
 
 
-                    var categoryMaps = await _db.ItemGroupCategoryMaps
-            .ToDictionaryAsync(
-                m => m.OracleGroupName.ToUpper(),
-                m => m.ItemCategoryId);
+            var categoryMaps = await _db.ItemGroupCategoryMaps
+    .ToDictionaryAsync(
+        m => m.OracleGroupName.ToUpper(),
+        m => m.ItemCategoryId);
 
+            // ✅ FIX: case-insensitive + trimmed comparison. Previously this used the
+            // default (case-sensitive, exact-match) comparer, so Oracle UOM values that
+            // only differed by casing or stray whitespace (e.g. "KG" / "Kg" / "kg ")
+            // were treated as different units and a new duplicate Unit row was created
+            // on every sync cycle. See merge_duplicate_units.sql for the one-time cleanup
+            // of rows created by the old behavior.
             var unitsByName = (await _db.Units.ToListAsync())
-                .GroupBy(u => u.Name)
-                .ToDictionary(g => g.Key, g => g.First());
+                .GroupBy(u => u.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             var relevantCompanyIds = items
                 .Select(i => mappings.TryGetValue(i.BranchId, out var cid) ? cid : (Guid?)null)
@@ -178,14 +184,17 @@ namespace Procurement.Api.Services.Integration
                     }
                 }
 
+                // ✅ FIX: trim the incoming UOM before lookup/creation so it matches the
+                // trimmed+case-insensitive dictionary above and doesn't spawn a duplicate.
                 Unit? unit = null;
                 if (!string.IsNullOrWhiteSpace(erpItem.Uom))
                 {
-                    if (!unitsByName.TryGetValue(erpItem.Uom, out unit))
+                    var uomTrimmed = erpItem.Uom.Trim();
+                    if (!unitsByName.TryGetValue(uomTrimmed, out unit))
                     {
-                        unit = new Unit { Id = Guid.NewGuid(), Name = erpItem.Uom };
+                        unit = new Unit { Id = Guid.NewGuid(), Name = uomTrimmed };
                         _db.Units.Add(unit);
-                        unitsByName[erpItem.Uom] = unit;
+                        unitsByName[uomTrimmed] = unit;
                     }
                 }
 
@@ -206,7 +215,7 @@ namespace Procurement.Api.Services.Integration
                         // ✅ NEW: auto-assign category from group name
                         CategoryId = group != null && categoryMaps.TryGetValue(
                     group.Name.ToUpper(), out var catId) ? catId : null,
-                        
+
                         SourceType = "ORACLE",
                         CreatedAt = DateTime.UtcNow
                     };

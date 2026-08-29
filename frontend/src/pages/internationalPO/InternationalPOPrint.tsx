@@ -306,16 +306,22 @@ export default function InternationalPOPrint() {
           </div>
         )}
 
-        {/* Footer strip */}
+      {/* Footer strip */}
         <div className="mt-8 pt-3 border-t-2 border-gray-800">
-          <div className="flex items-center justify-between text-[8.5px] text-gray-500">
+          <div className="flex items-start justify-between text-[8.5px] text-gray-500 gap-4">
             <div className="space-y-0.5">
               <p>Tel: 44775848 · Fax: 44775849 · P.O. Box: 4810</p>
-              <p>Al Maseela - Al Jazera Al Arabia St. Al Hattab Building</p>
-              <p>www.al-hattabgroup.com</p>
+              <p>Office Tel: 44731558 · Fax: 44723891</p>
+              <p>Al-Maseela - Al-Jazera Al-Arabia St. Al Hattab Building</p>
+              <p>Email: info@al-hattabgroup.com · www.al-hattabgroup.com</p>
             </div>
             <div className="border border-gray-300 rounded-full w-14 h-14 flex items-center justify-center text-center text-[6.5px] font-semibold text-gray-500 leading-tight shrink-0">
               ISO 9001:2015<br />CERTIFIED
+            </div>
+            <div className="space-y-0.5 text-right" dir="rtl">
+              <p>تليفون: 44775848 - فاكس: 44775849 - ص.ب: 4810</p>
+              <p>تليفون مكتب: 44731558 - فاكس: 44723891</p>
+              <p>المسيلة - شارع الجزيرة العربية - مبنى الحطاب</p>
             </div>
           </div>
           <div className="mt-2 pt-2 border-t border-gray-200 text-[9px] text-gray-500">
@@ -324,7 +330,6 @@ export default function InternationalPOPrint() {
           </div>
         </div>
       </div>
-
       <style>{`
         @media print {
           @page { size: A4; margin: 8mm; }

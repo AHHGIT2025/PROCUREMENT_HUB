@@ -81,6 +81,15 @@ export default function SuppliersManager() {
   const [showCreate, setShowCreate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
+  // NEW — the Oracle HQ / Oracle FMCG / Manual source-type filter pills are
+  // an admin/internal detail (which system a supplier record came from) and
+  // aren't meaningful to non-admin users, so they're hidden for everyone
+  // except System Admin. Non-admins still see all suppliers — the filter
+  // itself just isn't exposed, and stays "ALL" for them under the hood.
+  const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+  const userRoles: string[] = user.roles ?? [];
+  const isAdmin = userRoles.includes('System Admin');
+
   const load = async () => {
     setLoading(true);
     try {
@@ -146,14 +155,20 @@ export default function SuppliersManager() {
               <option value="">All Companies</option>
               {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <div className="flex gap-1.5 flex-wrap">
-              {['ALL', 'ORACLE_HQ', 'ORACLE_FMCG', 'MANUAL'].map(s => (
-                <button key={s} onClick={() => setSourceFilter(s)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                    sourceFilter === s ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}>{s === 'ALL' ? 'All' : (SOURCE_BADGES[s]?.label ?? s)}</button>
-              ))}
-            </div>
+
+            {/* FIXED — source-type pills (Oracle HQ / Oracle FMCG / Manual)
+                are now admin-only. Other roles never see this row at all. */}
+            {isAdmin && (
+              <div className="flex gap-1.5 flex-wrap">
+                {['ALL', 'ORACLE_HQ', 'ORACLE_FMCG', 'MANUAL'].map(s => (
+                  <button key={s} onClick={() => setSourceFilter(s)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+                      sourceFilter === s ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}>{s === 'ALL' ? 'All' : (SOURCE_BADGES[s]?.label ?? s)}</button>
+                ))}
+              </div>
+            )}
+
             <span className="text-xs text-gray-400 ml-auto">
               {filtered.length} suppliers {!search && !companyFilter && '(showing first 60 — search or pick a company to narrow down)'}
             </span>
@@ -183,7 +198,12 @@ export default function SuppliersManager() {
                       <h3 className="font-semibold text-gray-800 truncate group-hover:text-blue-700 transition">{s.name}</h3>
                       <p className="text-xs text-gray-400 font-mono mt-0.5">{s.supplierCode}</p>
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${badge.cls}`}>{badge.label}</span>
+                    {/* FIXED — source badge (Oracle HQ / Oracle FMCG / Manual)
+                        on each card is also admin-only, same reasoning as the
+                        filter pills above. */}
+                    {isAdmin && (
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${badge.cls}`}>{badge.label}</span>
+                    )}
                   </div>
 
                   {/* Company badge — shows which company this supplier belongs
@@ -227,6 +247,7 @@ export default function SuppliersManager() {
         <SupplierDetailPanel
           supplierId={detailId}
           companies={companies}
+          isAdmin={isAdmin}
           onClose={() => setDetailId(null)}
           onChanged={load}
         />
@@ -390,8 +411,8 @@ function SupplierFormModal({ companies, onClose, onSaved }: { companies: any[]; 
 // ═══════════════════════════════════════════════════════════════════
 // DETAIL / EDIT SLIDE-OVER
 // ═══════════════════════════════════════════════════════════════════
-function SupplierDetailPanel({ supplierId, companies, onClose, onChanged }: {
-  supplierId: string; companies: any[]; onClose: () => void; onChanged: () => void;
+function SupplierDetailPanel({ supplierId, companies, isAdmin, onClose, onChanged }: {
+  supplierId: string; companies: any[]; isAdmin: boolean; onClose: () => void; onChanged: () => void;
 }) {
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [docs, setDocs] = useState<SupplierDoc[]>([]);
@@ -517,9 +538,13 @@ function SupplierDetailPanel({ supplierId, companies, onClose, onChanged }: {
                   ) : (
                     <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-400">Unassigned</span>
                   )}
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(SOURCE_BADGES[supplier.sourceType] ?? { cls: 'bg-gray-100 text-gray-600' }).cls}`}>
-                    {(SOURCE_BADGES[supplier.sourceType] ?? { label: supplier.sourceType }).label}
-                  </span>
+                  {/* FIXED — source-type badge (Oracle HQ / Oracle FMCG / Manual)
+                      in the detail panel header is admin-only too. */}
+                  {isAdmin && (
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(SOURCE_BADGES[supplier.sourceType] ?? { cls: 'bg-gray-100 text-gray-600' }).cls}`}>
+                      {(SOURCE_BADGES[supplier.sourceType] ?? { label: supplier.sourceType }).label}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

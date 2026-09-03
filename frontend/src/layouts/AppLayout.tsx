@@ -11,6 +11,7 @@ import {
   ChevronDown,
   FileClock,
   GitBranch,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Plug,
@@ -474,17 +475,34 @@ export default function AppLayout() {
               Material requests, approvals, uploads, and Oracle integration
             </div>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-3 items-center">
             <NotificationBell userId={user.id} />
-            <span className="text-sm">{user.fullName || 'User'}</span>
+            <span className="text-sm text-slate-600 font-medium">{user.fullName || 'User'}</span>
+
+            {/* NEW — Change Password, always visible next to Logout
+                (no dropdown — both buttons shown directly, per request).
+                Colored icon + label, distinct from Logout's red styling. */}
             <button
-              className="btn bg-slate-100"
+              className="flex items-center gap-1.5 text-sm font-medium px-3.5 py-2 rounded-xl transition
+                         bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100"
+              title="Change Password"
+              onClick={() => nav('/change-password')}
+            >
+              <KeyRound size={15} />
+              <span className="hidden sm:inline">Change Password</span>
+            </button>
+
+            <button
+              className="flex items-center gap-1.5 text-sm font-medium px-3.5 py-2 rounded-xl transition
+                         bg-red-50 text-red-600 hover:bg-red-100 border border-red-100"
+              title="Logout"
               onClick={() => {
                 localStorage.clear();
                 nav('/login');
               }}
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </header>

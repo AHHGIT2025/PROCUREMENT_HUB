@@ -34,6 +34,7 @@ import RfqCreate from './pages/rfq/RfqCreate';
 import RfqDetail from './pages/rfq/RfqDetail';
 import InternationalPODetail from './pages/internationalPO/InternationalPODetail';
 import InternationalPOPrint from './pages/internationalPO/InternationalPOPrint';
+import ChangePassword  from './pages/users/ChangePassword';
  
 // ...
    
@@ -94,6 +95,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/users"            element={<ListPage type="users" />} />
           <Route path="/users/create"     element={<CreateUser />} />
           <Route path="/users/edit/:id"   element={<EditUser />} />
+          <Route path="/change-password"  element={<ChangePassword />} />
           <Route path="/upload-center"    element={<ListPage type="uploads" />} />
           <Route path="/oracle-monitor" element={<OracleMonitor />} />
           <Route path="/settings/item-category-flow" element={<ItemCategoryFlowManager />} />

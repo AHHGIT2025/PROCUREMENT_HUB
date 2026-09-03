@@ -14,4 +14,10 @@
         public List<Guid>? AdditionalCompanyIds { get; set; }
         // No Password field — editing a user should never require re-entering it
     }
+    public class ChangePasswordDto
+    {
+        public string CurrentPassword { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+    }
 }
+ 

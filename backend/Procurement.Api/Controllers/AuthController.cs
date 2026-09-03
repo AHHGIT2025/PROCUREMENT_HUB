@@ -38,6 +38,13 @@ public class AuthController : ControllerBase
         if (!isValid)
             return Unauthorized(new { message = "Invalid email or password" });
 
+        // FIXED — deactivated (IsActive = false) users could still log in and
+        // receive a valid token, since this check was completely missing. Now
+        // blocked immediately after password validation.
+        if (!user.IsActive)
+            return Unauthorized(new { message = "This account has been deactivated. Please contact your administrator." });
+
+     
         var roleIds = await _db.UserRoles
             .Where(x => x.UserId == user.Id)
             .Select(x => x.RoleId)

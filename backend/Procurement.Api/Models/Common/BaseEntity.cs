@@ -90,7 +90,7 @@ public class AppUser : BaseEntity
     // ✅ Reporting hierarchy
     public Guid? ManagerId { get; set; }
     public Guid? SubManagerId { get; set; }
-
+    public bool HasChangedPassword { get; set; } = false;
     // ✅ Status
     public bool IsActive { get; set; } = true;
 
@@ -128,7 +128,7 @@ public class CreateUserDto
     public string EmployeeCode { get; set; }
     public string FullName { get; set; }
     public string Email { get; set; }
-    public string Password { get; set; }
+    public string? Password { get; set; }
 
     public Guid? CompanyId { get; set; }
     public Guid? DepartmentId { get; set; }

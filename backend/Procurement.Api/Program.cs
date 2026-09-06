@@ -109,7 +109,8 @@ builder.Services.AddCors(o => o.AddPolicy("Frontend", p => p
         "http://localhost:3000",
            "http://10.10.50.23:5173",
            "http://10.10.11.29:5173",
-           "http://10.10.50.23:3161"
+           "http://10.10.50.23:3161",
+            "https://ahp.alhattabholding.com"
     )
     .AllowAnyHeader()
     .AllowAnyMethod()));

@@ -702,7 +702,7 @@ export default function Login() {
                 type="text"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="e.g. admin@alhattabholding.com"
+                placeholder="e.g. sample@example.com"
                 autoComplete="username"
                 className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:ring-2 focus:ring-blue-500"
                 style={{ background: "#132a4d", border: "1px solid rgba(255,255,255,0.1)" }}

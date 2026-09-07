@@ -60,7 +60,7 @@ namespace Procurement.Api.Controllers
             var allMenuKeys = new[]
             {
                 "dashboard", "purchase-requests", "create-request", "my-requests",
-                "approvals", "materials", "materials-create", "projects", "indent-transfer","procurement", "upload-center",
+                "approvals", "materials", "materials-create", "projects", "projects-create", "indent-transfer","procurement", "upload-center",
                 "category-flow", "oracle-monitor", "item-categories","approval-history",
                 "workflows", "users", "organization", "audit-logs","international-po","suppliers","rfq", "departments", "roles", "menu-permissions", "company-categories", "store-verification"
             };

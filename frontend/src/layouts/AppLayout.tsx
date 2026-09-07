@@ -79,6 +79,7 @@ const materialsGroup = {
   icon: Boxes,
   children: [
     { to: '/materials', key: 'materials', label: 'Materials', icon: Boxes },
+    { to: '/materials/create', key: 'materials-create', label: 'Create Item', icon: Boxes },
     { to: '/projects', key: 'projects', label: 'Projects', icon: Building2 },
   ],
 };

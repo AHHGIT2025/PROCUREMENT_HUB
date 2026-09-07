@@ -102,7 +102,7 @@ await api.post("/materials", {
 
       alert("✅ Item Created Successfully");
 
-      navigate("/materials");
+      navigate("/dashboard");
 
     } catch (err: any) {
 
@@ -312,7 +312,7 @@ await api.post("/materials", {
 
           <button
             type="button"
-            onClick={() => navigate("/materials")}
+            onClick={() => navigate("/dashboard")}
             className="bg-gray-200 px-4 py-2 rounded"
           >
             Cancel

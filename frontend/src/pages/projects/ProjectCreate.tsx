@@ -83,7 +83,7 @@ const handleSubmit = async (e: any) => {
 
     alert("✅ Project Created Successfully");
 
-    navigate("/projects");
+    navigate("/dashboard");
 
   } catch (err: any) {
 
@@ -204,7 +204,7 @@ const handleSubmit = async (e: any) => {
 
           <button
             type="button"
-            onClick={() => navigate("/projects")}
+            onClick={() => navigate("/dashboard")}
             className="bg-gray-200 px-4 py-2 rounded"
           >
             Cancel

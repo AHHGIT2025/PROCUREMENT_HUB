@@ -3,8 +3,20 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, RefreshCw, Eye, X, Loader2, Calendar, ListChecks, ArrowRightLeft } from 'lucide-react';
+import { Search, UserPlus, RefreshCw, Eye, X, Loader2, Calendar, ListChecks, ArrowRightLeft, Paperclip, Printer } from 'lucide-react';
 import api from '../../api/client';
+
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
+function getFileUrl(path?: string) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_ORIGIN}${path}`;
+}
+const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+function isImage(fileName?: string) {
+  if (!fileName) return false;
+  return IMAGE_EXTS.includes(fileName.toLowerCase().slice(fileName.lastIndexOf(".")));
+}
 
 const PO_STATUS_COLORS: Record<string, string> = {
   Draft:     'bg-gray-100 text-gray-600',
@@ -38,11 +50,6 @@ export default function ProcurementQueue() {
   const [saving, setSaving]           = useState(false);
   const [msg, setMsg]                 = useState('');
 
-  // ── Transfer modal state — separate from Assign. Assign is the
-  // Manager's original/key assignment; Transfer is a peer-to-peer handoff
-  // by whoever currently holds the MR (its effective owner), used to
-  // consolidate several MRs onto one officer before combining them into a
-  // single PO.
   const [transferModal, setTransferModal] = useState(false);
   const [transferSelected, setTransferSelected] = useState<any>(null);
   const [transferTo, setTransferTo]   = useState('');
@@ -67,8 +74,6 @@ export default function ProcurementQueue() {
       setRows(r.data?.data ?? r.data ?? []);
       const c = await api.get('/companies');
       setCompanies(c.data?.data ?? c.data ?? []);
-      // team members list is needed by BOTH the Manager's Assign modal AND
-      // the officer's Transfer modal, so load it for everyone up front.
       const t = await api.get('/procurement/team-members');
       setTeamMembers(t.data?.data ?? t.data ?? []);
     } catch (e) {
@@ -92,7 +97,6 @@ export default function ProcurementQueue() {
     }
   }
 
-  // ── open the Transfer modal for an officer's own row ──
   function openTransfer(row: any) {
     setTransferSelected(row);
     setTransferTo('');
@@ -150,6 +154,15 @@ export default function ProcurementQueue() {
     navigate(`/international-po/create?prId=${row.id}`);
   }
 
+  // ── Print — opens the same printable MR view used elsewhere in the
+  // app (ApproverInbox uses the identical route). Available to both the
+  // Manager and the assigned Officer, so either can print/reference the
+  // fully-approved MR when preparing a PO.
+  function printRequest(prId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    window.open(`/purchase-requests/${prId}/print`, '_blank', 'noopener,noreferrer');
+  }
+
   async function saveAssign() {
     if (!assignTo) { setMsg('Please select a team member.'); return; }
     try {
@@ -174,11 +187,6 @@ export default function ProcurementQueue() {
     } catch (e) { console.error(e); }
   }
 
-  // officer visibility uses effectiveOwnerId (falls back to assignedToId
-  // if the backend hasn't been updated yet / field is missing) instead of
-  // assignedToId directly. This is what makes a transferred MR show up in
-  // the new owner's queue instead of staying stuck under the original
-  // Manager-assigned officer.
   const visibleRows = isManager
     ? rows
     : rows.filter(r => (r.effectiveOwnerId ?? r.assignedToId) === user.id);
@@ -202,7 +210,6 @@ export default function ProcurementQueue() {
   const inProgressCount = visibleRows.filter(r => r.assignmentStatus === 'ASSIGNED' || r.assignmentStatus === 'IN_PROGRESS').length;
   const completedCount  = visibleRows.filter(r => r.assignmentStatus === 'COMPLETED').length;
 
-  // team members list minus the current user (can't transfer to yourself)
   const transferCandidates = teamMembers.filter(m => m.id !== user.id);
 
   return (
@@ -333,10 +340,6 @@ export default function ProcurementQueue() {
                             {row.assignedToName
                               ? <span className="font-medium text-gray-800">{row.assignedToName}</span>
                               : <span className="text-gray-300 italic">Unassigned</span>}
-                            {/* shows when the original assignee has since
-                                handed this off to someone else, so a Manager
-                                glancing at the list isn't confused by who's
-                                actually working it now. */}
                             {row.isTransferred && row.transferredToName && (
                               <p className="text-[11px] text-indigo-500 mt-0.5 flex items-center gap-1">
                                 <ArrowRightLeft className="w-3 h-3" /> → {row.transferredToName}
@@ -348,18 +351,6 @@ export default function ProcurementQueue() {
                         <td className="px-4 py-3">
                           {isManager ? (
                             <div className="flex items-center gap-1.5 flex-nowrap">
-                              {/* FIXED — Reassign is now hidden once the row
-                                  is Fully Converted (all items already on a
-                                  PO), not just when assignmentStatus is
-                                  COMPLETED. A fully converted MR has nothing
-                                  left to reassign — reassigning at that point
-                                  makes no sense and was confusing on the
-                                  "View PO" popup shown in the screenshot.
-                                  If the PO later gets unposted/reversed and
-                                  isFullyConverted flips back to false (e.g.
-                                  a revision path), this button reappears
-                                  automatically since it's driven by that
-                                  same flag — no separate toggle needed. */}
                               {!isTaskCompleted && !row.isFullyConverted && (
                                 <button onClick={() => openAssign(row)}
                                   className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition shadow-sm whitespace-nowrap">
@@ -367,6 +358,11 @@ export default function ProcurementQueue() {
                                   {row.assignedToName ? 'Reassign' : 'Assign'}
                                 </button>
                               )}
+                              <button onClick={(e) => printRequest(row.id, e)}
+                                title="Print MR"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition whitespace-nowrap">
+                                <Printer className="w-3 h-3" /> Print
+                              </button>
                               <button onClick={() => openViewPo(row)}
                                 className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition whitespace-nowrap">
                                 <Eye className="w-3 h-3" /> View PO
@@ -374,9 +370,6 @@ export default function ProcurementQueue() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 flex-nowrap flex-wrap">
-                              {/* shows when this MR was transferred TO the
-                                  current officer, so they know it didn't
-                                  come from their manager directly. */}
                               {row.isTransferred && (
                                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-medium whitespace-nowrap flex items-center gap-1">
                                   <ArrowRightLeft className="w-2.5 h-2.5" /> Transferred to you
@@ -389,6 +382,11 @@ export default function ProcurementQueue() {
                                   <ListChecks className="w-3 h-3" /> View Items
                                 </button>
                               )}
+                              <button onClick={(e) => printRequest(row.id, e)}
+                                title="Print MR"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition whitespace-nowrap">
+                                <Printer className="w-3 h-3" /> Print
+                              </button>
                               {row.assignmentStatus && row.assignmentStatus !== 'UNASSIGNED' && (
                                 <select
                                   value={row.isFullyConverted ? 'COMPLETED' : row.assignmentStatus}
@@ -406,12 +404,6 @@ export default function ProcurementQueue() {
                                   Convert to PO
                                 </button>
                               )}
-                              {/* Transfer — lets the officer currently
-                                  holding this MR hand it off to a peer, e.g.
-                                  to consolidate several MRs onto one person
-                                  before combining them into a single PO.
-                                  Hidden once fully converted (nothing left
-                                  to hand off at that point). */}
                               {!row.isFullyConverted && (
                                 <button onClick={() => openTransfer(row)}
                                   title="Hand this MR off to another officer"
@@ -605,7 +597,7 @@ export default function ProcurementQueue() {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
-                        {['#', 'Code', 'Material', 'Qty', 'UOM', 'Unit Price', 'Line Total'].map(h => (
+                        {['#', 'Code', 'Material', 'Qty', 'UOM', 'Unit Price', 'Line Total', 'Attachment'].map(h => (
                           <th key={h} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -623,6 +615,21 @@ export default function ProcurementQueue() {
                           </td>
                           <td className="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap">
                         {(Number(item.quantity || 0) * Number(item.estimatedUnitPrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {item.attachmentUrl ? (
+                              isImage(item.attachmentFileName) ? (
+                                <a href={getFileUrl(item.attachmentUrl)} target="_blank" rel="noreferrer">
+                                  <img src={getFileUrl(item.attachmentUrl)} alt={item.attachmentFileName}
+                                    className="h-8 w-8 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition cursor-pointer" />
+                                </a>
+                              ) : (
+                                <a href={getFileUrl(item.attachmentUrl)} target="_blank" rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">
+                                  <Paperclip size={12} />{item.attachmentFileName || "File"}
+                                </a>
+                              )
+                            ) : <span className="text-gray-300 text-xs">—</span>}
                           </td>
                         </tr>
                       ))}

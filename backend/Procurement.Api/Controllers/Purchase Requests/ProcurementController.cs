@@ -171,6 +171,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             return Ok(new { success = true, data = list });
         }
 
+
         [HttpGet("team-members")]
         public async Task<IActionResult> GetTeamMembers()
         {
@@ -180,10 +181,27 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                 .Select(d => d.Id)
                 .ToListAsync();
 
+            // ✅ FIX: Managers (who ALSO sit in the Procurement department)
+            // were showing up in their own "Assign To" dropdown. Assign is
+            // meant for handing a task DOWN to an officer, not to oneself
+            // or another manager — so any user holding a manager-level role
+            // is now excluded from this list.
+            var managerRoleNames = new[]
+            {
+                "System Admin", "Manager", "Purchase Manager", "Procurement Manager"
+            };
+
+            var managerUserIds = await _db.UserRoles
+                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+                .Where(x => managerRoleNames.Contains(x.Name))
+                .Select(x => x.UserId)
+                .ToListAsync();
+
             var members = await _db.Users
                 .Where(u => u.IsActive &&
                             u.DepartmentId != null &&
-                            procDeptIds.Contains(u.DepartmentId.Value))
+                            procDeptIds.Contains(u.DepartmentId.Value) &&
+                            !managerUserIds.Contains(u.Id))
                 .Select(u => new
                 {
                     id = u.Id,
@@ -198,6 +216,33 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { success = true, data = members });
         }
+        //[HttpGet("team-members")]
+        //public async Task<IActionResult> GetTeamMembers()
+        //{
+        //    // Procurement department-ile active users mathram team members aayi kaanikkuka
+        //    var procDeptIds = await _db.Departments
+        //        .Where(d => d.Name.ToUpper().Contains("PROCUREMENT"))
+        //        .Select(d => d.Id)
+        //        .ToListAsync();
+
+        //    var members = await _db.Users
+        //        .Where(u => u.IsActive &&
+        //                    u.DepartmentId != null &&
+        //                    procDeptIds.Contains(u.DepartmentId.Value))
+        //        .Select(u => new
+        //        {
+        //            id = u.Id,
+        //            fullName = u.FullName,
+        //            email = u.Email,
+        //            role = _db.UserRoles
+        //                .Where(ur => ur.UserId == u.Id)
+        //                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
+        //                .FirstOrDefault() ?? "Staff"
+        //        })
+        //        .ToListAsync();
+
+        //    return Ok(new { success = true, data = members });
+        //}
 
         // ── POST: Assign PR to team member ────────────────────
         // POST /api/procurement/{id}/assign

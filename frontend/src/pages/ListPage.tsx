@@ -3460,10 +3460,10 @@ const config: any = {
     endpoint: '/projects',
     cols: ['name', 'companyName', 'departmentName', 'source', 'createdAt'],
   },
-  requests: {
+   requests: {
     title: 'Purchase Requests',
     endpoint: '/purchase-requests',
-    cols: ['requestNumber', 'status', 'justification', 'totalAmount'],
+    cols: ['requestNumber', 'status', 'requestedBy', 'company', 'createdAt', 'justification', 'totalAmount'],
   },
   approvals: {
     title: 'Pending Approvals',
@@ -4252,7 +4252,7 @@ async function toggleUserStatus(userId: string, e: React.MouseEvent) {
                           </td>
                         )}
 
-                        {c.cols.map((col: string) => {
+                         {c.cols.map((col: string) => {
                           const v = r[col];
                           return (
                             <td key={col} className="px-4 py-3">
@@ -4261,7 +4261,14 @@ async function toggleUserStatus(userId: string, e: React.MouseEvent) {
                               ) : col.toLowerCase().includes("amount") ? (
                                 fmtQ(v)
                              ) : col.toLowerCase().includes("date") || col.endsWith("At") ? (
-                                fmtDate(v)
+                                v ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
+                                    <Clock size={12} />
+                                    {fmtDate(v)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300">-</span>
+                                )
                               ) : (
                                 String(v ?? "-")
                               )}

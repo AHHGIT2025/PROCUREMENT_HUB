@@ -1,4 +1,4 @@
-Ôªø// ===== FILE: SuppliersController.cs =====
+// ===== FILE: SuppliersController.cs =====
 // Place under: Controllers/InternationalPO/SuppliersController.cs
 
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +24,7 @@ namespace Procurement.Api.Controllers.InternationalPO
             _db = db;
         }
 
-        // GET /api/suppliers ‚Äî all active suppliers
+        // GET /api/suppliers ó all active suppliers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] Guid? companyId, [FromQuery] string? search, [FromQuery] int top = 100)
         {
@@ -32,7 +32,7 @@ namespace Procurement.Api.Controllers.InternationalPO
 
             if (companyId.HasValue)
                 query = query.Where(s => s.CompanyId == companyId.Value);
-            // ‚úÖ CHANGED: strict company filter ‚Äî selecting a company now
+            // ? CHANGED: strict company filter ó selecting a company now
             // shows ONLY suppliers explicitly assigned to it. Unassigned
             // suppliers (CompanyId == null) no longer show up under every
             // company's filter, since that was confusing in the UI (looked
@@ -41,7 +41,7 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(s => s.Name.Contains(search) || s.SupplierCode.Contains(search));
 
-            var cappedTop = top <= 0 || top > 500 ? 100 : top;
+            var cappedTop = top <= 0 || top > 1000 ? 100 : top;
 
             var companyIds = await query.Where(s => s.CompanyId != null)
                 .Select(s => s.CompanyId!.Value).Distinct().ToListAsync();
@@ -86,8 +86,8 @@ namespace Procurement.Api.Controllers.InternationalPO
             if (s == null)
                 return NotFound(ApiResponse<object>.Fail("Supplier not found."));
 
-            // ‚îÄ‚îÄ FIX: CompanyId/CompanyName were missing here even though
-            // GetAll() already returned them ‚Äî the Edit panel (which loads
+            // -- FIX: CompanyId/CompanyName were missing here even though
+            // GetAll() already returned them ó the Edit panel (which loads
             // via this endpoint) had no company data to show or pre-fill.
             var companyName = s.CompanyId.HasValue
                 ? await _db.Companies.Where(c => c.Id == s.CompanyId.Value).Select(c => c.Name).FirstOrDefaultAsync()
@@ -119,7 +119,7 @@ namespace Procurement.Api.Controllers.InternationalPO
             return Ok(ApiResponse<SupplierDto>.Ok(dto));
         }
 
-        // POST /api/suppliers ‚Äî manual entry (Oracle sync will populate SourceType=ORACLE_* separately)
+        // POST /api/suppliers ó manual entry (Oracle sync will populate SourceType=ORACLE_* separately)
         [HttpPost]
         public async Task<IActionResult> Create(CreateSupplierDto dto)
         {
@@ -149,7 +149,7 @@ namespace Procurement.Api.Controllers.InternationalPO
                 BankAddress = dto.BankAddress,
                 BankName = dto.BankName,
                 Iban = dto.Iban,
-                CompanyId = dto.CompanyId,   // ‚Üê NEW ‚Äî optional, null means "not tied to a specific company"
+                CompanyId = dto.CompanyId,   // ? NEW ó optional, null means "not tied to a specific company"
                 SourceType = "MANUAL",
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
@@ -181,14 +181,14 @@ namespace Procurement.Api.Controllers.InternationalPO
             supplier.BankAddress = dto.BankAddress;
             supplier.BankName = dto.BankName;
             supplier.Iban = dto.Iban;
-            supplier.CompanyId = dto.CompanyId;   // ‚Üê NEW ‚Äî lets admin assign/reassign/clear the company later
+            supplier.CompanyId = dto.CompanyId;   // ? NEW ó lets admin assign/reassign/clear the company later
             supplier.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
             return Ok(ApiResponse<object>.Ok(null, "Supplier updated."));
         }
 
-        // DELETE /api/suppliers/{id} ‚Äî soft delete
+        // DELETE /api/suppliers/{id} ó soft delete
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {

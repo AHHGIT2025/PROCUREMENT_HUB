@@ -137,11 +137,17 @@ export default function InternationalPOCreate() {
   const isLinkedToMr = selectedMrIds.length > 0;
   const cameFromQueue = !!searchParams.get('prId');
 
-  useEffect(() => {
+    useEffect(() => {
     api.get('/companies').then(r => setCompanies(r.data?.data ?? r.data ?? [])).catch(console.error);
-    api.get('/suppliers').then(r => setSuppliers(r.data?.data ?? [])).catch(console.error);
-     api.get('/procurement/queue').then(r => setPurchaseRequests(r.data?.data ?? r.data ?? [])).catch(console.error);
+    api.get('/procurement/queue').then(r => setPurchaseRequests(r.data?.data ?? r.data ?? [])).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!form.companyId) { setSuppliers([]); return; }
+    api.get('/suppliers', { params: { companyId: form.companyId, top: 500 } })
+      .then(r => setSuppliers(r.data?.data ?? []))
+      .catch(console.error);
+  }, [form.companyId]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

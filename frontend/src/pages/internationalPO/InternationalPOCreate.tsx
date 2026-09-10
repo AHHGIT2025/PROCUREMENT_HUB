@@ -713,7 +713,7 @@ export default function InternationalPOCreate() {
               <label className="text-xs font-medium text-gray-500">Payment Type</label>
               <select value={form.paymentType} onChange={e => set('paymentType', e.target.value)}
                 className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
-                {['Cash', 'Credit', 'LC'].map(p => <option key={p} value={p}>{p}</option>)}
+                {['Cash', 'Credit', 'Cheque', 'Bank Transfer', 'Bill of Exchange', 'LC', 'Telex Transfer'].map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
             <div>

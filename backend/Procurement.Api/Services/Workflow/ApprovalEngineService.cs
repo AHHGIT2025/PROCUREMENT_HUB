@@ -2186,29 +2186,32 @@ namespace Procurement.Api.Services.Workflow
                 .ThenByDescending(w => w.Priority)
                 .FirstOrDefault();
         }
-        private static bool MatchesCategoryConditions(WorkflowDefinition workflow, List<string> categoryCodes)
-        {
-            var categoryConditions = workflow.Conditions
-                .Where(c => c.Field == "ItemCategory" && c.Operator == "EQUALS")
-                .Select(c => c.Value.ToUpper())
-                .Distinct()
-                .ToList();
+       private static bool MatchesCategoryConditions(WorkflowDefinition workflow, List<string> categoryCodes)
+{
+    var categoryConditions = workflow.Conditions
+        .Where(c => c.Field == "ItemCategory" && c.Operator == "EQUALS")
+        .Select(c => c.Value.ToUpper())
+        .Distinct()
+        .ToList();
 
-            if (!categoryConditions.Any()) return false;
+    if (!categoryConditions.Any()) return false;
 
-            var baseMatch = workflow.ConditionMatchLogic == "ALL"
-                ? categoryConditions.All(v => categoryCodes.Contains(v))
-                : categoryConditions.Any(v => categoryCodes.Contains(v));
+    if (workflow.ConditionMatchLogic == "ALL")
+    {
+        // Combo flows: full coverage required both ways — every condition
+        // must be present in the request, and every request category must
+        // be one of this workflow's conditions. Prevents a request with an
+        // extra category (e.g. IT + ASSET + CIVIL) from silently matching
+        // a combo flow that doesn't account for CIVIL.
+        return categoryConditions.All(v => categoryCodes.Contains(v))
+            && categoryCodes.All(cc => categoryConditions.Contains(cc));
+    }
 
-            if (!baseMatch) return false;
-
-            // Full-coverage check: every category present in the request must be
-            // represented in this workflow's conditions. Without this, a request
-            // with an extra category not defined in the matched flow (e.g. IT +
-            // ASSET + CIVIL matching "IT + Asset Combo") would silently skip the
-            // CIVIL-specific approver instead of raising an error.
-            return categoryCodes.All(cc => categoryConditions.Contains(cc));
-        }
+    // ANY flows: any single matching category is enough. Extra categories
+    // present on the request do not disqualify the match — that's the
+    // whole point of ANY vs ALL.
+    return categoryConditions.Any(v => categoryCodes.Contains(v));
+}
         //private static bool MatchesCategoryConditions(WorkflowDefinition workflow, List<string> categoryCodes)
         //{
         //    var categoryConditions = workflow.Conditions

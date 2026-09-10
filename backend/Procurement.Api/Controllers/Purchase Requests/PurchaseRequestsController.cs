@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +31,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             _engine = engine;
             _numberGenerator = numberGenerator;
         }
-        // ── CREATE ────────────────────────────────────────────
+        // -- CREATE --------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(CreatePurchaseRequestDto dto)
         {
@@ -131,7 +131,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     pr.Id,
                     pr.RequestNumber,
                     status = pr.Status.ToString(),
-                    message = "Draft Saved ✅"
+                    message = "Draft Saved ?"
                 });
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             }
         }
 
-        // ── SUBMIT ────────────────────────────────────────────
+        // -- SUBMIT --------------------------------------------
         [HttpPost("{id:guid}/submit")]
         public async Task<IActionResult> Submit(Guid id)
         {
@@ -203,7 +203,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             }
         }
 
-        // ── GET ALL ───────────────────────────────────────────
+        // -- GET ALL -------------------------------------------
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -219,7 +219,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     pr.CreatedAt,
                     pr.DeliveryLocation,
                     pr.ContactNumber,
-                    companyId = pr.CompanyId,          // ← NEW — needed by International PO Create page to auto-fill Company when converting an MR
+                    companyId = pr.CompanyId,          // ? NEW � needed by International PO Create page to auto-fill Company when converting an MR
                     projectId = pr.ProjectId,
                     Company = _db.Companies
                                     .Where(c => c.Id == pr.CompanyId)
@@ -239,7 +239,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             return Ok(data);
         }
 
-        // ── GET BY ID ─────────────────────────────────────────
+        // -- GET BY ID -----------------------------------------
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> Get(Guid id)
         {
@@ -277,7 +277,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
 
 
-                    // ── NEW ──
+                    // -- NEW --
                     assignedToName = x.AssignedToId != null
     ? _db.Users.Where(u => u.Id == x.AssignedToId)
                .Select(u => u.FullName).FirstOrDefault()
@@ -307,9 +307,9 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                     canSubmit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
                     canDelete = x.Status == RequestStatus.Draft,
 
-                    // ── Current pending stage ────────────────────────────
+                    // -- Current pending stage ----------------------------
                     currentPendingStage = _db.ApprovalInstances
-                        .Where(ai => ai.EntityId == x.Id)
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .OrderByDescending(ai => ai.StepOrder)
                         .Join(_db.WorkflowSteps,
                               ai => ai.WorkflowStepId,
@@ -317,13 +317,13 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                               (ai, ws) => ws.Name)
                         .FirstOrDefault(),
 
-                    // ── Which Workflow Definition actually got matched/routed
+                    // -- Which Workflow Definition actually got matched/routed
                     // for this request. Helps admin debug "stuck" requests when
-                    // many company/category flows are configured — shows exactly
+                    // many company/category flows are configured � shows exactly
                     // which flow this request took instead of having to guess.
 
                     workflowName = _db.ApprovalInstances
-                        .Where(ai => ai.EntityId == x.Id)
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .OrderBy(ai => ai.StepOrder)
                         .Join(_db.WorkflowDefinitions,
                               ai => ai.WorkflowDefinitionId,
@@ -332,7 +332,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         .FirstOrDefault(),
 
                     workflowCode = _db.ApprovalInstances
-                        .Where(ai => ai.EntityId == x.Id)
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .OrderBy(ai => ai.StepOrder)
                         .Join(_db.WorkflowDefinitions,
                               ai => ai.WorkflowDefinitionId,
@@ -341,13 +341,13 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         .FirstOrDefault(),
 
                     totalWorkflowSteps = _db.ApprovalInstances
-                        .Where(ai => ai.EntityId == x.Id)
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .Select(ai => ai.WorkflowDefinitionId)
                         .Distinct()
                         .SelectMany(wdId => _db.WorkflowSteps.Where(s => s.WorkflowDefinitionId == wdId && s.IsActive))
                         .Count(),
 
-                    // ── Latest rejection / return comment ────────────────
+                    // -- Latest rejection / return comment ----------------
                     rejectionComment = _db.ApprovalActions
                         .Where(aa =>
                             _db.ApprovalInstances.Any(ai =>
@@ -374,7 +374,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .FirstOrDefault(),
 
-                    // ── Items (✅ now includes store verification outcome) ──
+                    // -- Items (? now includes store verification outcome) --
                     items = _db.PurchaseRequestItems
                         .Where(i => i.PurchaseRequestId == x.Id)
                         .Select(i => new
@@ -394,7 +394,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                                                         g => g.Id,
                                                         (item, g) => g.Name)
                                                     .FirstOrDefault(),
-                            quantity = i.Quantity,                       // original requested qty — never changes
+                            quantity = i.Quantity,                       // original requested qty � never changes
                             uom = i.Uom,
                             estimatedUnitPrice = i.EstimatedUnitPrice,
                             lineTotal = i.Quantity * i.EstimatedUnitPrice,
@@ -403,7 +403,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                             attachmentUrl = i.AttachmentUrl,
                             attachmentFileName = i.AttachmentFileName,
 
-                            // ✅ NEW — store verification outcome (0 = not yet checked)
+                            // ? NEW � store verification outcome (0 = not yet checked)
                             storeStatus = (int)i.StoreStatus,
                             availableQty = i.AvailableQty,
                             purchaseQty = i.PurchaseQty,                 // qty that still needs purchasing after store check
@@ -411,7 +411,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .ToList(),
 
-                    // ── Approval trail ───────────────────────────────────
+                    // -- Approval trail -----------------------------------
                     approvals = _db.ApprovalInstances
                         .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .OrderBy(ai => ai.StepOrder)
@@ -434,8 +434,8 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             if (request == null) return NotFound();
             return Ok(request);
         }
-        // ── Resolves current role holders for the printed signature panel.
-        // Only signatories with an actual assigned person are returned —
+        // -- Resolves current role holders for the printed signature panel.
+        // Only signatories with an actual assigned person are returned �
         // if a role has no holder (or doesn't apply, e.g. DCEO/Chairman
         // often blank on smaller Local POs), that box is simply omitted
         // rather than shown empty. This makes the panel size itself
@@ -476,7 +476,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                 new() { Label = "Chairman/Vice Chairman",        Name = await GetNameByRoleAsync("Vice Chairman") },
             };
 
-            // ── NEW: drop any signatory with no assigned holder ──
+            // -- NEW: drop any signatory with no assigned holder --
             return all.Where(s => !string.IsNullOrWhiteSpace(s.Name)).ToList();
         }
         // POST /api/purchase-requests/{id}/resubmit
@@ -542,9 +542,9 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         .Select(d => d.Name)
                         .FirstOrDefault(),
 
-                    // ── Current pending approval stage name ──────────────
+                    // -- Current pending approval stage name --------------
                     currentPendingStage = _db.ApprovalInstances
-                        .Where(ai => ai.EntityId == x.Id)
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive)
                         .OrderByDescending(ai => ai.StepOrder)
                         .Join(_db.WorkflowSteps,
                               ai => ai.WorkflowStepId,
@@ -552,7 +552,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                               (ai, ws) => ws.Name)
                         .FirstOrDefault(),
 
-                    // ── Latest rejection / return comment ────────────────
+                    // -- Latest rejection / return comment ----------------
                     rejectionComment = _db.ApprovalActions
                         .Where(aa =>
                             _db.ApprovalInstances.Any(ai =>
@@ -572,7 +572,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .FirstOrDefault(),
 
-                    // ── Items with individual justification (✅ store fields added) ──
+                    // -- Items with individual justification (? store fields added) --
                     items = _db.PurchaseRequestItems
                         .Where(i => i.PurchaseRequestId == x.Id)
                         .Select(i => new
@@ -596,7 +596,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                             attachmentUrl = i.AttachmentUrl,
                             attachmentFileName = i.AttachmentFileName,
 
-                            // ✅ NEW
+                            // ? NEW
                             storeStatus = (int)i.StoreStatus,
                             availableQty = i.AvailableQty,
                             purchaseQty = i.PurchaseQty,
@@ -604,7 +604,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         })
                         .ToList(),
 
-                    // ── Button permissions ───────────────────────────────
+                    // -- Button permissions -------------------------------
                     canEdit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
                     canSubmit = x.Status == RequestStatus.Draft || x.Status == RequestStatus.Returned,
                     canDelete = x.Status == RequestStatus.Draft,
@@ -617,7 +617,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
         // GET /api/purchase-requests/{id}/items
         // Returns this PR's item lines, plus how much of each line's
         // quantity has already been pulled into other International POs
-        // (across possibly multiple POs from the same MR) — so the buyer
+        // (across possibly multiple POs from the same MR) � so the buyer
         // can see what's left to allocate. Used by International PO Create
         // page's "pull items from MR" feature.
         [HttpGet("{id:guid}/items")]
@@ -643,9 +643,9 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             var itemIds = items.Select(i => i.id).ToList();
 
-            // ── CHANGED: exclude superseded POs (ones already revised) from
+            // -- CHANGED: exclude superseded POs (ones already revised) from
             // the allocation count. A revision copy carries the same
-            // SourcePurchaseRequestItemId as its parent — without this
+            // SourcePurchaseRequestItemId as its parent � without this
             // filter, a revised PO's qty gets double-counted against the MR
             // (once from the original, once from the revision).
             var allocatedByItem = await _db.InternationalPOItems
@@ -676,7 +676,7 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { success = true, data = result });
         }
-        // ── UPDATE ────────────────────────────────────────────
+        // -- UPDATE --------------------------------------------
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, CreatePurchaseRequestDto dto)
         {
@@ -730,10 +730,10 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             }
 
             await _db.SaveChangesAsync();
-            return Ok(new { message = "Request Updated ✅" });
+            return Ok(new { message = "Request Updated ?" });
         }
 
-        // ── DELETE ────────────────────────────────────────────
+        // -- DELETE --------------------------------------------
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -753,10 +753,10 @@ namespace Procurement.Api.Controllers.PurchaseRequests
             pr.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Deleted ✅" });
+            return Ok(new { message = "Deleted ?" });
         }
 
-        // ── PENDING LIST ──────────────────────────────────────
+        // -- PENDING LIST --------------------------------------
         [HttpGet("pending")]
         public async Task<IActionResult> Pending()
         {

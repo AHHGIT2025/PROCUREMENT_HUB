@@ -130,6 +130,7 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseSwagger(); app.UseSwaggerUI();
 app.UseCors("Frontend"); app.UseAuthentication();
+
 app.UseStaticFiles();
 app.UseAuthorization(); app.MapControllers();
 using (var scope = app.Services.CreateScope())

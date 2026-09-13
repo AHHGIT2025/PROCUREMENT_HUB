@@ -5,3 +5,5 @@
 **/App_Data/attachments/
 appsettings.Production.json
 frontend/dist/
+
+backend/Procurement.Api/appsettings.json

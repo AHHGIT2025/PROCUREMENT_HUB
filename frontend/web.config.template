@@ -1,23 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <system.webServer>
-    <rewrite>
-      <rules>
-        <rule name="React Routes" stopProcessing="true">
-          <match url=".*" />
-          <conditions logicalGrouping="MatchAll">
-            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-          </conditions>
-          <action type="Rewrite" url="/index.html" />
-        </rule>
-      </rules>
-    </rewrite>
-  </system.webServer>
-</configuration>$templatePath = "C:\Source Code\procurement-full-app\procurement-full-app\frontend\web.config.template"
-
-$newTemplate = @'
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <system.webServer>
     <rewrite>
@@ -42,7 +23,3 @@ $newTemplate = @'
     </rewrite>
   </system.webServer>
 </configuration>
-'@
-
-Set-Content -Path $templatePath -Value $newTemplate -NoNewline -Encoding UTF8
-Write-Host "Template updated." -ForegroundColor Green

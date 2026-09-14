@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop.Infrastructure;
 using Procurement.Api.Data;
 using Procurement.Api.DTOs.InternationalPO;
 using Procurement.Api.DTOs.PurchaseRequests;
@@ -368,31 +369,39 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                         .Count(),
 
                     // -- Latest rejection / return comment ----------------
-                    rejectionComment = _db.ApprovalActions
-                        .Where(aa =>
-                            _db.ApprovalInstances.Any(ai =>
-                                ai.Id == aa.ApprovalInstanceId &&
-                                ai.EntityId == x.Id)
-                            && (aa.ActionType == "REJECT" || aa.ActionType == "RETURN"))
-                        .OrderByDescending(aa => aa.CreatedAt)
-                        .Select(aa => new
-                        {
-                            comment = aa.Comments,
-                            action = aa.ActionType,
-                            stageName = _db.ApprovalInstances
-                                .Where(ai => ai.Id == aa.ApprovalInstanceId)
-                                .Join(_db.WorkflowSteps,
-                                      ai => ai.WorkflowStepId,
-                                      ws => ws.Id,
-                                      (ai, ws) => ws.Name)
-                                .FirstOrDefault(),
-                            byUser = _db.Users
-                                .Where(u => u.Id == aa.ActionBy)
-                                .Select(u => u.FullName)
-                                .FirstOrDefault(),
-                            at = aa.CreatedAt
-                        })
-                        .FirstOrDefault(),
+                    // FIXED (2026-09-13): only show this banner while the
+                    // request is CURRENTLY Rejected/Returned. Previously it
+                    // showed the historical REJECT/RETURN comment forever,
+                    // even after the request was later approved through to
+                    // completion (e.g. Print Report kept showing "Returned"
+                    // even once fully Approved by CEO/Procurement Manager).
+                    rejectionComment = (x.Status == RequestStatus.Rejected || x.Status == RequestStatus.Returned)
+                        ? _db.ApprovalActions
+                            .Where(aa =>
+                                _db.ApprovalInstances.Any(ai =>
+                                    ai.Id == aa.ApprovalInstanceId &&
+                                    ai.EntityId == x.Id)
+                                && (aa.ActionType == "REJECT" || aa.ActionType == "RETURN"))
+                            .OrderByDescending(aa => aa.CreatedAt)
+                            .Select(aa => new
+                            {
+                                comment = aa.Comments,
+                                action = aa.ActionType,
+                                stageName = _db.ApprovalInstances
+                                    .Where(ai => ai.Id == aa.ApprovalInstanceId)
+                                    .Join(_db.WorkflowSteps,
+                                          ai => ai.WorkflowStepId,
+                                          ws => ws.Id,
+                                          (ai, ws) => ws.Name)
+                                    .FirstOrDefault(),
+                                byUser = _db.Users
+                                    .Where(u => u.Id == aa.ActionBy)
+                                    .Select(u => u.FullName)
+                                    .FirstOrDefault(),
+                                at = aa.CreatedAt
+                            })
+                            .FirstOrDefault()
+                        : null,
 
                     // -- Items (? now includes store verification outcome) --
                     items = _db.PurchaseRequestItems

@@ -1,7 +1,115 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "../../api/client";
 import { useNavigate } from "react-router-dom";
+
+// ── Reusable searchable dropdown ─────────────────────────────────────────
+// A lightweight, dependency-free searchable <select> replacement: click to
+// open, type to filter, click an option (or outside) to close. Used for
+// Company / Main Group / Sub Group / Unit below since some of these lists
+// can get long and a plain <select> is slow to scan.
+function SearchableSelect({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder = "Select...",
+  disabled = false,
+  required = false,
+}: {
+  label: string;
+  options: { id: string; name: string }[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.id === value);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter((o) =>
+    o.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div ref={boxRef} className="relative">
+      <label className="block text-sm mb-1">{label}</label>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full border rounded px-3 py-2 text-left bg-white flex items-center justify-between ${
+          disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""
+        }`}
+      >
+        <span className={selected ? "" : "text-gray-400"}>
+          {selected ? selected.name : placeholder}
+        </span>
+        <span className="text-gray-400 text-xs ml-2">▾</span>
+      </button>
+
+      {/* Hidden input to keep native form "required" validation working */}
+      {required && (
+        <input
+          tabIndex={-1}
+          value={value}
+          required
+          onChange={() => {}}
+          className="absolute opacity-0 pointer-events-none w-0 h-0"
+        />
+      )}
+
+      {open && !disabled && (
+        <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow-lg max-h-64 overflow-hidden flex flex-col">
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            className="w-full border-b px-3 py-2 text-sm focus:outline-none"
+          />
+          <div className="overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-400">No matches</div>
+            ) : (
+              filtered.map((o) => (
+                <div
+                  key={o.id}
+                  onClick={() => {
+                    onChange(o.id);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 ${
+                    o.id === value ? "bg-blue-50 font-medium" : ""
+                  }`}
+                >
+                  {o.name}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MaterialCreate() {
 
@@ -29,8 +137,14 @@ export default function MaterialCreate() {
   // ✅ Load initial dropdowns
   useEffect(() => {
 
+    // Only manual-entry companies belong here — Oracle-integrated companies
+    // get their item master from the Bright ERP sync, not this form.
+    // Filtered by the AllowManualItemCreation flag (not a hardcoded company
+    // list, and not IsOracleIntegrated — several manual-entry companies are
+    // still flagged IsOracleIntegrated=1), so any future manual-entry
+    // company shows up automatically once an admin sets the flag.
     api.get("/companies")
-      .then(r => setCompanies(r.data));
+      .then(r => setCompanies((r.data || []).filter((c: any) => c.allowManualItemCreation)));
 
    
 api.get("/materialgroups")
@@ -177,118 +291,43 @@ await api.post("/materials", {
 
         </div>
 
-        {/* Company */}
-        <div>
+        {/* Company — searchable, non-Oracle companies only */}
+        <SearchableSelect
+          label="Company"
+          options={companies.map((c) => ({ id: c.id, name: c.name }))}
+          value={form.companyId}
+          onChange={(id) => setForm((f) => ({ ...f, companyId: id }))}
+          placeholder="Select Company"
+          required
+        />
 
-          <label className="block text-sm mb-1">
-            Company
-          </label>
+        {/* Main Group — searchable */}
+        <SearchableSelect
+          label="Main Group"
+          options={groups.map((g) => ({ id: g.id, name: g.name }))}
+          value={form.groupId}
+          onChange={(id) => setForm((f) => ({ ...f, groupId: id, subGroupId: "" }))}
+          placeholder="Select Main Group"
+        />
 
-          <select
-            name="companyId"
-            value={form.companyId}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          >
+        {/* Sub Group — searchable, depends on Main Group */}
+        <SearchableSelect
+          label="Sub Group"
+          options={subGroups.map((s) => ({ id: s.id, name: s.name }))}
+          value={form.subGroupId}
+          onChange={(id) => setForm((f) => ({ ...f, subGroupId: id }))}
+          placeholder={form.groupId ? "Select Sub Group" : "Select Main Group first"}
+          disabled={!form.groupId}
+        />
 
-            <option value="">
-              Select Company
-            </option>
-
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-
-          </select>
-
-        </div>
-
-        {/* Main Group */}
-        <div>
-
-          <label className="block text-sm mb-1">
-            Main Group
-          </label>
-
-          <select
-            name="groupId"
-            value={form.groupId}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          >
-
-            <option value="">
-              Select Main Group
-            </option>
-
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-
-          </select>
-
-        </div>
-
-        {/* Sub Group */}
-        <div>
-
-          <label className="block text-sm mb-1">
-            Sub Group
-          </label>
-
-          <select
-            name="subGroupId"
-            value={form.subGroupId}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          >
-
-            <option value="">
-              Select Sub Group
-            </option>
-
-            {subGroups.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-
-          </select>
-
-        </div>
-
-        {/* Default Unit */}
-        <div>
-
-          <label className="block text-sm mb-1">
-            Unit
-          </label>
-
-          <select
-            name="unitId"
-            value={form.unitId}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          >
-
-            <option value="">
-              Select Unit
-            </option>
-
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-
-          </select>
-
-        </div>
+        {/* Default Unit — searchable */}
+        <SearchableSelect
+          label="Unit"
+          options={units.map((u) => ({ id: u.id, name: u.name }))}
+          value={form.unitId}
+          onChange={(id) => setForm((f) => ({ ...f, unitId: id }))}
+          placeholder="Select Unit"
+        />
 
         {/* Description */}
         <div className="md:col-span-2">

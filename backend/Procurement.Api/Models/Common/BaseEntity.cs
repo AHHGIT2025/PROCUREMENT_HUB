@@ -70,6 +70,7 @@ public class Company : BaseEntity
     public bool IsOracleIntegrated { get; set; }
     public string Currency { get; set; } = "QAR";
     public string? LogoUrl { get; set; }   // ✅ NEW — set via POST /api/companies/{id}/logo
+    public bool AllowManualItemCreation { get; set; }   // ✅ NEW — controls which companies show in the manual Item Master create form (MaterialCreate.tsx)
 }
 public class Department : BaseEntity { public Guid CompanyId { get; set; } public string Code { get; set; } = ""; public string Name { get; set; } = ""; }
 public class BusinessVertical : BaseEntity { public Guid HoldingId { get; set; } public string Code { get; set; } = ""; public string Name { get; set; } = ""; }

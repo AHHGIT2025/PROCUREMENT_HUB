@@ -896,7 +896,7 @@ async function loadData() {
               <div>
                 <h2 className="text-lg font-bold text-emerald-700">✅ Request Fully Approved</h2>
                 <p className="text-xs text-emerald-600 mt-0.5">
-                  {assignRequestNumber} — assign it to a Procurement Officer now?
+                  {assignRequestNumber} — assign it to a team member now?
                 </p>
               </div>
               <button onClick={() => setAssignModal(false)}

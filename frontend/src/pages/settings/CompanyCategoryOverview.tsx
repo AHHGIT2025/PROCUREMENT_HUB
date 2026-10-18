@@ -3,7 +3,7 @@
 // Flow: Select company → see category breakdown → click a category →
 //       see items → bulk-move all, or override individual items.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Building2, ChevronDown, ChevronRight, Loader2, ArrowRight,
   CheckCircle2, AlertTriangle, X, Search, Boxes
@@ -35,6 +35,19 @@ interface Breakdown {
   categoryCode: string;
   categoryName: string;
   itemCount: number;
+}
+interface FinderCompany { id: string; code: string; name: string; }
+interface FinderItem {
+  id: string;
+  code: string;
+  name: string;
+  groupName: string | null;
+  categoryId: string | null;
+  categoryCode: string;
+  categoryName: string;
+  sourceType: string | null;
+  isManualOverride: boolean;
+  companies: FinderCompany[];
 }
 interface CompanyItem {
   id: string;
@@ -71,6 +84,14 @@ export default function CompanyCategoryOverview() {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [selectedSaving, setSelectedSaving] = useState(false);
 
+  // Item Finder (search any item across all companies)
+  const [finderQ, setFinderQ]             = useState('');
+  const [finderResults, setFinderResults] = useState<FinderItem[]>([]);
+  const [finderLoading, setFinderLoading] = useState(false);
+  const [finderSearched, setFinderSearched] = useState(false);
+
+  const lastSearchRef = useRef('');
+
   const [success, setSuccess]         = useState<string | null>(null);
   const [error, setError]             = useState<string | null>(null);
 
@@ -99,8 +120,9 @@ export default function CompanyCategoryOverview() {
   useEffect(() => { loadBreakdown(companyId); }, [companyId, loadBreakdown]);
 
   // ── Load items for expanded category ───────────────────────────────────
-  async function loadItems(categoryId: string | null) {
+  async function loadItems(categoryId: string | null, search: string = itemSearch) {
     setLoadingItems(true);
+    lastSearchRef.current = search;
     try {
       const r = await api.get('/item-categories/company-items', {
         params: {
@@ -108,6 +130,7 @@ export default function CompanyCategoryOverview() {
           categoryId: categoryId ?? undefined,
           fromDate: fromDate || undefined,
           toDate: toDate || undefined,
+          search: search.trim() || undefined,
         }
       });
       setItems(r.data?.data ?? r.data ?? []);
@@ -127,7 +150,7 @@ export default function CompanyCategoryOverview() {
     setSelectedTarget('');
     setGroupFilter('');
     setItemSearch('');
-    loadItems(row.categoryId);
+    loadItems(row.categoryId, '');
   }
 
   // ── Bulk move all items in this category ───────────────────────────────
@@ -232,6 +255,42 @@ export default function CompanyCategoryOverview() {
     else { setError(msg); setSuccess(null); setTimeout(() => setError(null), 5000); }
   }
 
+  // Debounced server-side search inside the expanded category
+  useEffect(() => {
+    if (!expanded || itemSearch === lastSearchRef.current) return;
+    const timer = setTimeout(() => {
+      loadItems(expanded === 'null' ? null : expanded, itemSearch);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemSearch]);
+
+  // Debounced Item Finder (all companies)
+  useEffect(() => {
+    const term = finderQ.trim();
+    if (term.length < 2) {
+      setFinderResults([]);
+      setFinderSearched(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setFinderLoading(true);
+      try {
+        const r = await api.get('/item-categories/item-lookup', { params: { q: term } });
+        if (!cancelled) {
+          setFinderResults(r.data?.data ?? r.data ?? []);
+          setFinderSearched(true);
+        }
+      } catch {
+        if (!cancelled) flash('error', 'Item search failed.');
+      } finally {
+        if (!cancelled) setFinderLoading(false);
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [finderQ]);
+
   const distinctGroups = Array.from(new Set(items.map(i => i.groupName).filter(Boolean))) as string[];
 
   const filteredItems = items.filter(i =>
@@ -265,6 +324,90 @@ export default function CompanyCategoryOverview() {
           <AlertTriangle size={15} className="shrink-0" /> {error}
         </div>
       )}
+
+      {/* Item Finder — search any item across all companies */}
+      <div className="bg-white border rounded-xl px-4 py-3 space-y-3">
+        <div className="flex items-center gap-3">
+          <Search size={16} className="text-gray-400 shrink-0" />
+          <input
+            value={finderQ}
+            onChange={e => setFinderQ(e.target.value)}
+            placeholder="Item Finder — type item code or name to see its category and which companies have it…"
+            className="flex-1 border rounded-lg px-3 py-2 text-sm"
+          />
+          {finderLoading && <Loader2 size={15} className="animate-spin text-gray-400 shrink-0" />}
+          {finderQ && (
+            <button
+              onClick={() => setFinderQ('')}
+              className="text-gray-400 hover:text-gray-600 shrink-0"
+              title="Clear"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+
+        {finderQ.trim().length > 0 && finderQ.trim().length < 2 && (
+          <p className="text-xs text-gray-400">Type at least 2 characters.</p>
+        )}
+
+        {finderSearched && !finderLoading && finderResults.length === 0 && (
+          <p className="text-xs text-gray-400">No items found.</p>
+        )}
+
+        {finderResults.length > 0 && (
+          <div className="border rounded-lg divide-y divide-gray-100 max-h-96 overflow-y-auto">
+            {finderResults.map(it => {
+              const meta = getMeta(it.categoryCode);
+              return (
+                <div key={it.id} className="px-4 py-2.5 flex items-start gap-3 hover:bg-gray-50">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-gray-800">{it.name}</p>
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                        style={{ color: meta.color, background: meta.bg, border: `1px solid ${meta.border}` }}
+                      >
+                        {meta.icon} {it.categoryName}
+                      </span>
+                      {it.isManualOverride && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                          🔒 Manual
+                        </span>
+                      )}
+                      {it.sourceType && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-mono shrink-0">
+                          {it.sourceType}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono mt-0.5">
+                      {it.code}{it.groupName ? ` · ${it.groupName}` : ''}
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                      {it.companies.length === 0 ? (
+                        <span className="text-[11px] text-gray-400">Not linked to any company</span>
+                      ) : it.companies.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => setCompanyId(c.id)}
+                          title={`Open ${c.name} category breakdown`}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                        >
+                          {c.code} — {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {finderResults.length >= 50 && (
+          <p className="text-[11px] text-gray-400">Showing first 50 matches. Type more to narrow down.</p>
+        )}
+      </div>
 
       {/* Company selector */}
       <div className="bg-white border rounded-xl px-4 py-3 flex items-center gap-3">
@@ -411,7 +554,7 @@ export default function CompanyCategoryOverview() {
                           onClick={() => {
                             setItemSearch(''); setGroupFilter('');
                             setFromDate(''); setToDate('');
-                            loadItems(row.categoryId);
+                            loadItems(row.categoryId, '');
                           }}
                           className="text-xs text-red-600 hover:text-red-700"
                         >
@@ -527,7 +670,7 @@ export default function CompanyCategoryOverview() {
                         </div>
                       </div>
                     )}
-                    {items.length > 500 && (
+                    {items.length >= 500 && (
                       <div className="px-5 py-2 bg-gray-50 border-t text-xs text-gray-400 text-center">
                         Showing first 500 items. Use search to narrow down.
                       </div>

@@ -784,6 +784,71 @@ namespace Procurement.Api.Controllers.PurchaseRequests
 
             return Ok(new { message = "Deleted ?" });
         }
+        // -- COMPANY FOLLOW-UP (read-only, all statuses, all officers) ---
+        // Used by the "Company Follow-Up" role: shows every MR for the
+        // companies this user is linked to via UserCompanies, regardless of
+        // status or which procurement officer it's currently assigned/
+        // transferred to. Lets a follow-up person track LPO delivery across
+        // the whole company without needing edit/approve access to anything.
+        [HttpGet("company-followup")]
+        public async Task<IActionResult> CompanyFollowUp()
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var companyIds = await _db.UserCompanies
+                .Where(uc => uc.UserId == currentUserId && uc.IsActive)
+                .Select(uc => uc.CompanyId)
+                .ToListAsync();
+
+            if (!companyIds.Any())
+                return Ok(new { success = true, data = new List<object>() });
+
+            var data = await _db.PurchaseRequests
+                .Where(x => companyIds.Contains(x.CompanyId)
+                            && x.Status != RequestStatus.Draft
+                            && x.Status != RequestStatus.Deleted)
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new
+                {
+                    id = x.Id,
+                    requestNumber = x.RequestNumber,
+                    status = x.Status.ToString(),
+                    totalAmount = x.TotalAmount,
+                    createdAt = x.CreatedAt,
+
+                    companyName = _db.Companies
+                        .Where(c => c.Id == x.CompanyId)
+                        .Select(c => c.Name).FirstOrDefault(),
+
+                    departmentName = _db.Departments
+                        .Where(d => d.Id == x.DepartmentId)
+                        .Select(d => d.Name).FirstOrDefault(),
+
+                    requestedBy = _db.Users
+                        .Where(u => u.Id == x.RequestedById)
+                        .Select(u => u.FullName).FirstOrDefault(),
+
+                    // -- who currently holds the pending step (approver, or
+                    // the procurement officer it's assigned/transferred to)
+                    currentApproverName = _db.ApprovalInstances
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive && ai.Status == "PENDING")
+                        .OrderByDescending(ai => ai.StepOrder)
+                        .Select(ai => _db.Users.Where(u => u.Id == ai.AssignedToId)
+                                                .Select(u => u.FullName).FirstOrDefault())
+                        .FirstOrDefault(),
+
+                    currentStageName = _db.ApprovalInstances
+                        .Where(ai => ai.EntityId == x.Id && ai.IsActive && ai.Status == "PENDING")
+                        .OrderByDescending(ai => ai.StepOrder)
+                        .Join(_db.WorkflowSteps, ai => ai.WorkflowStepId, ws => ws.Id, (ai, ws) => ws.Name)
+                        .FirstOrDefault(),
+
+                    daysOpen = EF.Functions.DateDiffDay(x.CreatedAt, DateTime.UtcNow)
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, data });
+        }
 
         // -- PENDING LIST --------------------------------------
         [HttpGet("pending")]

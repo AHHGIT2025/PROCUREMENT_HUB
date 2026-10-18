@@ -35,6 +35,8 @@ import RfqDetail from './pages/rfq/RfqDetail';
 import InternationalPODetail from './pages/internationalPO/InternationalPODetail';
 import InternationalPOPrint from './pages/internationalPO/InternationalPOPrint';
 import ChangePassword  from './pages/users/ChangePassword';
+
+import CompanyFollowUp from './pages/procurement/CompanyFollowUp';
  
 // ...
    
@@ -72,12 +74,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/my-requests"      element={<MyRequests />} />
           <Route path="/approvals"        element={<ApproverInbox />} />
           <Route path="/approval-history" element={<ApprovalHistory />} />
+          <Route path="/company-followup" element={<CompanyFollowUp />} />
           <Route path="/procurement" element={<ProcurementQueue />} />
          <Route path="/procurement/indent-transfer" element={<IndentTransfer />} />
          <Route path="/international-po" element={<InternationalPOList />} />
 <Route path="/international-po/create" element={<InternationalPOCreate />} />
 <Route path="/international-po/:id" element={<InternationalPODetail />} />
  
+ 
+
+
 <Route path="/suppliers" element={<SuppliersManager />} />
 <Route path="/rfq" element={<RfqList />} />
 <Route path="/rfq/create" element={<RfqCreate />} />
@@ -90,6 +96,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/store-verification" element={<StoreKeeperWindow />} />
           <Route path="/workflows/:id/edit" element={<WorkflowBuilder />} />
           <Route path="/organization"     element={<ListPage type="organization" />} />
+    
           <Route path="/settings/roles" element={<RolesManager />} />
           <Route path="/departments" element={<DepartmentsManager />} />
           <Route path="/users"            element={<ListPage type="users" />} />
@@ -100,7 +107,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/oracle-monitor" element={<OracleMonitor />} />
           <Route path="/settings/item-category-flow" element={<ItemCategoryFlowManager />} />
           <Route path="/settings/company-categories" element={<CompanyCategoryOverview />} />
-          
+            
           <Route path="/audit-logs"       element={<ListPage type="audit" />} />
           <Route path="/notifications"    element={<ListPage type="notifications" />} />
           <Route path="/settings"         element={<ListPage type="settings" />} />

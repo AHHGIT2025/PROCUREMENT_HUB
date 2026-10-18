@@ -57,6 +57,7 @@ public class AppDbContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
 
     public DbSet<MenuPermission> MenuPermissions { get; set; }
+    public DbSet<MenuItem> MenuItems { get; set; }
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();

@@ -1,7 +1,19 @@
 // FILE: src/pages/approvals/ApprovalHistory.tsx
 import { useEffect, useState } from "react";
 import api from "../../api/client";
-import { FileText, Search, ChevronDown, ChevronUp, Package, Printer } from "lucide-react";
+import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip } from "lucide-react";
+
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
+function getFileUrl(path?: string) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${API_ORIGIN}${path}`;
+}
+const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+function isImage(fileName?: string) {
+  if (!fileName) return false;
+  return IMAGE_EXTS.includes(fileName.toLowerCase().slice(fileName.lastIndexOf(".")));
+}
 
 const ACTION_LABELS: Record<string, { text: string; className: string }> = {
   APPROVE:        { text: "Approved",        className: "bg-emerald-100 text-emerald-700" },
@@ -232,14 +244,29 @@ export default function ApprovalHistory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {history.map((h: any) => (
+              {history.map((h: any) => {
+                const hasAttachments = Array.isArray(h.attachments) && h.attachments.length > 0;
+                const isExpandable = h.verifiedItems || hasAttachments;
+                return (
                 <>
                   <tr
                     key={h.id}
-                    className={`hover:bg-gray-50 ${h.verifiedItems ? "cursor-pointer" : ""}`}
-                    onClick={() => h.verifiedItems && setExpandedId(expandedId === h.id ? null : h.id)}
+                    className={`hover:bg-gray-50 ${isExpandable ? "cursor-pointer" : ""}`}
+                    onClick={() => isExpandable && setExpandedId(expandedId === h.id ? null : h.id)}
                   >
-                    <td className="px-4 py-3 font-medium text-gray-700">{h.requestNumber}</td>
+                    <td className="px-4 py-3 font-medium text-gray-700">
+                      {h.requestNumber}
+                      {/* ── shows a small paperclip badge when the request's
+                          items have attachment(s), regardless of what action
+                          this row represents — a quick visual cue before
+                          expanding. ── */}
+                      {hasAttachments && (
+                        <span title={`${h.attachments.length} attachment(s)`}
+                          className="inline-flex items-center gap-0.5 ml-2 text-[10px] font-medium text-indigo-600 bg-indigo-50 rounded-full px-1.5 py-0.5">
+                          <Paperclip size={10} /> {h.attachments.length}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{h.companyName}</td>
                     <td className="px-4 py-3">{actionBadge(h.actionType)}</td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{h.comments || "-"}</td>
@@ -262,7 +289,7 @@ export default function ApprovalHistory() {
                           className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-2 py-1.5 rounded-lg transition">
                           <Printer size={12} /> Print
                         </button>
-                        {h.verifiedItems && (
+                        {isExpandable && (
                           <button onClick={() => setExpandedId(expandedId === h.id ? null : h.id)}
                             className="p-1.5 text-gray-400 hover:text-gray-700">
                             {expandedId === h.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -272,44 +299,76 @@ export default function ApprovalHistory() {
                     </td>
                   </tr>
 
-                  {expandedId === h.id && h.verifiedItems && (
+                  {expandedId === h.id && isExpandable && (
                     <tr key={`${h.id}-detail`}>
-                      <td colSpan={7} className="bg-gray-50 px-4 py-4">
-                        <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
-                          <Package size={14} /> Store Verification Details
-                        </div>
-                        <table className="w-full text-xs bg-white rounded-lg border border-gray-200 overflow-hidden">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th className="text-left px-3 py-2">Material</th>
-                              <th className="text-right px-3 py-2">Requested</th>
-                              <th className="text-right px-3 py-2">Available</th>
-                              <th className="text-right px-3 py-2">To Purchase</th>
-                              <th className="text-left px-3 py-2">Status</th>
-                              <th className="text-left px-3 py-2">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {h.verifiedItems.map((it: any, idx: number) => (
-                              <tr key={idx}>
-                                <td className="px-3 py-2">
-                                  <span className="font-medium">{it.materialCode}</span>
-                                  <span className="text-gray-400"> — {it.materialName}</span>
-                                </td>
-                                <td className="text-right px-3 py-2">{it.requestedQty}</td>
-                                <td className="text-right px-3 py-2">{it.availableQty}</td>
-                                <td className="text-right px-3 py-2">{it.purchaseQty}</td>
-                                <td className="px-3 py-2">{it.storeStatus}</td>
-                                <td className="px-3 py-2 text-gray-500">{it.storeRemarks || "-"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <td colSpan={7} className="bg-gray-50 px-4 py-4 space-y-4">
+                        {h.verifiedItems && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
+                              <Package size={14} /> Store Verification Details
+                            </div>
+                            <table className="w-full text-xs bg-white rounded-lg border border-gray-200 overflow-hidden">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="text-left px-3 py-2">Material</th>
+                                  <th className="text-right px-3 py-2">Requested</th>
+                                  <th className="text-right px-3 py-2">Available</th>
+                                  <th className="text-right px-3 py-2">To Purchase</th>
+                                  <th className="text-left px-3 py-2">Status</th>
+                                  <th className="text-left px-3 py-2">Remarks</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {h.verifiedItems.map((it: any, idx: number) => (
+                                  <tr key={idx}>
+                                    <td className="px-3 py-2">
+                                      <span className="font-medium">{it.materialCode}</span>
+                                      <span className="text-gray-400"> — {it.materialName}</span>
+                                    </td>
+                                    <td className="text-right px-3 py-2">{it.requestedQty}</td>
+                                    <td className="text-right px-3 py-2">{it.availableQty}</td>
+                                    <td className="text-right px-3 py-2">{it.purchaseQty}</td>
+                                    <td className="px-3 py-2">{it.storeStatus}</td>
+                                    <td className="px-3 py-2 text-gray-500">{it.storeRemarks || "-"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* ── Attachments — shown whenever the request's
+                            items have one, independent of action type. ── */}
+                        {hasAttachments && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
+                              <Paperclip size={14} /> Attachments
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              {h.attachments.map((att: any, idx: number) => (
+                                <a key={idx} href={getFileUrl(att.attachmentUrl)} target="_blank" rel="noreferrer"
+                                  className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2.5 py-2 hover:border-indigo-300 hover:bg-indigo-50/40 transition">
+                                  {isImage(att.attachmentFileName) ? (
+                                    <img src={getFileUrl(att.attachmentUrl)} alt={att.attachmentFileName}
+                                      className="w-8 h-8 object-cover rounded border border-gray-200 shrink-0" />
+                                  ) : (
+                                    <Paperclip size={14} className="text-gray-400 shrink-0" />
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-medium text-gray-700 truncate">{att.materialCode} — {att.materialName}</p>
+                                    <p className="text-[10px] text-gray-400 truncate">{att.attachmentFileName || "File"}</p>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
                 </>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

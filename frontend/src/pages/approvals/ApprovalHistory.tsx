@@ -1,7 +1,7 @@
 // FILE: src/pages/approvals/ApprovalHistory.tsx
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import api from "../../api/client";
-import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip } from "lucide-react";
+import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip, RotateCcw } from "lucide-react";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
 function getFileUrl(path?: string) {
@@ -13,6 +13,15 @@ const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 function isImage(fileName?: string) {
   if (!fileName) return false;
   return IMAGE_EXTS.includes(fileName.toLowerCase().slice(fileName.lastIndexOf(".")));
+}
+
+// Local-time yyyy-mm-dd (toISOString() gives the UTC date, which is the wrong
+// day for Qatar (UTC+3) between 00:00 and 03:00).
+function toLocalIso(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 const ACTION_LABELS: Record<string, { text: string; className: string }> = {
@@ -37,11 +46,12 @@ export default function ApprovalHistory() {
   const [history, setHistory]     = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [search, setSearch]       = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // NEW — "Current Status" modal, same pattern as the Requester's status
+  // "Current Status" modal, same pattern as the Requester's status
   // tracker (My Requests) and Approver's own status tracker.
   const [statusModal, setStatusModal]     = useState(false);
   const [statusData, setStatusData]       = useState<any>(null);
@@ -52,51 +62,107 @@ export default function ApprovalHistory() {
   const [fromDate, setFromDate]     = useState("");
   const [toDate, setToDate]         = useState("");
 
+  // Bumped whenever a reload is needed but none of the effect's other
+  // dependencies changed (e.g. clicking "All Time" while already on All Time,
+  // or clearing the search box).
+  const [reloadKey, setReloadKey] = useState(0);
+  // Only the latest request is allowed to update the screen.
+  const requestSeq = useRef(0);
+
   function applyPreset(preset: string) {
     setDatePreset(preset);
     const today = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    let from = "";
+    let to = "";
 
-    if (preset === "all") {
-      setFromDate(""); setToDate("");
-    } else if (preset === "today") {
-      setFromDate(iso(today)); setToDate(iso(today));
+    if (preset === "today") {
+      from = toLocalIso(today);
+      to = toLocalIso(today);
     } else if (preset === "7d") {
-      const past = new Date(today); past.setDate(past.getDate() - 7);
-      setFromDate(iso(past)); setToDate(iso(today));
+      const past = new Date(today);
+      past.setDate(past.getDate() - 7);
+      from = toLocalIso(past);
+      to = toLocalIso(today);
     } else if (preset === "month") {
-      const first = new Date(today.getFullYear(), today.getMonth(), 1);
-      setFromDate(iso(first)); setToDate(iso(today));
+      from = toLocalIso(new Date(today.getFullYear(), today.getMonth(), 1));
+      to = toLocalIso(today);
     } else if (preset === "3m") {
-      const past = new Date(today); past.setMonth(past.getMonth() - 3);
-      setFromDate(iso(past)); setToDate(iso(today));
+      // clamp the day so e.g. 31 May - 3 months = 28/29 Feb, not 3 March
+      const past = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      const lastDay = new Date(past.getFullYear(), past.getMonth() + 1, 0).getDate();
+      past.setDate(Math.min(today.getDate(), lastDay));
+      from = toLocalIso(past);
+      to = toLocalIso(today);
     }
-    // "custom" — leave fromDate/toDate as whatever the user typed
+    // "all" => from/to stay empty
+
+    // If the dates are unchanged the effect would not fire, so force a reload.
+    if (from === fromDate && to === toDate) {
+      setReloadKey(k => k + 1);
+    } else {
+      setFromDate(from);
+      setToDate(to);
+    }
+  }
+
+  function resetAllFilters() {
+    setCompanyId("");
+    setSearch("");
+    setDatePreset("all");
+    setFromDate("");
+    setToDate("");
+    setReloadKey(k => k + 1);
   }
 
   useEffect(() => {
-    api.get("/companies").then(r => setCompanies(r.data?.data ?? r.data ?? []));
+    api.get("/companies")
+      .then(r => setCompanies(r.data?.data ?? r.data ?? []))
+      .catch(err => console.error(err));
   }, []);
 
   useEffect(() => {
     loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId, fromDate, toDate]);
+  }, [companyId, fromDate, toDate, reloadKey]);
 
   async function loadHistory() {
+    if (!user?.id) {
+      setHistory([]);
+      setLoading(false);
+      setLoadError("User session not found. Please log out and log in again.");
+      return;
+    }
+
+    const seq = ++requestSeq.current;
     setLoading(true);
+    setLoadError("");
     try {
+      // If From is later than To, swap them for the request.
+      let from = fromDate;
+      let to = toDate;
+      if (from && to && from > to) {
+        [from, to] = [to, from];
+      }
+
       const params = new URLSearchParams();
       if (companyId) params.set("companyId", companyId);
       if (search.trim()) params.set("search", search.trim());
-      if (fromDate) params.set("fromDate", fromDate);
-      if (toDate) params.set("toDate", toDate);
-      const r = await api.get(`/approval-actions/my-history/${user.id}?${params.toString()}`);
-      setHistory(r.data?.data ?? r.data ?? []);
-    } catch (err) {
+      if (from) params.set("fromDate", from);
+      if (to) params.set("toDate", to);
+
+      const qs = params.toString();
+      const r = await api.get(`/approval-actions/my-history/${user.id}${qs ? `?${qs}` : ""}`);
+      if (seq !== requestSeq.current) return; // a newer request superseded this one
+
+      const payload = r.data?.data ?? r.data ?? [];
+      setHistory(Array.isArray(payload) ? payload : []);
+    } catch (err: any) {
+      if (seq !== requestSeq.current) return;
       console.error(err);
+      setHistory([]);
+      setLoadError(err?.response?.data?.message || "Failed to load approval history.");
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   }
 
@@ -105,14 +171,22 @@ export default function ApprovalHistory() {
     loadHistory();
   }
 
-  // NEW — opens the print report for this request in a new tab, same as
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    // Clearing the box should immediately bring the full list back.
+    if (value.trim() === "" && search.trim() !== "") {
+      setReloadKey(k => k + 1);
+    }
+  }
+
+  // opens the print report for this request in a new tab, same as
   // the requester and approver pages do.
   function printRequest(requestId: string, e?: React.MouseEvent) {
     e?.stopPropagation();
     window.open(`/purchase-requests/${requestId}/print`, "_blank", "noopener,noreferrer");
   }
 
-  // NEW — fetches the request's live current status/workflow trail on
+  // fetches the request's live current status/workflow trail on
   // demand (same endpoint the Requester's and Approver's status trackers
   // already use), so this page shows where the request actually stands
   // right now, not just the one action this user took on it.
@@ -143,6 +217,8 @@ export default function ApprovalHistory() {
     }
   }
 
+  const filtersActive = !!(companyId || search.trim() || fromDate || toDate);
+
   return (
     <div className="p-6">
       <div className="flex items-center gap-2 mb-6">
@@ -171,7 +247,7 @@ export default function ApprovalHistory() {
           <input
             type="text"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
             placeholder="Search by request number..."
             className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
@@ -183,6 +259,16 @@ export default function ApprovalHistory() {
         >
           Search
         </button>
+
+        {filtersActive && (
+          <button
+            type="button"
+            onClick={resetAllFilters}
+            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-3 py-2 rounded-lg transition"
+          >
+            <RotateCcw size={14} /> Reset
+          </button>
+        )}
       </form>
 
       {/* Date filter */}
@@ -196,6 +282,7 @@ export default function ApprovalHistory() {
         ].map(p => (
           <button
             key={p.key}
+            type="button"
             onClick={() => applyPreset(p.key)}
             className={`text-xs font-medium px-3 py-1.5 rounded-full border transition ${
               datePreset === p.key
@@ -211,14 +298,14 @@ export default function ApprovalHistory() {
           <input
             type="date"
             value={fromDate}
-            onChange={e => { setFromDate(e.target.value); setDatePreset("custom"); }}
+            onChange={e => { setFromDate(e.target.value); setDatePreset(e.target.value || toDate ? "custom" : "all"); }}
             className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
           <span className="text-xs text-gray-400">to</span>
           <input
             type="date"
             value={toDate}
-            onChange={e => { setToDate(e.target.value); setDatePreset("custom"); }}
+            onChange={e => { setToDate(e.target.value); setDatePreset(e.target.value || fromDate ? "custom" : "all"); }}
             className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
         </div>
@@ -228,6 +315,8 @@ export default function ApprovalHistory() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
+        ) : loadError ? (
+          <div className="p-8 text-center text-red-500 text-sm">{loadError}</div>
         ) : history.length === 0 ? (
           <div className="p-8 text-center text-gray-400 text-sm">No approval actions found.</div>
         ) : (
@@ -246,20 +335,19 @@ export default function ApprovalHistory() {
             <tbody className="divide-y divide-gray-100">
               {history.map((h: any) => {
                 const hasAttachments = Array.isArray(h.attachments) && h.attachments.length > 0;
-                const isExpandable = h.verifiedItems || hasAttachments;
+                const hasVerified = Array.isArray(h.verifiedItems) && h.verifiedItems.length > 0;
+                const isExpandable = hasVerified || hasAttachments;
                 return (
-                <>
+                <Fragment key={h.id}>
                   <tr
-                    key={h.id}
                     className={`hover:bg-gray-50 ${isExpandable ? "cursor-pointer" : ""}`}
                     onClick={() => isExpandable && setExpandedId(expandedId === h.id ? null : h.id)}
                   >
                     <td className="px-4 py-3 font-medium text-gray-700">
                       {h.requestNumber}
-                      {/* ── shows a small paperclip badge when the request's
-                          items have attachment(s), regardless of what action
-                          this row represents — a quick visual cue before
-                          expanding. ── */}
+                      {/* small paperclip badge when the request's items have
+                          attachment(s), regardless of what action this row
+                          represents — a quick visual cue before expanding. */}
                       {hasAttachments && (
                         <span title={`${h.attachments.length} attachment(s)`}
                           className="inline-flex items-center gap-0.5 ml-2 text-[10px] font-medium text-indigo-600 bg-indigo-50 rounded-full px-1.5 py-0.5">
@@ -300,9 +388,9 @@ export default function ApprovalHistory() {
                   </tr>
 
                   {expandedId === h.id && isExpandable && (
-                    <tr key={`${h.id}-detail`}>
+                    <tr>
                       <td colSpan={7} className="bg-gray-50 px-4 py-4 space-y-4">
-                        {h.verifiedItems && (
+                        {hasVerified && (
                           <div>
                             <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
                               <Package size={14} /> Store Verification Details
@@ -337,8 +425,8 @@ export default function ApprovalHistory() {
                           </div>
                         )}
 
-                        {/* ── Attachments — shown whenever the request's
-                            items have one, independent of action type. ── */}
+                        {/* Attachments — shown whenever the request's
+                            items have one, independent of action type. */}
                         {hasAttachments && (
                           <div>
                             <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
@@ -366,7 +454,7 @@ export default function ApprovalHistory() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
                 );
               })}
             </tbody>
@@ -374,7 +462,7 @@ export default function ApprovalHistory() {
         )}
       </div>
 
-      {/* NEW — Current Status modal, same workflow-tracker pattern used
+      {/* Current Status modal, same workflow-tracker pattern used
           elsewhere in the app (My Requests, My Approvals). */}
       {statusModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

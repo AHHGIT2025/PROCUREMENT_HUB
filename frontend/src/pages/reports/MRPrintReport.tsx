@@ -26,6 +26,7 @@ interface ApprovalRow {
   approverName: string;
   stepName: string;
   completedAt: string | null;
+  comments?: string | null;
 }
 
 interface RequestDetail {
@@ -280,7 +281,7 @@ export default function MRPrintReport() {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", rowGap: "28px", columnGap: "16px" }}>
               {signedSteps.map(a => (
-                <div key={a.stepOrder}>
+                <div key={a.stepOrder} style={{ breakInside: "avoid" }}>
                   <div style={{ fontSize: "11px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.03em" }}>
                     {a.stepName}
                   </div>
@@ -291,6 +292,11 @@ export default function MRPrintReport() {
                   <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
                     {fmtDate(a.completedAt)}
                   </div>
+                    {a.comments && a.comments.trim() && (
+                      <div style={{ fontSize: "11px", color: "#334155", marginTop: "6px", fontStyle: "italic", lineHeight: 1.4, wordBreak: "break-word" }}>
+                        &ldquo;{a.comments.trim()}&rdquo;
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

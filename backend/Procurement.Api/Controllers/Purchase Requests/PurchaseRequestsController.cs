@@ -454,7 +454,12 @@ namespace Procurement.Api.Controllers.PurchaseRequests
                             stepName = _db.WorkflowSteps
                                               .Where(s => s.Id == ai.WorkflowStepId)
                                               .Select(s => s.Name).FirstOrDefault(),
-                            completedAt = ai.CompletedAt
+                            completedAt = ai.CompletedAt,
+                            comments = _db.ApprovalActions
+                                .Where(aa => aa.ApprovalInstanceId == ai.Id && aa.Comments != null && aa.Comments != "")
+                                .OrderByDescending(aa => aa.CreatedAt)
+                                .Select(aa => aa.Comments)
+                                .FirstOrDefault()
                         })
                         .ToList()
                 })

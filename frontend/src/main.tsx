@@ -38,6 +38,7 @@ import ChangePassword  from './pages/users/ChangePassword';
 
 import CompanyFollowUp from './pages/procurement/CompanyFollowUp';
  
+import ApprovalHistoryPrint from './pages/reports/ApprovalHistoryPrint';
 // ...
    
 function ProtectedLayout() {
@@ -61,6 +62,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             ProtectedLayout, same pattern as MRPrintReport, so no
             sidebar/header wraps the printable document. */}
         <Route path="/international-po/:id/print" element={<InternationalPOPrint />} />
+         <Route path="/purchase-requests/:id/approval-history/print" element={<ApprovalHistoryPrint />} />
 
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard"        element={<Dashboard />} />

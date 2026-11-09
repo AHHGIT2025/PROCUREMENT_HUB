@@ -1,7 +1,8 @@
-// // FILE: src/pages/approvals/ApprovalHistory.tsx
-// import { useEffect, useState } from "react";
+
+// FILE: src/pages/approvals/ApprovalHistory.tsx
+// import { Fragment, useEffect, useRef, useState } from "react";
 // import api from "../../api/client";
-// import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip } from "lucide-react";
+// import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip, RotateCcw } from "lucide-react";
 
 // const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
 // function getFileUrl(path?: string) {
@@ -13,6 +14,20 @@
 // function isImage(fileName?: string) {
 //   if (!fileName) return false;
 //   return IMAGE_EXTS.includes(fileName.toLowerCase().slice(fileName.lastIndexOf(".")));
+// }
+
+// // Local-date formatter (toISOString() is UTC and gives the wrong day in Qatar
+// // between 00:00 and 03:00).
+// function localISO(d: Date) {
+//   const y = d.getFullYear();
+//   const m = String(d.getMonth() + 1).padStart(2, "0");
+//   const day = String(d.getDate()).padStart(2, "0");
+//   return `${y}-${m}-${day}`;
+// }
+
+// function safeUser(): any {
+//   try { return JSON.parse(localStorage.getItem("user") || "{}"); }
+//   catch { return {}; }
 // }
 
 // const ACTION_LABELS: Record<string, { text: string; className: string }> = {
@@ -32,17 +47,18 @@
 // }
 
 // export default function ApprovalHistory() {
-//   const user = JSON.parse(localStorage.getItem("user") || "{}");
+//   const user = safeUser();
 
 //   const [history, setHistory]     = useState<any[]>([]);
 //   const [companies, setCompanies] = useState<any[]>([]);
 //   const [loading, setLoading]     = useState(true);
+//   const [error, setError]         = useState("");
 //   const [companyId, setCompanyId] = useState("");
-//   const [search, setSearch]       = useState("");
+//   const [search, setSearch]       = useState("");          // text in the box
+//   const [appliedSearch, setAppliedSearch] = useState("");  // what is actually sent
+//   const [reloadKey, setReloadKey] = useState(0);
 //   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-//   // NEW — "Current Status" modal, same pattern as the Requester's status
-//   // tracker (My Requests) and Approver's own status tracker.
 //   const [statusModal, setStatusModal]     = useState(false);
 //   const [statusData, setStatusData]       = useState<any>(null);
 //   const [statusLoading, setStatusLoading] = useState(false);
@@ -52,70 +68,97 @@
 //   const [fromDate, setFromDate]     = useState("");
 //   const [toDate, setToDate]         = useState("");
 
+//   // Guards against out-of-order responses: only the latest request may set state.
+//   const requestSeq = useRef(0);
+
+//   const dateRangeInvalid = !!fromDate && !!toDate && fromDate > toDate;
+
 //   function applyPreset(preset: string) {
 //     setDatePreset(preset);
 //     const today = new Date();
-//     const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 //     if (preset === "all") {
 //       setFromDate(""); setToDate("");
 //     } else if (preset === "today") {
-//       setFromDate(iso(today)); setToDate(iso(today));
+//       setFromDate(localISO(today)); setToDate(localISO(today));
 //     } else if (preset === "7d") {
 //       const past = new Date(today); past.setDate(past.getDate() - 7);
-//       setFromDate(iso(past)); setToDate(iso(today));
+//       setFromDate(localISO(past)); setToDate(localISO(today));
 //     } else if (preset === "month") {
 //       const first = new Date(today.getFullYear(), today.getMonth(), 1);
-//       setFromDate(iso(first)); setToDate(iso(today));
+//       setFromDate(localISO(first)); setToDate(localISO(today));
 //     } else if (preset === "3m") {
 //       const past = new Date(today); past.setMonth(past.getMonth() - 3);
-//       setFromDate(iso(past)); setToDate(iso(today));
+//       setFromDate(localISO(past)); setToDate(localISO(today));
 //     }
-//     // "custom" — leave fromDate/toDate as whatever the user typed
+//   }
+
+//   function resetAll() {
+//     setCompanyId("");
+//     setSearch("");
+//     setAppliedSearch("");
+//     applyPreset("all");
+//     setReloadKey(k => k + 1);
 //   }
 
 //   useEffect(() => {
-//     api.get("/companies").then(r => setCompanies(r.data?.data ?? r.data ?? []));
+//     api.get("/companies")
+//       .then(r => setCompanies(r.data?.data ?? r.data ?? []))
+//       .catch(err => console.error(err));
 //   }, []);
 
 //   useEffect(() => {
+//     if (dateRangeInvalid) return; // don't call the API with an impossible range
 //     loadHistory();
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [companyId, fromDate, toDate]);
+//   }, [companyId, appliedSearch, fromDate, toDate, reloadKey]);
 
 //   async function loadHistory() {
+//     if (!user?.id) {
+//       setHistory([]);
+//       setLoading(false);
+//       setError("Your session has no user id. Please log out and log in again.");
+//       return;
+//     }
+
+//     const seq = ++requestSeq.current;
 //     setLoading(true);
+//     setError("");
 //     try {
 //       const params = new URLSearchParams();
 //       if (companyId) params.set("companyId", companyId);
-//       if (search.trim()) params.set("search", search.trim());
+//       if (appliedSearch) params.set("search", appliedSearch);
 //       if (fromDate) params.set("fromDate", fromDate);
 //       if (toDate) params.set("toDate", toDate);
-//       const r = await api.get(`/approval-actions/my-history/${user.id}?${params.toString()}`);
-//       setHistory(r.data?.data ?? r.data ?? []);
-//     } catch (err) {
+//       const qs = params.toString();
+//       const r = await api.get(`/approval-actions/my-history/${user.id}${qs ? `?${qs}` : ""}`);
+//       if (seq !== requestSeq.current) return; // a newer request superseded this one
+//       const rows = r.data?.data ?? r.data ?? [];
+//       setHistory(Array.isArray(rows) ? rows : []);
+//     } catch (err: any) {
+//       if (seq !== requestSeq.current) return;
 //       console.error(err);
+//       setHistory([]);
+//       setError(
+//         err?.response?.data?.message ||
+//         `Could not load approval history${err?.response?.status ? ` (HTTP ${err.response.status})` : ""}.`
+//       );
 //     } finally {
-//       setLoading(false);
+//       if (seq === requestSeq.current) setLoading(false);
 //     }
 //   }
 
 //   function handleSearchSubmit(e: React.FormEvent) {
 //     e.preventDefault();
-//     loadHistory();
+//     setAppliedSearch(search.trim());
+//     setReloadKey(k => k + 1); // re-run even if the text is unchanged
 //   }
 
-//   // NEW — opens the print report for this request in a new tab, same as
-//   // the requester and approver pages do.
 //   function printRequest(requestId: string, e?: React.MouseEvent) {
 //     e?.stopPropagation();
 //     window.open(`/purchase-requests/${requestId}/print`, "_blank", "noopener,noreferrer");
 //   }
 
-//   // NEW — fetches the request's live current status/workflow trail on
-//   // demand (same endpoint the Requester's and Approver's status trackers
-//   // already use), so this page shows where the request actually stands
-//   // right now, not just the one action this user took on it.
 //   async function viewStatus(requestId: string, e?: React.MouseEvent) {
 //     e?.stopPropagation();
 //     try {
@@ -142,6 +185,8 @@
 //       default:                                  return "bg-gray-100 text-gray-600 border-gray-300";
 //     }
 //   }
+
+//   const filtersActive = !!companyId || !!appliedSearch || datePreset !== "all";
 
 //   return (
 //     <div className="p-6">
@@ -183,10 +228,20 @@
 //         >
 //           Search
 //         </button>
+
+//         {filtersActive && (
+//           <button
+//             type="button"
+//             onClick={resetAll}
+//             className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-3 py-2 rounded-lg"
+//           >
+//             <RotateCcw size={14} /> Reset
+//           </button>
+//         )}
 //       </form>
 
 //       {/* Date filter */}
-//       <div className="flex flex-wrap items-center gap-2 mb-5">
+//       <div className="flex flex-wrap items-center gap-2 mb-2">
 //         {[
 //           { key: "all",   label: "All Time" },
 //           { key: "today", label: "Today" },
@@ -195,6 +250,7 @@
 //           { key: "3m",    label: "Last 3 Months" },
 //         ].map(p => (
 //           <button
+//             type="button"
 //             key={p.key}
 //             onClick={() => applyPreset(p.key)}
 //             className={`text-xs font-medium px-3 py-1.5 rounded-full border transition ${
@@ -211,23 +267,40 @@
 //           <input
 //             type="date"
 //             value={fromDate}
-//             onChange={e => { setFromDate(e.target.value); setDatePreset("custom"); }}
+//             max={toDate || undefined}
+//             onChange={e => { setFromDate(e.target.value); setDatePreset(e.target.value || toDate ? "custom" : "all"); }}
 //             className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
 //           />
 //           <span className="text-xs text-gray-400">to</span>
 //           <input
 //             type="date"
 //             value={toDate}
-//             onChange={e => { setToDate(e.target.value); setDatePreset("custom"); }}
+//             min={fromDate || undefined}
+//             onChange={e => { setToDate(e.target.value); setDatePreset(e.target.value || fromDate ? "custom" : "all"); }}
 //             className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
 //           />
 //         </div>
 //       </div>
+//       {dateRangeInvalid && (
+//         <p className="text-xs text-red-600 mb-3">"From" date must be on or before the "To" date.</p>
+//       )}
+//       <div className="mb-3" />
 
 //       {/* Table */}
 //       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
 //         {loading ? (
 //           <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
+//         ) : error ? (
+//           <div className="p-8 text-center text-sm">
+//             <p className="text-red-600 mb-3">{error}</p>
+//             <button
+//               type="button"
+//               onClick={() => setReloadKey(k => k + 1)}
+//               className="text-xs font-medium text-blue-600 hover:underline"
+//             >
+//               Try again
+//             </button>
+//           </div>
 //         ) : history.length === 0 ? (
 //           <div className="p-8 text-center text-gray-400 text-sm">No approval actions found.</div>
 //         ) : (
@@ -246,20 +319,16 @@
 //             <tbody className="divide-y divide-gray-100">
 //               {history.map((h: any) => {
 //                 const hasAttachments = Array.isArray(h.attachments) && h.attachments.length > 0;
-//                 const isExpandable = h.verifiedItems || hasAttachments;
+//                 const hasVerified = Array.isArray(h.verifiedItems) && h.verifiedItems.length > 0;
+//                 const isExpandable = hasVerified || hasAttachments;
 //                 return (
-//                 <>
+//                 <Fragment key={h.id}>
 //                   <tr
-//                     key={h.id}
 //                     className={`hover:bg-gray-50 ${isExpandable ? "cursor-pointer" : ""}`}
 //                     onClick={() => isExpandable && setExpandedId(expandedId === h.id ? null : h.id)}
 //                   >
 //                     <td className="px-4 py-3 font-medium text-gray-700">
 //                       {h.requestNumber}
-//                       {/* ── shows a small paperclip badge when the request's
-//                           items have attachment(s), regardless of what action
-//                           this row represents — a quick visual cue before
-//                           expanding. ── */}
 //                       {hasAttachments && (
 //                         <span title={`${h.attachments.length} attachment(s)`}
 //                           className="inline-flex items-center gap-0.5 ml-2 text-[10px] font-medium text-indigo-600 bg-indigo-50 rounded-full px-1.5 py-0.5">
@@ -277,20 +346,20 @@
 //                       })}
 //                     </td>
 //                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-//                       <button onClick={(e) => viewStatus(h.requestId, e)}
+//                       <button type="button" onClick={(e) => viewStatus(h.requestId, e)}
 //                         className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
 //                         👁 Check status
 //                       </button>
 //                     </td>
 //                     <td className="px-4 py-3">
 //                       <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-//                         <button onClick={(e) => printRequest(h.requestId, e)}
+//                         <button type="button" onClick={(e) => printRequest(h.requestId, e)}
 //                           title="Print MR"
 //                           className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-2 py-1.5 rounded-lg transition">
 //                           <Printer size={12} /> Print
 //                         </button>
 //                         {isExpandable && (
-//                           <button onClick={() => setExpandedId(expandedId === h.id ? null : h.id)}
+//                           <button type="button" onClick={() => setExpandedId(expandedId === h.id ? null : h.id)}
 //                             className="p-1.5 text-gray-400 hover:text-gray-700">
 //                             {expandedId === h.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 //                           </button>
@@ -300,9 +369,9 @@
 //                   </tr>
 
 //                   {expandedId === h.id && isExpandable && (
-//                     <tr key={`${h.id}-detail`}>
+//                     <tr>
 //                       <td colSpan={7} className="bg-gray-50 px-4 py-4 space-y-4">
-//                         {h.verifiedItems && (
+//                         {hasVerified && (
 //                           <div>
 //                             <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
 //                               <Package size={14} /> Store Verification Details
@@ -337,8 +406,6 @@
 //                           </div>
 //                         )}
 
-//                         {/* ── Attachments — shown whenever the request's
-//                             items have one, independent of action type. ── */}
 //                         {hasAttachments && (
 //                           <div>
 //                             <div className="flex items-center gap-2 mb-3 text-xs font-medium text-gray-500">
@@ -366,7 +433,7 @@
 //                       </td>
 //                     </tr>
 //                   )}
-//                 </>
+//                 </Fragment>
 //                 );
 //               })}
 //             </tbody>
@@ -374,14 +441,13 @@
 //         )}
 //       </div>
 
-//       {/* NEW — Current Status modal, same workflow-tracker pattern used
-//           elsewhere in the app (My Requests, My Approvals). */}
+//       {/* Current Status modal */}
 //       {statusModal && (
 //         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 //           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 //             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-2xl">
 //               <h2 className="text-lg font-bold text-gray-800">📊 Current Status</h2>
-//               <button onClick={() => setStatusModal(false)}
+//               <button type="button" onClick={() => setStatusModal(false)}
 //                 className="text-gray-400 hover:text-gray-700 text-xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 transition">✕</button>
 //             </div>
 //             <div className="p-5">
@@ -453,10 +519,10 @@
 //     </div>
 //   );
 // }
-// FILE: src/pages/approvals/ApprovalHistory.tsx
 import { Fragment, useEffect, useRef, useState } from "react";
 import api from "../../api/client";
-import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip, RotateCcw } from "lucide-react";
+import { FileText, Search, ChevronDown, ChevronUp, Package, Printer, Paperclip, RotateCcw, History as HistoryIcon } from "lucide-react";
+import ApprovalHistoryModal from "../../components/ApprovalHistoryModal";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://10.10.50.23:5000/api").replace(/\/api\/?$/, "");
 function getFileUrl(path?: string) {
@@ -516,6 +582,7 @@ export default function ApprovalHistory() {
   const [statusModal, setStatusModal]     = useState(false);
   const [statusData, setStatusData]       = useState<any>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [historyFor, setHistoryFor]     = useState<{ id: string; no: string } | null>(null);
 
   // ── Date filter ──────────────────────────────────────────────────
   const [datePreset, setDatePreset] = useState<string>("all"); // all | today | 7d | month | 3m | custom
@@ -807,6 +874,11 @@ export default function ApprovalHistory() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                        <button type="button" onClick={() => setHistoryFor({ id: h.requestId, no: h.requestNumber })}
+                          title="Full approval / return history"
+                          className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 border border-orange-200 hover:border-orange-400 px-2 py-1.5 rounded-lg transition">
+                          <HistoryIcon size={12} /> History
+                        </button>
                         <button type="button" onClick={(e) => printRequest(h.requestId, e)}
                           title="Print MR"
                           className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-400 px-2 py-1.5 rounded-lg transition">
@@ -894,6 +966,15 @@ export default function ApprovalHistory() {
           </table>
         )}
       </div>
+
+      {/* Approval History modal */}
+      {historyFor && (
+        <ApprovalHistoryModal
+          requestId={historyFor.id}
+          requestNumber={historyFor.no}
+          onClose={() => setHistoryFor(null)}
+        />
+      )}
 
       {/* Current Status modal */}
       {statusModal && (

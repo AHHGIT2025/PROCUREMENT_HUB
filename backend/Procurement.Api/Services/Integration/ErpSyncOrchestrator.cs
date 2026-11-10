@@ -145,6 +145,14 @@ namespace Procurement.Api.Services.Integration
                 await _db.SaveChangesAsync();
                 pendingNewItemLinks.Clear();
             }
+            // Keys (ItemCode + Company) that have at least one ACTIVE row in this batch.
+            // An inactive duplicate of the same key must never override an active one.
+            var activeKeysInBatch = new HashSet<(string, Guid)>();
+            foreach (var e in items)
+            {
+                if (e.Status?.Trim() != "2" && mappings.TryGetValue(e.BranchId, out var cid))
+                    activeKeysInBatch.Add((e.ItemCode, cid));
+            }
 
             foreach (var erpItem in items)
             {
@@ -200,6 +208,22 @@ namespace Procurement.Api.Services.Integration
 
                 var itemKey = (erpItem.ItemCode, companyId);
 
+                var erpInactive = erpItem.Status?.Trim() == "2"
+                                  && !activeKeysInBatch.Contains(itemKey);
+
+                if (erpInactive)
+                {
+                    // Inactive in Bright: never import as new; if already in Hub, mark inactive.
+                    if (existingItemsByKey.TryGetValue(itemKey, out var inactiveExisting))
+                        inactiveExisting.IsActive = false;
+                    else
+                        result.ItemsSkipped++;
+
+                    if (erpItem.LastModified > maxItemWatermark)
+                        maxItemWatermark = erpItem.LastModified;
+
+                    continue;
+                }
                 if (!existingItemsByKey.TryGetValue(itemKey, out var existing))
                 {
                     var newItem = new Item
@@ -227,6 +251,7 @@ namespace Procurement.Api.Services.Integration
                 }
                 else
                 {
+                    existing.IsActive = true;   // active again in Bright -> active in Hub
                     existing.Name = erpItem.Name;
                     existing.Description = erpItem.Description ?? "";
 

@@ -24,6 +24,7 @@ namespace Procurement.Api.Controllers.Materials
         [FromQuery] Guid? companyId,
         [FromQuery] Guid? categoryId,
         [FromQuery] string? search,
+          [FromQuery] bool includeInactive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
         {
@@ -45,10 +46,11 @@ namespace Procurement.Api.Controllers.Materials
             }
 
             var query = _context.Items
-                .Where(i => _context.ItemCompanies.Any(ic =>
-                    ic.ItemId == i.Id &&
-                    ic.CompanyId == companyId.Value))
-                .AsQueryable();
+               .Where(i => _context.ItemCompanies.Any(ic =>
+                   ic.ItemId == i.Id &&
+                   ic.CompanyId == companyId.Value))
+               .Where(i => includeInactive || i.IsActive)
+               .AsQueryable();
 
             // ? NEW — category tab filter
             if (categoryId.HasValue)
@@ -109,7 +111,7 @@ namespace Procurement.Api.Controllers.Materials
         public async Task<IActionResult> GetCategoriesForCompany(Guid companyId)
         {
             var data = await _context.Items
-                .Where(i => i.CategoryId != null &&
+                                .Where(i => i.CategoryId != null && i.IsActive &&
                             _context.ItemCompanies.Any(ic =>
                                 ic.ItemId == i.Id && ic.CompanyId == companyId))
                 .GroupBy(i => i.CategoryId)

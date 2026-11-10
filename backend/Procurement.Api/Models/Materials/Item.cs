@@ -23,7 +23,10 @@ namespace Procurement.Api.Models
         public DateTime? UpdatedAt { get; set; }    // ✅ ADD THIS LINE
         public ICollection<ItemUnit> ItemUnits { get; set; }
         public bool IsManualCategoryOverride { get; set; }
+        public bool IsActive { get; set; } = true;
         public ItemCategory? Category { get; set; }    // ✅ NEW nav property
+
+ 
     }
 
     public class ItemCompany

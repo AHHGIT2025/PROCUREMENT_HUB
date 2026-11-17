@@ -2,7 +2,7 @@
 // Save under: src/pages/procurement/ProcurementQueue.tsx
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, UserPlus, RefreshCw, Eye, X, Loader2, Calendar, ListChecks, ArrowRightLeft, Paperclip, Printer } from 'lucide-react';
 import api from '../../api/client';
 
@@ -42,6 +42,26 @@ export default function ProcurementQueue() {
   const [search, setSearch]           = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [dateFilter, setDateFilter]   = useState('');
+
+  // Stat-card filter (Total / Unassigned / In Progress / Completed). Also
+  // seeded from ?status=... so the Dashboard cards can deep-link here.
+  type StatusFilter = 'all' | 'unassigned' | 'inprogress' | 'completed';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter: StatusFilter = (() => {
+    const v = (searchParams.get('status') || '').toLowerCase();
+    return v === 'unassigned' || v === 'inprogress' || v === 'completed' ? v : 'all';
+  })();
+  function setStatusFilter(next: StatusFilter) {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'all') params.delete('status'); else params.set('status', next);
+    setSearchParams(params, { replace: true });
+  }
+  function matchesStatus(r: any, f: StatusFilter) {
+    if (f === 'unassigned') return !r.assignedToName;
+    if (f === 'inprogress') return r.assignmentStatus === 'ASSIGNED' || r.assignmentStatus === 'IN_PROGRESS';
+    if (f === 'completed')  return r.assignmentStatus === 'COMPLETED';
+    return true;
+  }
 
   const [assignModal, setAssignModal] = useState(false);
   const [selected, setSelected]       = useState<any>(null);
@@ -199,6 +219,7 @@ export default function ProcurementQueue() {
       r.companyName?.toLowerCase().includes(search.toLowerCase())
     )
     .filter(r => !companyFilter || r.companyName === companyFilter)
+    .filter(r => matchesStatus(r, statusFilter))
     .filter(r => {
       if (!dateFilter) return true;
       const rowDate = new Date(r.createdAt).toISOString().slice(0, 10);
@@ -206,9 +227,9 @@ export default function ProcurementQueue() {
     });
 
   const totalCount      = visibleRows.length;
-  const unassignedCount = visibleRows.filter(r => !r.assignedToName).length;
-  const inProgressCount = visibleRows.filter(r => r.assignmentStatus === 'ASSIGNED' || r.assignmentStatus === 'IN_PROGRESS').length;
-  const completedCount  = visibleRows.filter(r => r.assignmentStatus === 'COMPLETED').length;
+  const unassignedCount = visibleRows.filter(r => matchesStatus(r, 'unassigned')).length;
+  const inProgressCount = visibleRows.filter(r => matchesStatus(r, 'inprogress')).length;
+  const completedCount  = visibleRows.filter(r => matchesStatus(r, 'completed')).length;
 
   const transferCandidates = teamMembers.filter(m => m.id !== user.id);
 
@@ -235,17 +256,26 @@ export default function ProcurementQueue() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total',       value: totalCount,      color: 'border-blue-400',    bg: 'bg-blue-50',    text: 'text-blue-700'    },
-            { label: 'Unassigned',  value: unassignedCount, color: 'border-gray-400',    bg: 'bg-gray-50',    text: 'text-gray-700'    },
-            { label: 'In Progress', value: inProgressCount, color: 'border-amber-400',   bg: 'bg-amber-50',   text: 'text-amber-700'   },
-            { label: 'Completed',   value: completedCount,  color: 'border-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-          ].map(c => (
-            <div key={c.label} className={`${c.bg} rounded-2xl border-l-4 ${c.color} shadow-sm p-4`}>
-              <p className={`text-xs font-medium ${c.text} opacity-80`}>{c.label}</p>
-              <p className={`text-3xl font-bold ${c.text} mt-1`}>{c.value}</p>
-            </div>
-          ))}
+          {([
+            { key: 'all',        label: 'Total',       value: totalCount,      color: 'border-blue-400',    bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-400'    },
+            { key: 'unassigned', label: 'Unassigned',  value: unassignedCount, color: 'border-gray-400',    bg: 'bg-gray-50',    text: 'text-gray-700',    ring: 'ring-gray-400'    },
+            { key: 'inprogress', label: 'In Progress', value: inProgressCount, color: 'border-amber-400',   bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-400'   },
+            { key: 'completed',  label: 'Completed',   value: completedCount,  color: 'border-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-400' },
+          ] as const).map(c => {
+            const active = statusFilter === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setStatusFilter(active && c.key !== 'all' ? 'all' : c.key)}
+                title={c.key === 'all' ? 'Show all requests' : active ? 'Click to clear filter' : `Show ${c.label} requests`}
+                className={`${c.bg} text-left rounded-2xl border-l-4 ${c.color} shadow-sm p-4 transition hover:shadow-md cursor-pointer focus:outline-none ${active ? `ring-2 ${c.ring}` : ''}`}
+              >
+                <p className={`text-xs font-medium ${c.text} opacity-80`}>{c.label}</p>
+                <p className={`text-3xl font-bold ${c.text} mt-1`}>{c.value}</p>
+              </button>
+            );
+          })}
         </div>
 
         {/* Search + Company + Date */}
